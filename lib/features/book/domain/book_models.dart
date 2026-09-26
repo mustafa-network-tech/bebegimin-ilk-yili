@@ -27,11 +27,11 @@ enum BookFormat {
 }
 
 enum BookQuality {
-  /// Fast preview / sharing on phones.
-  screen('screen', 'Paylaşım kalitesi', 1400, 80),
+  /// Fast preview / sharing on phones (short image side in px).
+  screen('screen', 'Paylaşım kalitesi', 1000, 80),
 
-  /// High resolution for printing (~250-300 dpi on a full page).
-  print('print', 'Baskı kalitesi', 2600, 90);
+  /// High resolution for printing (~300 dpi on a 17 cm wide photo).
+  print('print', 'Baskı kalitesi', 2000, 90);
 
   const BookQuality(this.key, this.label, this.maxImagePx, this.jpegQuality);
 

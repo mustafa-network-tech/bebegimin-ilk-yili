@@ -66,7 +66,6 @@ class BookPdfBuilder {
     : format = job.data.format,
       _sans = pw.Font.ttf(ByteData.sublistView(job.fonts.sansRegular)),
       _sansBold = pw.Font.ttf(ByteData.sublistView(job.fonts.sansBold)),
-      _serif = pw.Font.ttf(ByteData.sublistView(job.fonts.serifRegular)),
       _serifBold = pw.Font.ttf(ByteData.sublistView(job.fonts.serifSemiBold)),
       _serifItalic = pw.Font.ttf(ByteData.sublistView(job.fonts.serifItalic));
 
@@ -74,7 +73,6 @@ class BookPdfBuilder {
   final BookFormat format;
   final pw.Font _sans;
   final pw.Font _sansBold;
-  final pw.Font _serif;
   final pw.Font _serifBold;
   final pw.Font _serifItalic;
   final _imageCache = <String, pw.ImageProvider>{};

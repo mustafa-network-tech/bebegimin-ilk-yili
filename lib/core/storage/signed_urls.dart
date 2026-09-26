@@ -60,10 +60,10 @@ class SignedUrlCache {
     for (var i = 0; i < missing.length; i += 100) {
       final chunk = missing.sublist(i, (i + 100).clamp(0, missing.length));
       try {
-        final signed = await _client.storage.from(bucket).createSignedUrls(chunk, _ttl.inSeconds);
+        final signed = await _client.storage.from(bucket).createSignedUrlsResult(chunk, _ttl.inSeconds);
         final expires = DateTime.now().add(_ttl - _safety);
-        for (final s in signed) {
-          if (s.signedUrl.isNotEmpty) _cache[_key(bucket, s.path)] = (url: s.signedUrl, expires: expires);
+        for (final s in signed.whereType<SignedUrlSuccess>()) {
+          _cache[_key(bucket, s.path)] = (url: s.signedUrl, expires: expires);
         }
       } catch (_) {
         // Individual widgets will retry on their own.
