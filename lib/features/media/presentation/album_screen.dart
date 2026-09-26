@@ -91,7 +91,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('${baby.firstName} · Albüm')),
-      floatingActionButton: access.can(AppPermission.addPhoto)
+      floatingActionButton: access.can(AppPermission.addPhoto) && access.can(AppPermission.addMemory)
           ? FloatingActionButton.extended(
               onPressed: () => context.push('/memory/new?category=photo&pick=photo'),
               icon: const Icon(Icons.add_a_photo_outlined),
