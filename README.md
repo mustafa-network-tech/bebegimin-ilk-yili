@@ -175,7 +175,7 @@ notifications, device_tokens (kullanıcı başına) ; activity_logs (bebek baş�
 
 - Flutter **3.47+** (Dart 3.13+) – `flutter --version`
 - Android: Android Studio + SDK (API 35), JDK 17
-- iOS: macOS, Xcode 16+, CocoaPods
+- iOS: macOS, **Xcode 26.1.1+** (connectivity_plus 7.x iOS 26 SDK API'lerini kullanır), CocoaPods
 
 ```bash
 flutter pub get
