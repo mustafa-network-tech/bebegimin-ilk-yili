@@ -110,6 +110,12 @@ create table public.family_members (
 
 create index family_members_user_idx on public.family_members (user_id);
 
+-- Second FK to profiles so PostgREST can embed the member's public profile
+-- (profiles rows always exist, created by the auth trigger).
+alter table public.family_members
+  add constraint family_members_profile_fk foreign key (user_id)
+  references public.profiles (id) on delete cascade;
+
 create trigger family_members_set_updated_at
   before update on public.family_members
   for each row execute function public.set_updated_at();
