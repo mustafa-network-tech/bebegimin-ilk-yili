@@ -1,0 +1,5 @@
+package app.bebegimin.bebegimin_ilk_yili
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
