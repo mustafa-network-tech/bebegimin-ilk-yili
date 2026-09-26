@@ -20,8 +20,7 @@ enum BookFormat {
 
   static const double bleedMm = 3;
 
-  static BookFormat fromKey(String? k) =>
-      values.firstWhere((f) => f.key == k, orElse: () => BookFormat.square21);
+  static BookFormat fromKey(String? k) => values.firstWhere((f) => f.key == k, orElse: () => BookFormat.square21);
 
   bool get isSquare => widthMm == heightMm;
 }
@@ -149,10 +148,9 @@ class BookPage {
   });
 
   factory BookPage.fromJson(Map<String, dynamic> j) {
-    final items = ((j['book_items'] as List?) ?? const [])
-        .map((e) => BookItem.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final items =
+        ((j['book_items'] as List?) ?? const []).map((e) => BookItem.fromJson(e as Map<String, dynamic>)).toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return BookPage(
       id: j['id'] as String,
       projectId: j['project_id'] as String,
@@ -229,10 +227,9 @@ class BookProject {
   });
 
   factory BookProject.fromJson(Map<String, dynamic> j) {
-    final pages = ((j['book_pages'] as List?) ?? const [])
-        .map((e) => BookPage.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final pages =
+        ((j['book_pages'] as List?) ?? const []).map((e) => BookPage.fromJson(e as Map<String, dynamic>)).toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return BookProject(
       id: j['id'] as String,
       babyId: j['baby_id'] as String,
@@ -262,7 +259,10 @@ class BookProject {
 
   bool get hasBeenGenerated => currentVersion > 0;
 
-  Set<String> get allRefIds => {for (final p in pages) for (final i in p.items) i.refId};
+  Set<String> get allRefIds => {
+    for (final p in pages)
+      for (final i in p.items) i.refId,
+  };
 }
 
 class BookExport {

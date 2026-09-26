@@ -68,25 +68,30 @@ class PendingUpload {
 
   String? get thumbPath => kind == MediaKind.photo ? '$babyId/$id/thumb.jpg' : null;
 
-  PendingUpload copyWith({int? attempts, UploadState? state, String? error, bool clearError = false, bool? rowCreated}) =>
-      PendingUpload(
-        id: id,
-        babyId: babyId,
-        kind: kind,
-        localPath: localPath,
-        mimeType: mimeType,
-        takenOn: takenOn,
-        memoryId: memoryId,
-        milestoneId: milestoneId,
-        letterId: letterId,
-        caption: caption,
-        tags: tags,
-        durationMs: durationMs,
-        attempts: attempts ?? this.attempts,
-        state: state ?? this.state,
-        error: clearError ? null : (error ?? this.error),
-        rowCreated: rowCreated ?? this.rowCreated,
-      );
+  PendingUpload copyWith({
+    int? attempts,
+    UploadState? state,
+    String? error,
+    bool clearError = false,
+    bool? rowCreated,
+  }) => PendingUpload(
+    id: id,
+    babyId: babyId,
+    kind: kind,
+    localPath: localPath,
+    mimeType: mimeType,
+    takenOn: takenOn,
+    memoryId: memoryId,
+    milestoneId: milestoneId,
+    letterId: letterId,
+    caption: caption,
+    tags: tags,
+    durationMs: durationMs,
+    attempts: attempts ?? this.attempts,
+    state: state ?? this.state,
+    error: clearError ? null : (error ?? this.error),
+    rowCreated: rowCreated ?? this.rowCreated,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,

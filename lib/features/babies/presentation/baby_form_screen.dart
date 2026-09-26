@@ -147,7 +147,9 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tüm anılar, fotoğraflar, videolar, mektuplar, kitaplar ve aile üyelikleri geri alınamaz şekilde silinir.'),
+            const Text(
+              'Tüm anılar, fotoğraflar, videolar, mektuplar, kitaplar ve aile üyelikleri geri alınamaz şekilde silinir.',
+            ),
             const SizedBox(height: 12),
             Text('Onaylamak için "${baby.firstName}" yazın:'),
             TextField(controller: ctrl, autofocus: true),
@@ -194,7 +196,11 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             if (baby != null && (access?.can(AppPermission.manageBaby) ?? false)) ...[
-              _ImagesEditor(baby: baby, onAvatar: () => _pickImage(cover: false), onCover: () => _pickImage(cover: true)),
+              _ImagesEditor(
+                baby: baby,
+                onAvatar: () => _pickImage(cover: false),
+                onCover: () => _pickImage(cover: true),
+              ),
               const SizedBox(height: 20),
             ],
             TextFormField(
@@ -264,7 +270,11 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
               minLines: 3,
               maxLines: 6,
               maxLength: 4000,
-              decoration: const InputDecoration(labelText: 'Kısa hikâye / not', alignLabelWithHint: true, hintText: 'Doğum hikâyeniz, ismin anlamı…'),
+              decoration: const InputDecoration(
+                labelText: 'Kısa hikâye / not',
+                alignLabelWithHint: true,
+                hintText: 'Doğum hikâyeniz, ismin anlamı…',
+              ),
             ),
             if (!_isEdit) ...[
               const SizedBox(height: 8),
@@ -275,7 +285,11 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
                 runSpacing: 8,
                 children: [
                   for (final r in Relation.values)
-                    ChoiceChip(label: Text(r.label), selected: _relation == r, onSelected: (_) => setState(() => _relation = r)),
+                    ChoiceChip(
+                      label: Text(r.label),
+                      selected: _relation == r,
+                      onSelected: (_) => setState(() => _relation = r),
+                    ),
                 ],
               ),
               if (_relation == Relation.diger) ...[
@@ -293,10 +307,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
               ),
             ],
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : _save,
-              child: Text(_isEdit ? 'Kaydet' : 'Bebek profilini oluştur'),
-            ),
+            FilledButton(onPressed: _busy ? null : _save, child: Text(_isEdit ? 'Kaydet' : 'Bebek profilini oluştur')),
           ],
         ),
       ),
@@ -330,11 +341,11 @@ class _ImagesEditor extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       if (baby.coverPath != null) StorageImage(bucket: Buckets.babyMedia, path: baby.coverPath),
-                      Align(
+                      const Align(
                         alignment: Alignment.topRight,
                         child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Chip(avatar: const Icon(Icons.edit_outlined, size: 16), label: const Text('Kapak')),
+                          padding: EdgeInsets.all(8),
+                          child: Chip(avatar: Icon(Icons.edit_outlined, size: 16), label: Text('Kapak')),
                         ),
                       ),
                     ],
@@ -351,10 +362,16 @@ class _ImagesEditor extends StatelessWidget {
               child: Container(
                 width: 88,
                 height: 88,
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: scheme.surface, width: 4)),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: scheme.surface, width: 4),
+                ),
                 child: ClipOval(
                   child: baby.avatarPath == null
-                      ? Container(color: scheme.primaryContainer, child: Icon(Icons.add_a_photo_outlined, color: scheme.primary))
+                      ? Container(
+                          color: scheme.primaryContainer,
+                          child: Icon(Icons.add_a_photo_outlined, color: scheme.primary),
+                        )
                       : StorageImage(bucket: Buckets.babyMedia, path: baby.avatarPath),
                 ),
               ),

@@ -11,9 +11,7 @@ abstract final class Buckets {
   static const avatars = 'avatars';
 }
 
-final signedUrlCacheProvider = Provider<SignedUrlCache>(
-  (ref) => SignedUrlCache(ref.watch(supabaseProvider)),
-);
+final signedUrlCacheProvider = Provider<SignedUrlCache>((ref) => SignedUrlCache(ref.watch(supabaseProvider)));
 
 /// Private buckets are only reachable through short-lived signed URLs.
 /// This cache signs each object once per hour and deduplicates requests.
@@ -55,7 +53,10 @@ class SignedUrlCache {
 
   /// Signs many objects with one request (grids, timelines).
   Future<void> prefetch(String bucket, Iterable<String> paths) async {
-    final missing = paths.where((p) => peek(bucket, p) == null && !_inFlight.containsKey(_key(bucket, p))).toSet().toList();
+    final missing = paths
+        .where((p) => peek(bucket, p) == null && !_inFlight.containsKey(_key(bucket, p)))
+        .toSet()
+        .toList();
     if (missing.isEmpty) return;
     for (var i = 0; i < missing.length; i += 100) {
       final chunk = missing.sublist(i, (i + 100).clamp(0, missing.length));

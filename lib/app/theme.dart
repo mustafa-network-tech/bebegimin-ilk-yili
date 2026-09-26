@@ -26,10 +26,7 @@ abstract final class AppTheme {
   static const _radius = 20.0;
 
   static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.apricot,
-      brightness: Brightness.light,
-    ).copyWith(
+    final scheme = ColorScheme.fromSeed(seedColor: AppColors.apricot, brightness: Brightness.light).copyWith(
       primary: AppColors.apricot,
       onPrimary: Colors.white,
       secondary: AppColors.sage,
@@ -47,10 +44,7 @@ abstract final class AppTheme {
   }
 
   static ThemeData dark() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.apricot,
-      brightness: Brightness.dark,
-    ).copyWith(
+    final scheme = ColorScheme.fromSeed(seedColor: AppColors.apricot, brightness: Brightness.dark).copyWith(
       primary: AppColors.apricotLight,
       onPrimary: const Color(0xFF3A1E12),
       secondary: const Color(0xFFA5C4B1),
@@ -163,9 +157,7 @@ abstract final class AppTheme {
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surface,
@@ -176,9 +168,7 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-      ),
+      listTileTheme: const ListTileThemeData(contentPadding: EdgeInsets.symmetric(horizontal: 16)),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),

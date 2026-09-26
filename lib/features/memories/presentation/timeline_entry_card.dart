@@ -19,7 +19,14 @@ String entryRoute(TimelineEntry e) => switch (e.type) {
 
 /// Card used by the timeline, home, calendar and search.
 class TimelineEntryCard extends ConsumerWidget {
-  const TimelineEntryCard({super.key, required this.entry, required this.baby, this.media = const [], this.favorite = false, this.compact = false});
+  const TimelineEntryCard({
+    super.key,
+    required this.entry,
+    required this.baby,
+    this.media = const [],
+    this.favorite = false,
+    this.compact = false,
+  });
 
   final TimelineEntry entry;
   final Baby baby;
@@ -50,7 +57,11 @@ class TimelineEntryCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(radius: 15, backgroundColor: color.withValues(alpha: 0.16), child: Icon(icon, size: 16, color: color)),
+                  CircleAvatar(
+                    radius: 15,
+                    backgroundColor: color.withValues(alpha: 0.16),
+                    child: Icon(icon, size: 16, color: color),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -62,14 +73,23 @@ class TimelineEntryCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              Text(entry.title, style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'Lora', fontWeight: FontWeight.w600, fontSize: 18)),
+              Text(
+                entry.title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontFamily: 'Lora',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
+              ),
               if (entry.body?.trim().isNotEmpty ?? false) ...[
                 const SizedBox(height: 6),
                 Text(
                   entry.body!.trim(),
                   maxLines: compact ? 2 : 4,
                   overflow: TextOverflow.ellipsis,
-                  style: entry.type == EntryType.letter ? theme.textTheme.bodyMedium?.copyWith(fontFamily: 'Lora', fontStyle: FontStyle.italic) : theme.textTheme.bodyMedium,
+                  style: entry.type == EntryType.letter
+                      ? theme.textTheme.bodyMedium?.copyWith(fontFamily: 'Lora', fontStyle: FontStyle.italic)
+                      : theme.textTheme.bodyMedium,
                 ),
               ],
               if (media.isNotEmpty && !compact) ...[
@@ -82,7 +102,10 @@ class TimelineEntryCard extends ConsumerWidget {
                   child: Row(
                     children: [
                       for (final m in media.take(4))
-                        Padding(padding: const EdgeInsets.only(right: 6), child: SizedBox.square(dimension: 56, child: MediaThumb(media: m, radius: 10))),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: SizedBox.square(dimension: 56, child: MediaThumb(media: m, radius: 10)),
+                        ),
                     ],
                   ),
                 ),
@@ -94,11 +117,16 @@ class TimelineEntryCard extends ConsumerWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Pill(label: label, color: color),
-                  if (age != null) Pill(label: age.label, color: theme.colorScheme.secondary)
-                  else Pill(label: 'Doğumdan önce', color: theme.colorScheme.secondary),
+                  if (age != null)
+                    Pill(label: age.label, color: theme.colorScheme.secondary)
+                  else
+                    Pill(label: 'Doğumdan önce', color: theme.colorScheme.secondary),
                   if (fy.isBookCandidate(entry.date) && entry.includeInBook)
-                    Pill(label: 'İlk Yılım', icon: Icons.menu_book_rounded, color: AppColors.apricot),
-                  Text('· $author', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const Pill(label: 'İlk Yılım', icon: Icons.menu_book_rounded, color: AppColors.apricot),
+                  Text(
+                    '· $author',
+                    style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
                 ],
               ),
             ],

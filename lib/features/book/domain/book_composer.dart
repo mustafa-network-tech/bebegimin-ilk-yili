@@ -43,12 +43,7 @@ class PlannedPage {
 }
 
 class PlannedItem {
-  const PlannedItem({
-    required this.type,
-    required this.refId,
-    required this.date,
-    this.hidden = false,
-  });
+  const PlannedItem({required this.type, required this.refId, required this.date, this.hidden = false});
 
   final BookItemType type;
   final String refId;
@@ -115,8 +110,7 @@ class BookComposer {
 
   /// Letters are family messages: written any time up to the first
   /// birthday (pregnancy included). Later letters can be added manually.
-  bool letterIsCandidate(FirstYearPeriod fy, Letter l) =>
-      !l.writtenOn.isAfter(fy.firstBirthday);
+  bool letterIsCandidate(FirstYearPeriod fy, Letter l) => !l.writtenOn.isAfter(fy.firstBirthday);
 
   BookPlan plan(BookSource src) {
     final fy = src.baby.firstYear;
@@ -134,15 +128,17 @@ class BookComposer {
     final includedMilestoneIds = <String>{};
     for (final ms in src.milestones.where((m) => m.includeInBook)) {
       if (slotForDate(fy, ms.achievedOn) == null) continue;
-      bySlot[BookPageType.milestones.key]!.items
-          .add(PlannedItem(type: BookItemType.milestone, refId: ms.id, date: ms.achievedOn));
+      bySlot[BookPageType.milestones.key]!.items.add(
+        PlannedItem(type: BookItemType.milestone, refId: ms.id, date: ms.achievedOn),
+      );
       includedMilestoneIds.add(ms.id);
     }
 
     final includedLetterIds = <String>{};
     for (final l in src.letters.where((l) => l.includeInBook && letterIsCandidate(fy, l))) {
-      bySlot[BookPageType.letters.key]!.items
-          .add(PlannedItem(type: BookItemType.letter, refId: l.id, date: l.writtenOn));
+      bySlot[BookPageType.letters.key]!.items.add(
+        PlannedItem(type: BookItemType.letter, refId: l.id, date: l.writtenOn),
+      );
       includedLetterIds.add(l.id);
     }
 
@@ -159,9 +155,7 @@ class BookComposer {
         if (!includedLetterIds.contains(media.letterId)) continue;
         slot = BookPageType.letters.key;
       } else {
-        final memory = media.memoryId == null
-            ? null
-            : src.memories.firstWhereOrNull((m) => m.id == media.memoryId);
+        final memory = media.memoryId == null ? null : src.memories.firstWhereOrNull((m) => m.id == media.memoryId);
         if (memory != null && !memory.includeInBook) continue;
         slot = slotForDate(fy, memory?.date ?? media.takenOn);
       }
@@ -225,10 +219,11 @@ class BookComposer {
   /// last month, otherwise the latest first-year photo.
   String? suggestCover(BookSource src) {
     final fy = src.baby.firstYear;
-    final photos = src.media
-        .where((m) => m.status == 'ready' && !m.isVideo && m.includeInBook && fy.isBookCandidate(m.takenOn))
-        .toList()
-      ..sort((a, b) => b.takenOn.compareTo(a.takenOn));
+    final photos =
+        src.media
+            .where((m) => m.status == 'ready' && !m.isVideo && m.includeInBook && fy.isBookCandidate(m.takenOn))
+            .toList()
+          ..sort((a, b) => b.takenOn.compareTo(a.takenOn));
     if (photos.isEmpty) return null;
     return (photos.firstWhereOrNull((m) => src.favoriteIds.contains(m.id) && !fy.isPregnancy(m.takenOn)) ??
             photos.firstWhereOrNull((m) => fy.isFirstBirthday(m.takenOn)) ??
@@ -245,9 +240,7 @@ class BookComposer {
     final missingPages = fresh.pages.where((p) => !existingSlots.contains(p.slot)).toList();
     final newItems = <String, List<PlannedItem>>{};
     for (final p in fresh.pages) {
-      final add = p.items
-          .where((i) => !existingRefs.contains(i.refId) && !removedRefIds.contains(i.refId))
-          .toList();
+      final add = p.items.where((i) => !existingRefs.contains(i.refId) && !removedRefIds.contains(i.refId)).toList();
       if (add.isNotEmpty) newItems[p.slot] = add;
     }
     return BookSyncResult(missingPages: missingPages, newItems: newItems);

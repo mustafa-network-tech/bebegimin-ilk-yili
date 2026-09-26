@@ -67,9 +67,7 @@ void main() {
       final data = render(format);
       final jpegP = File('test/fixtures/portrait.jpg').readAsBytesSync();
       final jpegL = File('test/fixtures/landscape.jpg').readAsBytesSync();
-      final images = {
-        for (final p in data.allPhotos) p.mediaId: p.aspect > 1 ? jpegL : jpegP,
-      };
+      final images = {for (final p in data.allPhotos) p.mediaId: p.aspect > 1 ? jpegL : jpegP};
       final result = await buildBookPdf(BookBuildJob(data: data, fonts: loadFonts(), images: images, compress: false));
       final text = String.fromCharCodes(result.bytes);
       expect(text.startsWith('%PDF-'), isTrue);

@@ -174,8 +174,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                           children: [
                             Text(Dates.monthYear(entry.key), style: Theme.of(context).textTheme.titleMedium),
                             const Spacer(),
-                            Text(baby.ageOn(entry.value.first.takenOn)?.label ?? '',
-                                style: Theme.of(context).textTheme.labelMedium),
+                            Text(
+                              baby.ageOn(entry.value.first.takenOn)?.label ?? '',
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
                           ],
                         ),
                       ),

@@ -26,7 +26,10 @@ final milestoneSlotsProvider = FutureProvider.autoDispose.family<List<MilestoneS
   return [...achieved, ...upcoming];
 });
 
-final milestoneDetailProvider = FutureProvider.autoDispose.family<MilestoneSlot?, (String babyId, String id)>((ref, key) async {
+final milestoneDetailProvider = FutureProvider.autoDispose.family<MilestoneSlot?, (String babyId, String id)>((
+  ref,
+  key,
+) async {
   final slots = await ref.watch(milestoneSlotsProvider(key.$1).future);
   return slots.firstWhereOrNull((s) => s.milestone?.id == key.$2);
 });

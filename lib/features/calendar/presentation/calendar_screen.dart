@@ -18,14 +18,16 @@ import '../../memories/data/timeline_repository.dart';
 import '../../memories/domain/timeline_entry.dart';
 import '../../memories/presentation/timeline_entry_card.dart';
 
-final _monthEntriesProvider = FutureProvider.autoDispose.family<Map<DateTime, List<TimelineEntry>>, (String, DateTime)>((ref, key) async {
-  ref.watch(contentRevisionProvider);
-  final (babyId, month) = key;
-  final from = DateTime.utc(month.year, month.month - 1, 20);
-  final to = DateTime.utc(month.year, month.month + 1, 10);
-  final entries = await ref.watch(timelineRepositoryProvider).range(babyId, from, to);
-  return groupBy(entries, (TimelineEntry e) => Dates.dateOnly(e.date));
-});
+final _monthEntriesProvider = FutureProvider.autoDispose.family<Map<DateTime, List<TimelineEntry>>, (String, DateTime)>(
+  (ref, key) async {
+    ref.watch(contentRevisionProvider);
+    final (babyId, month) = key;
+    final from = DateTime.utc(month.year, month.month - 1, 20);
+    final to = DateTime.utc(month.year, month.month + 1, 10);
+    final entries = await ref.watch(timelineRepositoryProvider).range(babyId, from, to);
+    return groupBy(entries, (TimelineEntry e) => Dates.dateOnly(e.date));
+  },
+);
 
 /// Month calendar; tapping a day lists everything recorded on that day.
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -88,7 +90,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   titleTextStyle: theme.textTheme.titleMedium!,
                 ),
                 calendarStyle: CalendarStyle(
-                  todayDecoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.25), shape: BoxShape.circle),
+                  todayDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                    shape: BoxShape.circle,
+                  ),
                   todayTextStyle: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w800),
                   selectedDecoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
                   outsideDaysVisible: false,
@@ -97,7 +102,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   markerBuilder: (context, day, events) {
                     if (events.isEmpty) {
                       if (Dates.isSameDay(Dates.dateOnly(day), baby.birthDate)) {
-                        return const Positioned(bottom: 4, child: Icon(Icons.cake_rounded, size: 12, color: AppColors.apricot));
+                        return const Positioned(
+                          bottom: 4,
+                          child: Icon(Icons.cake_rounded, size: 12, color: AppColors.apricot),
+                        );
                       }
                       return null;
                     }
@@ -132,8 +140,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   age == null
                       ? 'Doğumdan önce'
                       : isMonthiversary
-                          ? '${baby.firstName} bugün ${age.totalMonths} aylık oldu 🎉'
-                          : '${baby.firstName} ${age.label}',
+                      ? '${baby.firstName} bugün ${age.totalMonths} aylık oldu 🎉'
+                      : '${baby.firstName} ${age.label}',
                   style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
@@ -141,7 +149,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
           if (entries.isLoading && !entries.hasValue) const LoadingView(),
           if (entries.hasError && !entries.hasValue)
-            ErrorView(error: entries.error!, compact: true, onRetry: () => ref.invalidate(_monthEntriesProvider((baby.id, month)))),
+            ErrorView(
+              error: entries.error!,
+              compact: true,
+              onRetry: () => ref.invalidate(_monthEntriesProvider((baby.id, month))),
+            ),
           for (final e in dayEntries)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -165,7 +177,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     MediaThumb(
                       media: dayMedia.value!.items[i],
                       radius: 10,
-                      onTap: () => context.push('/viewer', extra: MediaViewerArgs(media: dayMedia.value!.items, initialIndex: i)),
+                      onTap: () => context.push(
+                        '/viewer',
+                        extra: MediaViewerArgs(media: dayMedia.value!.items, initialIndex: i),
+                      ),
                     ),
                 ],
               ),

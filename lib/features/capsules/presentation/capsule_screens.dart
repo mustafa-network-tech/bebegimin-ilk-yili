@@ -51,7 +51,8 @@ class CapsulesScreen extends ConsumerWidget {
             ? EmptyState(
                 icon: Icons.hourglass_empty_rounded,
                 title: 'Geleceğe bir mesaj bırakın',
-                message: '${baby.firstName} 5, 10 ya da 18 yaşına geldiğinde açılacak mesajlar yazın. Açılış gününe kadar kimse — siz dahil — içeriği göremez.',
+                message:
+                    '${baby.firstName} 5, 10 ya da 18 yaşına geldiğinde açılacak mesajlar yazın. Açılış gününe kadar kimse — siz dahil — içeriği göremez.',
               )
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -69,7 +70,10 @@ class CapsulesScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              Icon(open ? Icons.drafts_rounded : Icons.lock_clock_rounded, color: theme.colorScheme.primary),
+                              Icon(
+                                open ? Icons.drafts_rounded : Icons.lock_clock_rounded,
+                                color: theme.colorScheme.primary,
+                              ),
                               const SizedBox(width: 10),
                               Expanded(child: Text(c.title, style: theme.textTheme.titleMedium)),
                               if (c.authorId == access.userId || access.isAdmin)
@@ -77,8 +81,13 @@ class CapsulesScreen extends ConsumerWidget {
                                   tooltip: 'Sil',
                                   icon: const Icon(Icons.delete_outline_rounded),
                                   onPressed: () async {
-                                    final ok = await confirm(context,
-                                        title: 'Kapsül silinsin mi?', message: 'Mühürlü içerik de kalıcı olarak silinir.', confirmLabel: 'Sil', destructive: true);
+                                    final ok = await confirm(
+                                      context,
+                                      title: 'Kapsül silinsin mi?',
+                                      message: 'Mühürlü içerik de kalıcı olarak silinir.',
+                                      confirmLabel: 'Sil',
+                                      destructive: true,
+                                    );
                                     if (!ok || !context.mounted) return;
                                     await runWithProgress(context, () => ref.read(capsuleRepositoryProvider).delete(c));
                                     ref.read(contentRevisionProvider.notifier).bump();
@@ -87,19 +96,36 @@ class CapsulesScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          Text('${c.signature} · ${Dates.short(c.createdAt.toLocal())} tarihinde bıraktı', style: theme.textTheme.bodySmall),
+                          Text(
+                            '${c.signature} · ${Dates.short(c.createdAt.toLocal())} tarihinde bıraktı',
+                            style: theme.textTheme.bodySmall,
+                          ),
                           const SizedBox(height: 10),
                           if (!open) ...[
-                            Text('${c.occasion.label} açılacak: ${Dates.long(c.openOn)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                            Text(
+                              '${c.occasion.label} açılacak: ${Dates.long(c.openOn)}',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
                             Text(c.remainingLabel(today), style: theme.textTheme.bodySmall),
-                            if (c.hasPhoto) const Padding(padding: EdgeInsets.only(top: 6), child: Text('📷 Bir fotoğraf içeriyor')),
+                            if (c.hasPhoto)
+                              const Padding(padding: EdgeInsets.only(top: 6), child: Text('📷 Bir fotoğraf içeriyor')),
                           ] else ...[
-                            Text(c.body!, style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'Lora', fontStyle: FontStyle.italic, height: 1.6)),
+                            Text(
+                              c.body!,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontFamily: 'Lora',
+                                fontStyle: FontStyle.italic,
+                                height: 1.6,
+                              ),
+                            ),
                             if (c.hasPhoto) ...[
                               const SizedBox(height: 12),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(14),
-                                child: AspectRatio(aspectRatio: 4 / 3, child: StorageImage(bucket: Buckets.babyMedia, path: c.photoPath)),
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 3,
+                                  child: StorageImage(bucket: Buckets.babyMedia, path: c.photoPath),
+                                ),
                               ),
                             ],
                           ],
@@ -146,21 +172,25 @@ class _CapsuleFormScreenState extends ConsumerState<CapsuleFormScreen> {
       showSnack(context, 'Açılış tarihi gelecekte olmalı.', error: true);
       return;
     }
-    final ok = await confirm(context,
-        title: 'Kapsül mühürlensin mi?',
-        message: 'Mesaj ${Dates.long(openOn)} tarihine kadar hiç kimse tarafından okunamaz ve düzenlenemez.',
-        confirmLabel: 'Mühürle');
+    final ok = await confirm(
+      context,
+      title: 'Kapsül mühürlensin mi?',
+      message: 'Mesaj ${Dates.long(openOn)} tarihine kadar hiç kimse tarafından okunamaz ve düzenlenemez.',
+      confirmLabel: 'Mühürle',
+    );
     if (!ok) return;
     setState(() => _busy = true);
     try {
-      await ref.read(capsuleRepositoryProvider).create(
-        babyId: babyId,
-        title: _title.text,
-        body: _body.text,
-        openOn: openOn,
-        occasion: _occasion,
-        photoJpeg: _photo,
-      );
+      await ref
+          .read(capsuleRepositoryProvider)
+          .create(
+            babyId: babyId,
+            title: _title.text,
+            body: _body.text,
+            openOn: openOn,
+            occasion: _occasion,
+            photoJpeg: _photo,
+          );
       ref.read(contentRevisionProvider.notifier).bump();
       if (mounted) {
         showSnack(context, 'Zaman kapsülü mühürlendi ⏳');
@@ -192,7 +222,11 @@ class _CapsuleFormScreenState extends ConsumerState<CapsuleFormScreen> {
               runSpacing: 8,
               children: [
                 for (final o in CapsuleOccasion.values)
-                  ChoiceChip(label: Text(o.label), selected: _occasion == o, onSelected: (_) => setState(() => _occasion = o)),
+                  ChoiceChip(
+                    label: Text(o.label),
+                    selected: _occasion == o,
+                    onSelected: (_) => setState(() => _occasion = o),
+                  ),
               ],
             ),
             const SizedBox(height: 12),
@@ -209,7 +243,10 @@ class _CapsuleFormScreenState extends ConsumerState<CapsuleFormScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _title,
-              decoration: const InputDecoration(labelText: 'Zarfın üzerine ne yazalım?', hintText: '18. yaş gününde aç'),
+              decoration: const InputDecoration(
+                labelText: 'Zarfın üzerine ne yazalım?',
+                hintText: '18. yaş gününde aç',
+              ),
               validator: (v) => Validators.required(v, field: 'Başlık') ?? Validators.maxLength(v, 140),
             ),
             const SizedBox(height: 14),

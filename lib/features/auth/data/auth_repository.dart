@@ -4,9 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../app/env.dart';
 import '../../../core/supabase_providers.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => AuthRepository(ref.watch(supabaseProvider)),
-);
+final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepository(ref.watch(supabaseProvider)));
 
 class AuthRepository {
   AuthRepository(this._client);
@@ -30,17 +28,13 @@ class AuthRepository {
     return res.session != null;
   }
 
-  Future<void> resendVerification(String email) => _auth.resend(
-    type: OtpType.signup,
-    email: email.trim(),
-    emailRedirectTo: Env.authRedirectUrl,
-  );
+  Future<void> resendVerification(String email) =>
+      _auth.resend(type: OtpType.signup, email: email.trim(), emailRedirectTo: Env.authRedirectUrl);
 
   Future<void> sendPasswordReset(String email) =>
       _auth.resetPasswordForEmail(email.trim(), redirectTo: Env.authRedirectUrl);
 
-  Future<void> updatePassword(String newPassword) =>
-      _auth.updateUser(UserAttributes(password: newPassword));
+  Future<void> updatePassword(String newPassword) => _auth.updateUser(UserAttributes(password: newPassword));
 
   Future<void> signOut() => _auth.signOut();
 

@@ -8,8 +8,7 @@ abstract final class Validators {
     return null;
   }
 
-  static String? optionalEmail(String? v) =>
-      (v == null || v.trim().isEmpty) ? null : email(v);
+  static String? optionalEmail(String? v) => (v == null || v.trim().isEmpty) ? null : email(v);
 
   static String? password(String? v) {
     final s = v ?? '';
@@ -23,6 +22,5 @@ abstract final class Validators {
   static String? required(String? v, {String field = 'Bu alan'}) =>
       (v == null || v.trim().isEmpty) ? '$field gerekli' : null;
 
-  static String? maxLength(String? v, int max) =>
-      (v != null && v.length > max) ? 'En fazla $max karakter' : null;
+  static String? maxLength(String? v, int max) => (v != null && v.length > max) ? 'En fazla $max karakter' : null;
 }

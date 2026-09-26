@@ -74,6 +74,9 @@ class BookItemLeading extends StatelessWidget {
       if (m != null) return SizedBox.square(dimension: 48, child: MediaThumb(media: m, radius: 10, memCacheWidth: 150));
     }
     final info = BookItemInfo.of(source, type, refId);
-    return CircleAvatar(backgroundColor: info.color.withValues(alpha: 0.16), child: Icon(info.icon, color: info.color));
+    return CircleAvatar(
+      backgroundColor: info.color.withValues(alpha: 0.16),
+      child: Icon(info.icon, color: info.color),
+    );
   }
 }

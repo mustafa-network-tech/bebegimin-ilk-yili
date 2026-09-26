@@ -75,10 +75,18 @@ class LettersScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            if (l.title?.isNotEmpty ?? false) Text(l.title!, style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'Lora')),
+                            if (l.title?.isNotEmpty ?? false)
+                              Text(l.title!, style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'Lora')),
                             const SizedBox(height: 4),
-                            Text(l.body, maxLines: 3, overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'Lora', fontStyle: FontStyle.italic)),
+                            Text(
+                              l.body,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontFamily: 'Lora',
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -123,10 +131,24 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
     try {
       final repo = ref.read(letterRepositoryProvider);
       final letter = widget.letterId == null
-          ? await repo.create(babyId: babyId, title: _title.text, body: _body.text, writtenOn: _date, includeInBook: _include)
-          : await repo.update(widget.letterId!, title: _title.text, body: _body.text, writtenOn: _date, includeInBook: _include);
+          ? await repo.create(
+              babyId: babyId,
+              title: _title.text,
+              body: _body.text,
+              writtenOn: _date,
+              includeInBook: _include,
+            )
+          : await repo.update(
+              widget.letterId!,
+              title: _title.text,
+              body: _body.text,
+              writtenOn: _date,
+              includeInBook: _include,
+            );
       if (_photo != null) {
-        await ref.read(uploadQueueProvider.notifier).enqueue(babyId: babyId, files: [_photo!], takenOn: _date, letterId: letter.id);
+        await ref
+            .read(uploadQueueProvider.notifier)
+            .enqueue(babyId: babyId, files: [_photo!], takenOn: _date, letterId: letter.id);
       }
       ref.read(contentRevisionProvider.notifier).bump();
       if (!mounted) return;
@@ -174,7 +196,10 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
               maxLength: 20000,
               textCapitalization: TextCapitalization.sentences,
               style: const TextStyle(fontFamily: 'Lora', fontSize: 17, height: 1.6),
-              decoration: const InputDecoration(alignLabelWithHint: true, hintText: 'Bugün seni ilk kez kucağıma aldım…'),
+              decoration: const InputDecoration(
+                alignLabelWithHint: true,
+                hintText: 'Bugün seni ilk kez kucağıma aldım…',
+              ),
               validator: (v) => Validators.required(v, field: 'Mektup'),
             ),
             DateField(
@@ -226,13 +251,23 @@ class LetterDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         actions: [
           if (l != null && (access?.canEditLetter(l.authorId) ?? false))
-            IconButton(tooltip: 'Düzenle', icon: const Icon(Icons.edit_outlined), onPressed: () => context.push('/letter/$letterId/edit')),
+            IconButton(
+              tooltip: 'Düzenle',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push('/letter/$letterId/edit'),
+            ),
           if (l != null && (access?.canDeleteLetter(l.authorId) ?? false))
             IconButton(
               tooltip: 'Sil',
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () async {
-                final ok = await confirm(context, title: 'Mektup silinsin mi?', message: 'Bu işlem geri alınamaz.', confirmLabel: 'Sil', destructive: true);
+                final ok = await confirm(
+                  context,
+                  title: 'Mektup silinsin mi?',
+                  message: 'Bu işlem geri alınamaz.',
+                  confirmLabel: 'Sil',
+                  destructive: true,
+                );
                 if (!ok || !context.mounted) return;
                 final done = await runWithProgress(context, () async {
                   await ref.read(letterRepositoryProvider).delete(letterId, media);
@@ -260,9 +295,20 @@ class LetterDetailScreen extends ConsumerWidget {
                     Text(l.title!, style: theme.textTheme.headlineMedium),
                     const SizedBox(height: 16),
                   ],
-                  SelectableText(l.body, style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'Lora', fontSize: 18, height: 1.7, fontStyle: FontStyle.italic)),
+                  SelectableText(
+                    l.body,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontFamily: 'Lora',
+                      fontSize: 18,
+                      height: 1.7,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                   const SizedBox(height: 24),
-                  Align(alignment: Alignment.centerRight, child: Text('— ${l.signature}', style: theme.textTheme.titleMedium)),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('— ${l.signature}', style: theme.textTheme.titleMedium),
+                  ),
                   if (media.isNotEmpty) ...[const SizedBox(height: 24), MediaCollage(media: media, height: 260)],
                 ],
               ),

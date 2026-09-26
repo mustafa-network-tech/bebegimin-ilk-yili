@@ -99,7 +99,11 @@ class MilestoneRepository {
   Future<MilestoneType> createCustomType(String babyId, String title, String? emoji) async {
     final row = await _client
         .from('milestone_types')
-        .insert({'baby_id': babyId, 'title': title.trim(), 'emoji': (emoji?.trim().isEmpty ?? true) ? '⭐' : emoji!.trim()})
+        .insert({
+          'baby_id': babyId,
+          'title': title.trim(),
+          'emoji': (emoji?.trim().isEmpty ?? true) ? '⭐' : emoji!.trim(),
+        })
         .select()
         .single();
     return MilestoneType.fromJson(row);

@@ -52,7 +52,14 @@ class BabyInput {
 }
 
 class BabyStats {
-  const BabyStats({this.memories = 0, this.milestones = 0, this.letters = 0, this.photos = 0, this.videos = 0, this.capsules = 0});
+  const BabyStats({
+    this.memories = 0,
+    this.milestones = 0,
+    this.letters = 0,
+    this.photos = 0,
+    this.videos = 0,
+    this.capsules = 0,
+  });
 
   factory BabyStats.fromJson(Map<String, dynamic> j) => BabyStats(
     memories: (j['memories'] as num?)?.toInt() ?? 0,
@@ -98,18 +105,21 @@ class BabyRepository {
   );
 
   Future<Baby> create(BabyInput input, {required Relation relation, String? relationLabel}) async {
-    final row = await _client.rpc('create_baby', params: {
-      'p_first_name': input.firstName.trim(),
-      'p_birth_date': Dates.toSql(input.birthDate),
-      'p_relation': relation.key,
-      'p_relation_label': relationLabel,
-      'p_last_name': input.toRow()['last_name'],
-      'p_birth_time': input.toRow()['birth_time'],
-      'p_birth_place': input.toRow()['birth_place'],
-      'p_birth_weight_grams': input.birthWeightGrams,
-      'p_birth_length_cm': input.birthLengthCm,
-      'p_story': input.toRow()['story'],
-    });
+    final row = await _client.rpc(
+      'create_baby',
+      params: {
+        'p_first_name': input.firstName.trim(),
+        'p_birth_date': Dates.toSql(input.birthDate),
+        'p_relation': relation.key,
+        'p_relation_label': relationLabel,
+        'p_last_name': input.toRow()['last_name'],
+        'p_birth_time': input.toRow()['birth_time'],
+        'p_birth_place': input.toRow()['birth_place'],
+        'p_birth_weight_grams': input.birthWeightGrams,
+        'p_birth_length_cm': input.birthLengthCm,
+        'p_story': input.toRow()['story'],
+      },
+    );
     return Baby.fromJson((row as Map).cast<String, dynamic>());
   }
 
@@ -121,11 +131,13 @@ class BabyRepository {
   /// Uploads a profile or cover image into `<baby>/profile/` (manage_baby).
   Future<void> uploadImage(Baby baby, File jpeg, {required bool cover}) async {
     final path = '${baby.id}/profile/${cover ? 'cover' : 'avatar'}-${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _client.storage.from(Buckets.babyMedia).upload(
-      path,
-      jpeg,
-      fileOptions: const FileOptions(contentType: 'image/jpeg', cacheControl: '3600'),
-    );
+    await _client.storage
+        .from(Buckets.babyMedia)
+        .upload(
+          path,
+          jpeg,
+          fileOptions: const FileOptions(contentType: 'image/jpeg', cacheControl: '3600'),
+        );
     await _client.from('babies').update({cover ? 'cover_path' : 'avatar_path': path}).eq('id', baby.id);
     final old = cover ? baby.coverPath : baby.avatarPath;
     if (old != null) {

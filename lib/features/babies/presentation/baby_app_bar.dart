@@ -62,7 +62,11 @@ class BabyAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           onPressed: () => context.push('/notifications'),
         ),
-        IconButton(tooltip: 'Ayarlar', icon: const Icon(Icons.settings_outlined), onPressed: () => context.push('/settings')),
+        IconButton(
+          tooltip: 'Ayarlar',
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: () => context.push('/settings'),
+        ),
         const SizedBox(width: 4),
       ],
     );
@@ -92,7 +96,9 @@ Future<void> showBabySwitcher(BuildContext context, WidgetRef ref) {
                   leading: AppAvatar(name: b.firstName, bucket: Buckets.babyMedia, path: b.avatarPath),
                   title: Text(b.fullName, style: const TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text(b.ageToday().label),
-                  trailing: b.id == active?.id ? Icon(Icons.check_circle_rounded, color: Theme.of(ctx).colorScheme.primary) : null,
+                  trailing: b.id == active?.id
+                      ? Icon(Icons.check_circle_rounded, color: Theme.of(ctx).colorScheme.primary)
+                      : null,
                   onTap: () {
                     ref.read(activeBabyIdProvider.notifier).select(b.id);
                     Navigator.pop(ctx);

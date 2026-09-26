@@ -40,14 +40,15 @@ class AppAvatar extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   _initials,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: radius * 0.75,
-                    color: scheme.primary,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: radius * 0.75, color: scheme.primary),
                 ),
               )
-            : StorageImage(bucket: bucket, path: path, placeholderIcon: Icons.person_outline, memCacheWidth: (radius * 6).round()),
+            : StorageImage(
+                bucket: bucket,
+                path: path,
+                placeholderIcon: Icons.person_outline,
+                memCacheWidth: (radius * 6).round(),
+              ),
       ),
     );
   }

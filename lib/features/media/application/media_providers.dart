@@ -25,7 +25,9 @@ class AlbumState {
   final bool loadingMore;
 }
 
-final albumProvider = AsyncNotifierProvider.autoDispose.family<AlbumController, AlbumState, AlbumKey>(AlbumController.new);
+final albumProvider = AsyncNotifierProvider.autoDispose.family<AlbumController, AlbumState, AlbumKey>(
+  AlbumController.new,
+);
 
 class AlbumController extends AsyncNotifier<AlbumState> {
   AlbumController(this.key);
@@ -45,7 +47,9 @@ class AlbumController extends AsyncNotifier<AlbumState> {
     if (s == null || !s.hasMore || s.loadingMore) return;
     state = AsyncData(AlbumState(s.items, hasMore: true, loadingMore: true));
     try {
-      final more = await ref.read(mediaRepositoryProvider).album(key.babyId, query: key.query, offset: s.items.length, limit: _page);
+      final more = await ref
+          .read(mediaRepositoryProvider)
+          .album(key.babyId, query: key.query, offset: s.items.length, limit: _page);
       state = AsyncData(AlbumState([...s.items, ...more], hasMore: more.length == _page));
     } catch (_) {
       state = AsyncData(AlbumState(s.items, hasMore: true));

@@ -32,10 +32,12 @@ class _AppShellState extends ConsumerState<AppShell> {
       final title = m.notification?.title;
       if (title == null) return;
       final route = m.data['route'] as String?;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(title),
-        action: route == null ? null : SnackBarAction(label: 'Aç', onPressed: () => context.push(route)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(title),
+          action: route == null ? null : SnackBarAction(label: 'Aç', onPressed: () => context.push(route)),
+        ),
+      );
     });
     push.openedRoute.addListener(_openPushRoute);
     WidgetsBinding.instance.addPostFrameCallback((_) => _openPushRoute());
@@ -173,18 +175,54 @@ Future<void> showCreateSheet(BuildContext context, MemberAccess access) {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 child: Text('Ne eklemek istersiniz?', style: Theme.of(ctx).textTheme.titleLarge),
               ),
-              tile(Icons.auto_awesome_rounded, const Color(0xFFC7785B), 'Anı', 'Bugün ya da geçmiş bir tarihe',
-                  '/memory/new?category=moment', enabled: access.can(AppPermission.addMemory)),
-              tile(Icons.photo_library_rounded, const Color(0xFF7FA38E), 'Fotoğraf', 'Kamera veya galeriden, tek ya da çoklu',
-                  '/memory/new?category=photo&pick=photo', enabled: access.can(AppPermission.addMemory) && access.can(AppPermission.addPhoto)),
-              tile(Icons.videocam_rounded, const Color(0xFF6E8FB5), 'Video', 'Kısa bir an kaydedin',
-                  '/memory/new?category=video&pick=video', enabled: access.can(AppPermission.addMemory) && access.can(AppPermission.addVideo)),
-              tile(Icons.star_rounded, const Color(0xFFE2B866), 'Kilometre taşı', 'İlk gülümseme, ilk adım…',
-                  '/milestones', enabled: access.can(AppPermission.addMilestone)),
-              tile(Icons.mail_rounded, const Color(0xFFB7A6C9), 'Mektup', 'Bebeğinize bir mektup bırakın',
-                  '/letter/new', enabled: access.can(AppPermission.writeLetter)),
-              tile(Icons.hourglass_bottom_rounded, const Color(0xFF9C8BB0), 'Zaman kapsülü', 'Yıllar sonra açılacak bir mesaj',
-                  '/capsule/new', enabled: access.can(AppPermission.writeLetter)),
+              tile(
+                Icons.auto_awesome_rounded,
+                const Color(0xFFC7785B),
+                'Anı',
+                'Bugün ya da geçmiş bir tarihe',
+                '/memory/new?category=moment',
+                enabled: access.can(AppPermission.addMemory),
+              ),
+              tile(
+                Icons.photo_library_rounded,
+                const Color(0xFF7FA38E),
+                'Fotoğraf',
+                'Kamera veya galeriden, tek ya da çoklu',
+                '/memory/new?category=photo&pick=photo',
+                enabled: access.can(AppPermission.addMemory) && access.can(AppPermission.addPhoto),
+              ),
+              tile(
+                Icons.videocam_rounded,
+                const Color(0xFF6E8FB5),
+                'Video',
+                'Kısa bir an kaydedin',
+                '/memory/new?category=video&pick=video',
+                enabled: access.can(AppPermission.addMemory) && access.can(AppPermission.addVideo),
+              ),
+              tile(
+                Icons.star_rounded,
+                const Color(0xFFE2B866),
+                'Kilometre taşı',
+                'İlk gülümseme, ilk adım…',
+                '/milestones',
+                enabled: access.can(AppPermission.addMilestone),
+              ),
+              tile(
+                Icons.mail_rounded,
+                const Color(0xFFB7A6C9),
+                'Mektup',
+                'Bebeğinize bir mektup bırakın',
+                '/letter/new',
+                enabled: access.can(AppPermission.writeLetter),
+              ),
+              tile(
+                Icons.hourglass_bottom_rounded,
+                const Color(0xFF9C8BB0),
+                'Zaman kapsülü',
+                'Yıllar sonra açılacak bir mesaj',
+                '/capsule/new',
+                enabled: access.can(AppPermission.writeLetter),
+              ),
               const SizedBox(height: 8),
             ],
           ),

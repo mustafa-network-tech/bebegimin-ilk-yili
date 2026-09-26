@@ -8,19 +8,20 @@ import '../support/fixtures.dart';
 void main() {
   const composer = BookComposer();
 
-  Set<String> refs(BookPlan plan, String slot, {bool visibleOnly = false}) => plan
-      .page(slot)
-      .items
-      .where((i) => !visibleOnly || !i.hidden)
-      .map((i) => i.refId)
-      .toSet();
+  Set<String> refs(BookPlan plan, String slot, {bool visibleOnly = false}) =>
+      plan.page(slot).items.where((i) => !visibleOnly || !i.hidden).map((i) => i.refId).toSet();
 
   test('default structure: cover, welcome, birth, 12 months, firsts, letters, one year, back cover', () {
     final plan = composer.plan(demoSource());
     expect(plan.pages.map((p) => p.slot).toList(), [
-      'cover', 'welcome', 'birth',
+      'cover',
+      'welcome',
+      'birth',
       for (var m = 1; m <= 12; m++) 'month:$m',
-      'milestones', 'letters', 'one_year', 'back_cover',
+      'milestones',
+      'letters',
+      'one_year',
+      'back_cover',
     ]);
     expect(plan.page('month:3').title, '3. Ayım');
     expect(plan.page('welcome').title, 'Hoş geldin, Defne');
@@ -65,18 +66,20 @@ void main() {
     expect(refs(plan, 'milestones'), {'ms-steps', 'ms-tooth', 'p-steps'});
     expect(refs(plan, 'letters'), {'l-teyze', 'p-letter'});
     // milestones are chronological
-    final ms = plan.page('milestones').items.where((i) => i.type == BookItemType.milestone).map((i) => i.refId).toList();
+    final ms = plan
+        .page('milestones')
+        .items
+        .where((i) => i.type == BookItemType.milestone)
+        .map((i) => i.refId)
+        .toList();
     expect(ms, ['ms-tooth', 'ms-steps']);
   });
 
   test('photo cap keeps big months readable but hides (not drops) the rest', () {
     final src = demoSource();
-    final many = [
-      for (var i = 0; i < 30; i++) photo('bulk-$i', Dates.addDays(defne.birthDate, 35 + (i % 20))),
-    ];
-    final plan = const BookComposer(maxVisiblePhotosPerMonth: 12).plan(
-      BookSourceCopy.withMedia(src, [...src.media, ...many], favorites: {'bulk-29'}),
-    );
+    final many = [for (var i = 0; i < 30; i++) photo('bulk-$i', Dates.addDays(defne.birthDate, 35 + (i % 20)))];
+    final plan = const BookComposer(maxVisiblePhotosPerMonth: 12)
+        .plan(BookSourceCopy.withMedia(src, [...src.media, ...many], favorites: {'bulk-29'}));
     final month2 = plan.page('month:2').items.where((i) => i.type == BookItemType.media).toList();
     expect(month2.length, 30);
     expect(month2.where((i) => !i.hidden).length, 12);
@@ -127,27 +130,29 @@ BookProject projectFromPlan(BookPlan plan, {Set<String> dropSlots = const {}}) {
   final pages = <BookPage>[];
   for (final p in plan.pages.where((p) => !dropSlots.contains(p.slot))) {
     final pageId = 'page-${p.slot}';
-    pages.add(BookPage(
-      id: pageId,
-      projectId: 'project',
-      type: p.type,
-      monthIndex: p.monthIndex,
-      title: p.title,
-      body: null,
-      sortOrder: order++,
-      isHidden: false,
-      items: [
-        for (var i = 0; i < p.items.length; i++)
-          BookItem(
-            id: 'item-${p.items[i].refId}',
-            pageId: pageId,
-            type: p.items[i].type,
-            refId: p.items[i].refId,
-            sortOrder: i,
-            isHidden: p.items[i].hidden,
-          ),
-      ],
-    ));
+    pages.add(
+      BookPage(
+        id: pageId,
+        projectId: 'project',
+        type: p.type,
+        monthIndex: p.monthIndex,
+        title: p.title,
+        body: null,
+        sortOrder: order++,
+        isHidden: false,
+        items: [
+          for (var i = 0; i < p.items.length; i++)
+            BookItem(
+              id: 'item-${p.items[i].refId}',
+              pageId: pageId,
+              type: p.items[i].type,
+              refId: p.items[i].refId,
+              sortOrder: i,
+              isHidden: p.items[i].hidden,
+            ),
+        ],
+      ),
+    );
   }
   return BookProject(
     id: 'project',

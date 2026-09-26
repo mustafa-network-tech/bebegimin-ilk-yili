@@ -113,14 +113,7 @@ class RenderLetter {
 }
 
 class RenderPage {
-  RenderPage({
-    required this.type,
-    required this.title,
-    this.monthIndex,
-    this.subtitle,
-    this.summary,
-    this.note,
-  });
+  RenderPage({required this.type, required this.title, this.monthIndex, this.subtitle, this.summary, this.note});
 
   final BookPageType type;
   final int? monthIndex;
@@ -138,14 +131,7 @@ class RenderPage {
 }
 
 class BirthInfo {
-  const BirthInfo({
-    required this.dateLabel,
-    this.time,
-    this.place,
-    this.weight,
-    this.length,
-    this.story,
-  });
+  const BirthInfo({required this.dateLabel, this.time, this.place, this.weight, this.length, this.story});
 
   final String dateLabel;
   final String? time;
@@ -250,35 +236,41 @@ class BookRenderResolver {
             final m = memories[item.refId];
             if (m == null) continue;
             final author = m.authorId == null ? null : membersByUser[m.authorId]?.introduction;
-            rp.memories.add(RenderMemory(
-              title: m.title,
-              body: m.body,
-              dateLabel: dateLine(m.date),
-              author: author,
-              photos: attached((x) => x.memoryId == m.id),
-            ));
+            rp.memories.add(
+              RenderMemory(
+                title: m.title,
+                body: m.body,
+                dateLabel: dateLine(m.date),
+                author: author,
+                photos: attached((x) => x.memoryId == m.id),
+              ),
+            );
             statMemories++;
           case BookItemType.milestone:
             final ms = milestones[item.refId];
             if (ms == null) continue;
             final type = source.milestoneTypes[ms.typeId];
-            rp.milestones.add(RenderMilestone(
-              title: type?.title ?? 'İlk',
-              dateLabel: dateLine(ms.achievedOn),
-              description: ms.description,
-              photos: attached((x) => x.milestoneId == ms.id),
-            ));
+            rp.milestones.add(
+              RenderMilestone(
+                title: type?.title ?? 'İlk',
+                dateLabel: dateLine(ms.achievedOn),
+                description: ms.description,
+                photos: attached((x) => x.milestoneId == ms.id),
+              ),
+            );
             statMilestones++;
           case BookItemType.letter:
             final l = letters[item.refId];
             if (l == null) continue;
-            rp.letters.add(RenderLetter(
-              title: l.title,
-              body: l.body,
-              signature: l.signature,
-              dateLabel: Dates.long(l.writtenOn),
-              photos: attached((x) => x.letterId == l.id),
-            ));
+            rp.letters.add(
+              RenderLetter(
+                title: l.title,
+                body: l.body,
+                signature: l.signature,
+                dateLabel: Dates.long(l.writtenOn),
+                photos: attached((x) => x.letterId == l.id),
+              ),
+            );
             statLetters++;
           case BookItemType.media:
             break;
@@ -297,8 +289,7 @@ class BookRenderResolver {
       pages.add(rp);
     }
 
-    final coverMedia = media[project.coverMediaId] ??
-        media[const BookComposer().suggestCover(source)];
+    final coverMedia = media[project.coverMediaId] ?? media[const BookComposer().suggestCover(source)];
     final lastYear = fy.firstBirthday.year;
     return BookRenderData(
       title: project.title,
@@ -318,12 +309,7 @@ class BookRenderResolver {
         length: baby.birthLengthLabel,
         story: baby.story,
       ),
-      stats: BookStats(
-        memories: statMemories,
-        photos: statPhotos,
-        milestones: statMilestones,
-        letters: statLetters,
-      ),
+      stats: BookStats(memories: statMemories, photos: statPhotos, milestones: statMilestones, letters: statLetters),
       pages: pages,
     );
   }

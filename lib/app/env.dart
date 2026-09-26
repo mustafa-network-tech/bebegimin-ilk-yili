@@ -15,10 +15,7 @@ abstract final class Env {
   /// Base for shareable invitation links. With the default custom scheme
   /// the link opens the app directly; set an https URL once App Links /
   /// Universal Links are configured.
-  static const inviteLinkBase = String.fromEnvironment(
-    'INVITE_LINK_BASE',
-    defaultValue: 'bebegimin://invite',
-  );
+  static const inviteLinkBase = String.fromEnvironment('INVITE_LINK_BASE', defaultValue: 'bebegimin://invite');
 
   /// Shows demo account shortcuts on the login screen. Only for local
   /// development against `supabase db reset` + seed.sql.
@@ -35,8 +32,7 @@ abstract final class Env {
   static const firebaseIosAppId = String.fromEnvironment('FIREBASE_IOS_APP_ID');
   static const firebaseIosBundleId = String.fromEnvironment('FIREBASE_IOS_BUNDLE_ID');
 
-  static bool get isSupabaseConfigured =>
-      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+  static bool get isSupabaseConfigured => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
   static bool get isPushConfigured =>
       firebaseApiKey.isNotEmpty && firebaseProjectId.isNotEmpty && firebaseSenderId.isNotEmpty;

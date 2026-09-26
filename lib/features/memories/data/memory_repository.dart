@@ -7,9 +7,7 @@ import '../../media/domain/media_item.dart';
 import '../domain/comment.dart';
 import '../domain/memory.dart';
 
-final memoryRepositoryProvider = Provider<MemoryRepository>(
-  (ref) => MemoryRepository(ref.watch(supabaseProvider)),
-);
+final memoryRepositoryProvider = Provider<MemoryRepository>((ref) => MemoryRepository(ref.watch(supabaseProvider)));
 
 class MemoryRepository {
   MemoryRepository(this._client);
@@ -55,21 +53,30 @@ class MemoryRepository {
     return rows.map(Comment.fromJson).toList();
   }
 
-  Future<void> addComment({required String babyId, required TargetKind kind, required String targetId, required String body}) =>
-      _client.from('comments').insert({'baby_id': babyId, kind.column: targetId, 'body': body.trim()});
+  Future<void> addComment({
+    required String babyId,
+    required TargetKind kind,
+    required String targetId,
+    required String body,
+  }) => _client.from('comments').insert({'baby_id': babyId, kind.column: targetId, 'body': body.trim()});
 
   Future<void> deleteComment(String id) => _client.from('comments').delete().eq('id', id);
 
   // Favorites (per user) ---------------------------------------------------------------
   Future<Set<String>> favoriteIds(String babyId) async {
-    final rows = await _client.from('favorites').select('memory_id, media_id, milestone_id, letter_id').eq('baby_id', babyId);
-    return {
-      for (final r in rows)
-        (r['memory_id'] ?? r['media_id'] ?? r['milestone_id'] ?? r['letter_id']) as String,
-    };
+    final rows = await _client
+        .from('favorites')
+        .select('memory_id, media_id, milestone_id, letter_id')
+        .eq('baby_id', babyId);
+    return {for (final r in rows) (r['memory_id'] ?? r['media_id'] ?? r['milestone_id'] ?? r['letter_id']) as String};
   }
 
-  Future<void> setFavorite({required String babyId, required TargetKind kind, required String targetId, required bool favorite}) async {
+  Future<void> setFavorite({
+    required String babyId,
+    required TargetKind kind,
+    required String targetId,
+    required bool favorite,
+  }) async {
     if (favorite) {
       await _client.from('favorites').insert({'baby_id': babyId, kind.column: targetId});
     } else {
@@ -81,7 +88,9 @@ class MemoryRepository {
 /// Best-effort removal of media files through the Storage API. Rows removed
 /// by cascades are also queued server-side for the cleanup function.
 Future<void> removeFiles(SupabaseClient client, List<MediaItem> media) async {
-  final paths = [for (final m in media) ...[m.storagePath, ?m.thumbPath]];
+  final paths = [
+    for (final m in media) ...[m.storagePath, ?m.thumbPath],
+  ];
   if (paths.isEmpty) return;
   try {
     await client.storage.from(Buckets.babyMedia).remove(paths);

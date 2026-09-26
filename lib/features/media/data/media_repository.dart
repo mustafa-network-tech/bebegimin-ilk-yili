@@ -6,9 +6,7 @@ import '../../../core/utils/dates.dart';
 import '../../memories/data/memory_repository.dart';
 import '../domain/media_item.dart';
 
-final mediaRepositoryProvider = Provider<MediaRepository>(
-  (ref) => MediaRepository(ref.watch(supabaseProvider)),
-);
+final mediaRepositoryProvider = Provider<MediaRepository>((ref) => MediaRepository(ref.watch(supabaseProvider)));
 
 class AlbumQuery {
   const AlbumQuery({this.kind, this.tag, this.ids, this.from, this.to, this.text});
@@ -28,7 +26,8 @@ class AlbumQuery {
       other.from == from &&
       other.to == to &&
       other.text == text &&
-      ((other.ids == null && ids == null) || (other.ids != null && ids != null && other.ids!.length == ids!.length && other.ids!.containsAll(ids!)));
+      ((other.ids == null && ids == null) ||
+          (other.ids != null && ids != null && other.ids!.length == ids!.length && other.ids!.containsAll(ids!)));
 
   @override
   int get hashCode => Object.hash(kind, tag, from, to, text, ids?.length);
@@ -39,7 +38,12 @@ class MediaRepository {
 
   final SupabaseClient _client;
 
-  Future<List<MediaItem>> album(String babyId, {AlbumQuery query = const AlbumQuery(), int offset = 0, int limit = 60}) async {
+  Future<List<MediaItem>> album(
+    String babyId, {
+    AlbumQuery query = const AlbumQuery(),
+    int offset = 0,
+    int limit = 60,
+  }) async {
     var q = _client.from('media').select().eq('baby_id', babyId).eq('status', 'ready');
     if (query.kind != null) q = q.eq('kind', query.kind!.name);
     if (query.tag != null) q = q.contains('tags', [query.tag!]);
@@ -49,24 +53,26 @@ class MediaRepository {
     if (query.text?.trim().isNotEmpty ?? false) {
       q = q.ilike('caption', '%${query.text!.trim().replaceAll('%', r'\%').replaceAll('_', r'\_')}%');
     }
-    final rows = await q.order('taken_on', ascending: false).order('created_at', ascending: false).range(offset, offset + limit - 1);
+    final rows = await q
+        .order('taken_on', ascending: false)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
     return rows.map(MediaItem.fromJson).toList();
   }
 
   /// Media attached to any of the given parents (timeline thumbnails).
-  Future<List<MediaItem>> forParents({Iterable<String> memoryIds = const [], Iterable<String> milestoneIds = const [], Iterable<String> letterIds = const []}) async {
+  Future<List<MediaItem>> forParents({
+    Iterable<String> memoryIds = const [],
+    Iterable<String> milestoneIds = const [],
+    Iterable<String> letterIds = const [],
+  }) async {
     final filters = <String>[
       if (memoryIds.isNotEmpty) 'memory_id.in.(${memoryIds.join(',')})',
       if (milestoneIds.isNotEmpty) 'milestone_id.in.(${milestoneIds.join(',')})',
       if (letterIds.isNotEmpty) 'letter_id.in.(${letterIds.join(',')})',
     ];
     if (filters.isEmpty) return const [];
-    final rows = await _client
-        .from('media')
-        .select()
-        .or(filters.join(','))
-        .order('sort_order')
-        .order('created_at');
+    final rows = await _client.from('media').select().or(filters.join(',')).order('sort_order').order('created_at');
     return rows.map(MediaItem.fromJson).where((m) => m.status == 'ready').toList();
   }
 
@@ -81,7 +87,13 @@ class MediaRepository {
     return set.toList()..sort();
   }
 
-  Future<MediaItem> update(String id, {String? caption, List<String>? tags, bool? includeInBook, DateTime? takenOn}) async {
+  Future<MediaItem> update(
+    String id, {
+    String? caption,
+    List<String>? tags,
+    bool? includeInBook,
+    DateTime? takenOn,
+  }) async {
     final row = await _client
         .from('media')
         .update({

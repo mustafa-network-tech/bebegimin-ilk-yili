@@ -36,7 +36,8 @@ class _BebegiminAppState extends ConsumerState<BebegiminApp> {
     final appLinks = AppLinks();
     void handle(Uri uri) {
       // Auth callbacks (bebegimin://login-callback) are handled by supabase_flutter.
-      final isInvite = uri.host == 'invite' || uri.pathSegments.contains('davet') || uri.pathSegments.contains('invite');
+      final isInvite =
+          uri.host == 'invite' || uri.pathSegments.contains('davet') || uri.pathSegments.contains('invite');
       if (!isInvite) return;
       final code = InviteCode.parse(uri.toString());
       if (code == null) return;

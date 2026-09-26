@@ -44,8 +44,9 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
     var format = p.format;
     var cover = p.coverMediaId;
     final fy = source.baby.firstYear;
-    final photos = source.media.where((m) => m.status == 'ready' && !m.isVideo && fy.isBookCandidate(m.takenOn)).toList()
-      ..sort((a, b) => b.takenOn.compareTo(a.takenOn));
+    final photos =
+        source.media.where((m) => m.status == 'ready' && !m.isVideo && fy.isBookCandidate(m.takenOn)).toList()
+          ..sort((a, b) => b.takenOn.compareTo(a.takenOn));
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -62,8 +63,16 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
               children: [
                 Text('Kitap ayarları', style: Theme.of(ctx).textTheme.titleLarge),
                 const SizedBox(height: 16),
-                TextField(controller: title, maxLength: 120, decoration: const InputDecoration(labelText: 'Başlık')),
-                TextField(controller: subtitle, maxLength: 200, decoration: const InputDecoration(labelText: 'Alt başlık')),
+                TextField(
+                  controller: title,
+                  maxLength: 120,
+                  decoration: const InputDecoration(labelText: 'Başlık'),
+                ),
+                TextField(
+                  controller: subtitle,
+                  maxLength: 200,
+                  decoration: const InputDecoration(labelText: 'Alt başlık'),
+                ),
                 const SizedBox(height: 8),
                 Text('Ölçü', style: Theme.of(ctx).textTheme.titleSmall),
                 const SizedBox(height: 8),
@@ -93,7 +102,10 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
                             width: 96,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: selected ? Theme.of(ctx).colorScheme.primary : Colors.transparent, width: 3),
+                              border: Border.all(
+                                color: selected ? Theme.of(ctx).colorScheme.primary : Colors.transparent,
+                                width: 3,
+                              ),
                             ),
                             child: MediaThumb(media: m, radius: 11),
                           ),
@@ -107,7 +119,10 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
                   maxLength: 1000,
                   minLines: 2,
                   maxLines: 5,
-                  decoration: const InputDecoration(labelText: 'Arka kapak yazısı', hintText: 'Boş bırakılırsa sıcak bir varsayılan metin kullanılır'),
+                  decoration: const InputDecoration(
+                    labelText: 'Arka kapak yazısı',
+                    hintText: 'Boş bırakılırsa sıcak bir varsayılan metin kullanılır',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Kaydet')),
@@ -120,15 +135,17 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
     if (saved != true || !mounted) return;
     await runWithProgress(
       context,
-      () => ref.read(bookRepositoryProvider).updateProject(
-        p.id,
-        title: title.text.trim().isEmpty ? p.title : title.text.trim(),
-        subtitle: subtitle.text.trim().isEmpty ? null : subtitle.text.trim(),
-        clearSubtitle: subtitle.text.trim().isEmpty,
-        format: format,
-        coverMediaId: cover,
-        backCoverText: back.text.trim(),
-      ),
+      () => ref
+          .read(bookRepositoryProvider)
+          .updateProject(
+            p.id,
+            title: title.text.trim().isEmpty ? p.title : title.text.trim(),
+            subtitle: subtitle.text.trim().isEmpty ? null : subtitle.text.trim(),
+            clearSubtitle: subtitle.text.trim().isEmpty,
+            format: format,
+            coverMediaId: cover,
+            backCoverText: back.text.trim(),
+          ),
       success: 'Kaydedildi',
     );
     ref.invalidate(bookProjectProvider(p.babyId));
@@ -165,7 +182,11 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
         title: const Text('Kitabı düzenle'),
         actions: [
           if (p != null && source.hasValue)
-            IconButton(tooltip: 'Kitap ayarları', icon: const Icon(Icons.tune_rounded), onPressed: () => _editSettings(p, source.requireValue)),
+            IconButton(
+              tooltip: 'Kitap ayarları',
+              icon: const Icon(Icons.tune_rounded),
+              onPressed: () => _editSettings(p, source.requireValue),
+            ),
           if (p != null)
             PopupMenuButton<String>(
               onSelected: (v) async {
@@ -176,8 +197,11 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
                     showSnack(context, 'Kitap zaten güncel.');
                     return;
                   }
-                  await runWithProgress(context, () => ref.read(bookRepositoryProvider).applySync(p, sync),
-                      success: '${sync.newItemCount} yeni içerik eklendi');
+                  await runWithProgress(
+                    context,
+                    () => ref.read(bookRepositoryProvider).applySync(p, sync),
+                    success: '${sync.newItemCount} yeni içerik eklendi',
+                  );
                   ref.invalidate(bookProjectProvider(baby.id));
                 } else if (v == 'custom') {
                   final ctrl = TextEditingController();
@@ -185,7 +209,11 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text('Yeni sayfa'),
-                      content: TextField(controller: ctrl, autofocus: true, decoration: const InputDecoration(labelText: 'Başlık')),
+                      content: TextField(
+                        controller: ctrl,
+                        autofocus: true,
+                        decoration: const InputDecoration(labelText: 'Başlık'),
+                      ),
                       actions: [
                         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
                         FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Ekle')),
@@ -220,9 +248,9 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
               BookPageType.cover => 'Kapak fotoğrafı ve başlık · ayarlardan değiştirin',
               BookPageType.backCover => 'Arka kapak yazısı · ayarlardan değiştirin',
               BookPageType.month => () {
-                  final (from, to) = baby.firstYear.monthRange(page.monthIndex!);
-                  return '${Dates.dayMonth(from)} – ${Dates.dayMonth(to)} · $visible içerik${hidden > 0 ? ' ($hidden gizli)' : ''}';
-                }(),
+                final (from, to) = baby.firstYear.monthRange(page.monthIndex!);
+                return '${Dates.dayMonth(from)} – ${Dates.dayMonth(to)} · $visible içerik${hidden > 0 ? ' ($hidden gizli)' : ''}';
+              }(),
               _ => '$visible içerik${hidden > 0 ? ' ($hidden gizli)' : ''}',
             };
             return Card(
@@ -231,9 +259,15 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: theme.colorScheme.primary.withValues(alpha: page.isHidden ? 0.05 : 0.14),
-                  child: Icon(pageIcon(page.type), color: page.isHidden ? theme.disabledColor : theme.colorScheme.primary),
+                  child: Icon(
+                    pageIcon(page.type),
+                    color: page.isHidden ? theme.disabledColor : theme.colorScheme.primary,
+                  ),
                 ),
-                title: Text(page.title, style: TextStyle(fontWeight: FontWeight.w800, color: page.isHidden ? theme.disabledColor : null)),
+                title: Text(
+                  page.title,
+                  style: TextStyle(fontWeight: FontWeight.w800, color: page.isHidden ? theme.disabledColor : null),
+                ),
                 subtitle: Text(page.isHidden ? 'Kitapta gizli' : subtitle),
                 onTap: page.type == BookPageType.cover || page.type == BookPageType.backCover
                     ? (source.hasValue ? () => _editSettings(p, source.requireValue) : null)
@@ -267,7 +301,10 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: Text('Bölümlerin sırasını sürükleyerek değiştirin, dokunarak içeriklerini düzenleyin.', style: theme.textTheme.bodySmall),
+                child: Text(
+                  'Bölümlerin sırasını sürükleyerek değiştirin, dokunarak içeriklerini düzenleyin.',
+                  style: theme.textTheme.bodySmall,
+                ),
               ),
               for (final page in fixedTop) tile(page),
               ReorderableListView(
@@ -283,7 +320,10 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
                   for (var i = 0; i < movable.length; i++)
                     tile(
                       movable[i],
-                      drag: ReorderableDragStartListener(index: i, child: const Padding(padding: EdgeInsets.all(8), child: Icon(Icons.drag_handle_rounded))),
+                      drag: ReorderableDragStartListener(
+                        index: i,
+                        child: const Padding(padding: EdgeInsets.all(8), child: Icon(Icons.drag_handle_rounded)),
+                      ),
                     ),
                 ],
               ),

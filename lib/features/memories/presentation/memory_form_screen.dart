@@ -63,7 +63,9 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
   void initState() {
     super.initState();
     if (widget.autoPick != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _addMedia(videos: widget.autoPick == 'video', photos: widget.autoPick != 'video'));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _addMedia(videos: widget.autoPick == 'video', photos: widget.autoPick != 'video'),
+      );
     }
   }
 
@@ -125,12 +127,9 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
         await ref.read(mediaRepositoryProvider).delete(m);
       }
       if (_newMedia.isNotEmpty) {
-        await ref.read(uploadQueueProvider.notifier).enqueue(
-          babyId: baby.id,
-          files: List.of(_newMedia),
-          takenOn: _date,
-          memoryId: memory.id,
-        );
+        await ref
+            .read(uploadQueueProvider.notifier)
+            .enqueue(babyId: baby.id, files: List.of(_newMedia), takenOn: _date, memoryId: memory.id);
       }
       ref.read(contentRevisionProvider.notifier).bump();
       if (!mounted) return;
@@ -156,7 +155,11 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
       if (!detail.hasValue) {
         return Scaffold(
           appBar: AppBar(),
-          body: AsyncValueView(value: detail, data: (_) => const SizedBox(), onRetry: () => ref.invalidate(memoryDetailProvider(widget.memoryId!))),
+          body: AsyncValueView(
+            value: detail,
+            data: (_) => const SizedBox(),
+            onRetry: () => ref.invalidate(memoryDetailProvider(widget.memoryId!)),
+          ),
         );
       }
       if (detail.value != null) _fill(detail.value!);
@@ -172,9 +175,7 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Anıyı düzenle' : 'Yeni anı'),
-        actions: [
-          TextButton(onPressed: _busy ? null : () => _save(baby), child: const Text('Kaydet')),
-        ],
+        actions: [TextButton(onPressed: _busy ? null : () => _save(baby), child: const Text('Kaydet'))],
       ),
       body: Form(
         key: _form,
@@ -195,7 +196,11 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
               maxLines: 12,
               maxLength: 10000,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'Ne oldu?', alignLabelWithHint: true, hintText: 'Bu anı yıllar sonra okuduğunuzda ne hatırlamak istersiniz?'),
+              decoration: const InputDecoration(
+                labelText: 'Ne oldu?',
+                alignLabelWithHint: true,
+                hintText: 'Bu anı yıllar sonra okuduğunuzda ne hatırlamak istersiniz?',
+              ),
             ),
             const SizedBox(height: 6),
             DateField(
@@ -213,7 +218,12 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
                   children: [
                     const Icon(Icons.menu_book_rounded, size: 18, color: AppColors.apricot),
                     const SizedBox(width: 6),
-                    Expanded(child: Text('Bu tarih İlk Yılım dönemine denk geliyor; kitaba aday olur.', style: theme.textTheme.bodySmall)),
+                    Expanded(
+                      child: Text(
+                        'Bu tarih İlk Yılım dönemine denk geliyor; kitaba aday olur.',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -239,7 +249,10 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
               const SizedBox(height: 18),
               DropdownButtonFormField<String?>(
                 initialValue: _milestoneId,
-                decoration: const InputDecoration(labelText: 'Kilometre taşı bağlantısı', prefixIcon: Icon(Icons.star_outline_rounded)),
+                decoration: const InputDecoration(
+                  labelText: 'Kilometre taşı bağlantısı',
+                  prefixIcon: Icon(Icons.star_outline_rounded),
+                ),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Bağlantı yok')),
                   for (final s in milestones)
@@ -254,7 +267,11 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
                 Text('Fotoğraf ve videolar', style: theme.textTheme.titleSmall),
                 const Spacer(),
                 if (canAddMedia)
-                  TextButton.icon(onPressed: _addMedia, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('Ekle')),
+                  TextButton.icon(
+                    onPressed: _addMedia,
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    label: const Text('Ekle'),
+                  ),
               ],
             ),
             const SizedBox(height: 8),
@@ -280,7 +297,10 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
                         borderRadius: BorderRadius.circular(10),
                         child: p.kind == MediaKind.photo
                             ? Image.file(File(p.path), fit: BoxFit.cover, cacheWidth: 300)
-                            : Container(color: theme.colorScheme.surfaceContainerHigh, child: const Icon(Icons.videocam_outlined)),
+                            : Container(
+                                color: theme.colorScheme.surfaceContainerHigh,
+                                child: const Icon(Icons.videocam_outlined),
+                              ),
                       ),
                     ),
                 ],
@@ -294,7 +314,10 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
               subtitle: const Text('İlk Yılım kitabı oluşturulurken bu anı kullanılabilir.'),
             ),
             const SizedBox(height: 18),
-            FilledButton(onPressed: _busy ? null : () => _save(baby), child: Text(_isEdit ? 'Değişiklikleri kaydet' : 'Anıyı kaydet')),
+            FilledButton(
+              onPressed: _busy ? null : () => _save(baby),
+              child: Text(_isEdit ? 'Değişiklikleri kaydet' : 'Anıyı kaydet'),
+            ),
           ],
         ),
       ),
@@ -318,7 +341,11 @@ class _RemovableTile extends StatelessWidget {
         top: 2,
         child: InkWell(
           onTap: onRemove,
-          child: const CircleAvatar(radius: 11, backgroundColor: Colors.black54, child: Icon(Icons.close_rounded, size: 14, color: Colors.white)),
+          child: const CircleAvatar(
+            radius: 11,
+            backgroundColor: Colors.black54,
+            child: Icon(Icons.close_rounded, size: 14, color: Colors.white),
+          ),
         ),
       ),
     ],

@@ -12,9 +12,7 @@ class Profile {
     displayName: j['display_name'] as String? ?? '',
     avatarPath: j['avatar_path'] as String?,
     onboardingCompleted: j['onboarding_completed'] as bool? ?? false,
-    notificationPrefs: ((j['notification_prefs'] as Map?) ?? const {}).map(
-      (k, v) => MapEntry(k.toString(), v == true),
-    ),
+    notificationPrefs: ((j['notification_prefs'] as Map?) ?? const {}).map((k, v) => MapEntry(k.toString(), v == true)),
   );
 
   final String id;

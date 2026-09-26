@@ -73,9 +73,8 @@ class Baby {
 
   FirstYearPeriod get firstYear => FirstYearPeriod(birthDate);
 
-  String? get birthWeightLabel => birthWeightGrams == null
-      ? null
-      : '${(birthWeightGrams! / 1000).toStringAsFixed(2).replaceAll('.', ',')} kg';
+  String? get birthWeightLabel =>
+      birthWeightGrams == null ? null : '${(birthWeightGrams! / 1000).toStringAsFixed(2).replaceAll('.', ',')} kg';
 
   String? get birthLengthLabel => birthLengthCm == null
       ? null
@@ -109,11 +108,13 @@ List<UpcomingDay> upcomingDays(Baby baby, DateTime today, {int limit = 3}) {
   }
   final fy = baby.firstYear;
   if (!fy.isComplete(t)) {
-    result.add(UpcomingDay(
-      date: Dates.addDays(fy.end, 1),
-      title: 'İlk Yılım kitabı hazır olacak 📖',
-      kind: UpcomingKind.firstYearComplete,
-    ));
+    result.add(
+      UpcomingDay(
+        date: Dates.addDays(fy.end, 1),
+        title: 'İlk Yılım kitabı hazır olacak 📖',
+        kind: UpcomingKind.firstYearComplete,
+      ),
+    );
   }
   result.sort((a, b) => a.date.compareTo(b.date));
   return result.take(limit).toList();

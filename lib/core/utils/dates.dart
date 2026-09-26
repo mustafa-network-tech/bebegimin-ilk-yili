@@ -9,16 +9,14 @@ abstract final class Dates {
   static DateTime today([DateTime? now]) => dateOnly(now ?? DateTime.now());
 
   /// Whole days from [from] to [to] (calendar based, DST safe).
-  static int daysBetween(DateTime from, DateTime to) =>
-      dateOnly(to).difference(dateOnly(from)).inDays;
+  static int daysBetween(DateTime from, DateTime to) => dateOnly(to).difference(dateOnly(from)).inDays;
 
   static DateTime addDays(DateTime d, int days) {
     final base = dateOnly(d);
     return DateTime.utc(base.year, base.month, base.day + days);
   }
 
-  static int daysInMonth(int year, int month) =>
-      DateTime.utc(year, month + 1, 0).day;
+  static int daysInMonth(int year, int month) => DateTime.utc(year, month + 1, 0).day;
 
   /// Adds calendar months, clamping the day to the end of the target month
   /// (31 Jan + 1 month = 28/29 Feb), the same rule PostgreSQL uses.
@@ -45,11 +43,9 @@ abstract final class Dates {
     return DateTime.utc(int.parse(p[0]), int.parse(p[1]), int.parse(p[2].substring(0, 2)));
   }
 
-  static DateTime? tryFromSql(Object? s) =>
-      s is String && s.length >= 10 ? fromSql(s) : null;
+  static DateTime? tryFromSql(Object? s) => s is String && s.length >= 10 ? fromSql(s) : null;
 
-  static bool isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  static bool isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   // Formatting (Turkish) ---------------------------------------------------
   static final _long = DateFormat('d MMMM y', 'tr_TR');
@@ -67,8 +63,7 @@ abstract final class Dates {
   static String weekday(DateTime d) => _weekday.format(d);
 
   /// "14:05" from a PostgreSQL `time` value ("14:05:00").
-  static String? timeLabel(String? sqlTime) =>
-      sqlTime == null || sqlTime.length < 5 ? null : sqlTime.substring(0, 5);
+  static String? timeLabel(String? sqlTime) => sqlTime == null || sqlTime.length < 5 ? null : sqlTime.substring(0, 5);
 
   static String relativeDays(int days) {
     if (days == 0) return 'bugün';

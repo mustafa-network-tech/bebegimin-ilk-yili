@@ -46,7 +46,8 @@ class FamilyScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Text(
                 '${baby.firstName} için özel aile alanı. İçerikleri yalnızca buradaki kişiler, verilen yetkiler kadar görebilir.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
             if (canInvite)
@@ -88,8 +89,16 @@ class FamilyScreen extends ConsumerWidget {
                             m.userId == uid ? '${m.shownName} (siz)' : m.shownName,
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
-                          subtitle: Text([m.relationName, if (m.isAdmin) 'Yönetici', '${m.isAdmin ? AppPermission.values.length : m.permissions.length} yetki'].join(' · ')),
-                          trailing: m.isAdmin ? const Icon(Icons.verified_user_rounded, size: 20) : const Icon(Icons.chevron_right_rounded),
+                          subtitle: Text(
+                            [
+                              m.relationName,
+                              if (m.isAdmin) 'Yönetici',
+                              '${m.isAdmin ? AppPermission.values.length : m.permissions.length} yetki',
+                            ].join(' · '),
+                          ),
+                          trailing: m.isAdmin
+                              ? const Icon(Icons.verified_user_rounded, size: 20)
+                              : const Icon(Icons.chevron_right_rounded),
                           onTap: () => context.push('/family/member/${m.id}'),
                         ),
                     ],
@@ -128,11 +137,13 @@ class FamilyScreen extends ConsumerWidget {
                       leading: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.error),
                       title: Text('Bu aileden ayrıl', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       onTap: () async {
-                        final ok = await confirm(context,
-                            title: 'Aileden ayrılmak istiyor musunuz?',
-                            message: '${baby.firstName} arşivine artık erişemezsiniz. Eklediğiniz anılar ailede kalır.',
-                            confirmLabel: 'Ayrıl',
-                            destructive: true);
+                        final ok = await confirm(
+                          context,
+                          title: 'Aileden ayrılmak istiyor musunuz?',
+                          message: '${baby.firstName} arşivine artık erişemezsiniz. Eklediğiniz anılar ailede kalır.',
+                          confirmLabel: 'Ayrıl',
+                          destructive: true,
+                        );
                         if (!ok || !context.mounted || uid == null) return;
                         final done = await runWithProgress(context, () async {
                           await ref.read(familyRepositoryProvider).leave(baby.id, uid);
@@ -178,8 +189,13 @@ class _Invitations extends ConsumerWidget {
                 for (final i in pending)
                   ListTile(
                     leading: const CircleAvatar(child: Icon(Icons.mail_outline_rounded)),
-                    title: Text(InviteCode.pretty(i.code), style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                    subtitle: Text('${i.relation.label}${i.invitedEmail == null ? '' : ' · ${i.invitedEmail}'} · son gün ${Dates.short(i.expiresAt.toLocal())}'),
+                    title: Text(
+                      InviteCode.pretty(i.code),
+                      style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                    ),
+                    subtitle: Text(
+                      '${i.relation.label}${i.invitedEmail == null ? '' : ' · ${i.invitedEmail}'} · son gün ${Dates.short(i.expiresAt.toLocal())}',
+                    ),
                     trailing: PopupMenuButton<String>(
                       onSelected: (v) async {
                         switch (v) {
@@ -189,7 +205,11 @@ class _Invitations extends ConsumerWidget {
                           case 'share':
                             await SharePlus.instance.share(ShareParams(text: invitationMessage(i)));
                           case 'revoke':
-                            await runWithProgress(context, () => ref.read(familyRepositoryProvider).revokeInvitation(i.id), success: 'Davet iptal edildi');
+                            await runWithProgress(
+                              context,
+                              () => ref.read(familyRepositoryProvider).revokeInvitation(i.id),
+                              success: 'Davet iptal edildi',
+                            );
                             ref.invalidate(invitationsProvider(babyId));
                         }
                       },

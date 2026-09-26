@@ -31,12 +31,7 @@ class BookFonts {
 
 /// Input of a PDF build job (all plain data => isolate friendly).
 class BookBuildJob {
-  const BookBuildJob({
-    required this.data,
-    required this.fonts,
-    required this.images,
-    this.compress = true,
-  });
+  const BookBuildJob({required this.data, required this.fonts, required this.images, this.compress = true});
 
   final BookRenderData data;
   final BookFonts fonts;
@@ -77,12 +72,12 @@ class BookPdfBuilder {
   final pw.Font _serifItalic;
   final _imageCache = <String, pw.ImageProvider>{};
 
-  static final _ink = PdfColor.fromInt(0xFF2F2A26);
-  static final _muted = PdfColor.fromInt(0xFF7A6E64);
-  static final _accent = PdfColor.fromInt(0xFFC7785B);
-  static final _paper = PdfColor.fromInt(0xFFFFFCF8);
-  static final _sand = PdfColor.fromInt(0xFFF3E9DC);
-  static final _sage = PdfColor.fromInt(0xFF7FA38E);
+  static const _ink = PdfColor.fromInt(0xFF2F2A26);
+  static const _muted = PdfColor.fromInt(0xFF7A6E64);
+  static const _accent = PdfColor.fromInt(0xFFC7785B);
+  static const _paper = PdfColor.fromInt(0xFFFFFCF8);
+  static const _sand = PdfColor.fromInt(0xFFF3E9DC);
+  static const _sage = PdfColor.fromInt(0xFF7FA38E);
 
   double get _bleed => BookFormat.bleedMm * PdfPageFormat.mm;
   double get _margin => format.marginMm * PdfPageFormat.mm;
@@ -95,37 +90,25 @@ class BookPdfBuilder {
 
   PdfPageFormat get _pageFormat => PdfPageFormat(_pageW, _pageH);
 
-  pw.ThemeData get _theme => pw.ThemeData.withFont(
-    base: _sans,
-    bold: _sansBold,
-    italic: _serifItalic,
-    boldItalic: _serifBold,
-  );
+  pw.ThemeData get _theme =>
+      pw.ThemeData.withFont(base: _sans, bold: _sansBold, italic: _serifItalic, boldItalic: _serifBold);
 
   pw.PageTheme _innerTheme({PdfColor? background}) => pw.PageTheme(
     pageFormat: _pageFormat,
     theme: _theme,
     margin: pw.EdgeInsets.all(_bleed + _margin),
-    buildBackground: (ctx) => pw.FullPage(
-      ignoreMargins: true,
-      child: pw.Container(color: background ?? _paper),
-    ),
+    buildBackground: (ctx) => pw.FullPage(ignoreMargins: true, child: pw.Container(color: background ?? _paper)),
   );
 
-  pw.PageTheme get _fullBleedTheme => pw.PageTheme(
-    pageFormat: _pageFormat,
-    theme: _theme,
-    margin: pw.EdgeInsets.zero,
-  );
+  pw.PageTheme get _fullBleedTheme => pw.PageTheme(pageFormat: _pageFormat, theme: _theme, margin: pw.EdgeInsets.zero);
 
-  pw.TextStyle _t(double size, {pw.Font? font, PdfColor? color, double? spacing, double letter = 0}) =>
-      pw.TextStyle(
-        font: font ?? _sans,
-        fontSize: size * _scale,
-        color: color ?? _ink,
-        lineSpacing: spacing == null ? null : spacing * _scale,
-        letterSpacing: letter,
-      );
+  pw.TextStyle _t(double size, {pw.Font? font, PdfColor? color, double? spacing, double letter = 0}) => pw.TextStyle(
+    font: font ?? _sans,
+    fontSize: size * _scale,
+    color: color ?? _ink,
+    lineSpacing: spacing == null ? null : spacing * _scale,
+    letterSpacing: letter,
+  );
 
   pw.ImageProvider? _image(RenderPhoto? p) {
     if (p == null) return null;
@@ -136,7 +119,10 @@ class BookPdfBuilder {
 
   /// PDF fonts have no colour emoji – strip them so no "tofu" boxes appear.
   static String clean(String s) => s
-      .replaceAll(RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]', unicode: true), '')
+      .replaceAll(
+        RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]', unicode: true),
+        '',
+      )
       .replaceAll(RegExp(r'[ \t]{2,}'), ' ')
       .trim();
 
@@ -164,16 +150,19 @@ class BookPdfBuilder {
           // Short birth-day memories fit on the birth page itself; only
           // longer content / extra photos continue on following pages.
           final hero = BookRenderResolver.heroOf(page);
-          final extraPhotos = page.loosePhotos.where((p) => p.mediaId != hero?.mediaId).length +
+          final extraPhotos =
+              page.loosePhotos.where((p) => p.mediaId != hero?.mediaId).length +
               page.memories.expand((m) => m.photos).where((p) => p.mediaId != hero?.mediaId).length;
           if (page.memories.length > 2 || extraPhotos > 0) {
-            doc.addPage(_contentPages(
-              page,
-              intro: [],
-              exclude: {?hero?.mediaId},
-              continued: true,
-              showMemories: page.memories.length > 2,
-            ));
+            doc.addPage(
+              _contentPages(
+                page,
+                intro: [],
+                exclude: {?hero?.mediaId},
+                continued: true,
+                showMemories: page.memories.length > 2,
+              ),
+            );
           }
         case BookPageType.month:
           doc.addPage(_contentPages(page, intro: _monthIntro(page)));
@@ -188,7 +177,12 @@ class BookPdfBuilder {
             doc.addPage(_contentPages(page, intro: [], continued: true, exclude: {?hero?.mediaId}));
           }
         case BookPageType.custom:
-          doc.addPage(_contentPages(page, intro: _sectionTitle(page.title, subtitle: page.subtitle, note: page.note)));
+          doc.addPage(
+            _contentPages(
+              page,
+              intro: _sectionTitle(page.title, subtitle: page.subtitle, note: page.note),
+            ),
+          );
         case BookPageType.cover:
         case BookPageType.backCover:
           break;
@@ -226,10 +220,7 @@ class BookPdfBuilder {
       build: (ctx) => pw.Stack(
         fit: pw.StackFit.expand,
         children: [
-          if (img != null)
-            pw.Image(img, fit: pw.BoxFit.cover)
-          else
-            pw.Container(color: _sand),
+          if (img != null) pw.Image(img, fit: pw.BoxFit.cover) else pw.Container(color: _sand),
           if (img == null)
             pw.Positioned(
               right: -_pageW * 0.15,
@@ -237,7 +228,7 @@ class BookPdfBuilder {
               child: pw.Container(
                 width: _pageW * 0.7,
                 height: _pageW * 0.7,
-                decoration: pw.BoxDecoration(shape: pw.BoxShape.circle, color: PdfColor.fromInt(0x33C7785B)),
+                decoration: const pw.BoxDecoration(shape: pw.BoxShape.circle, color: PdfColor.fromInt(0x33C7785B)),
               ),
             ),
           // Title panel: an opaque cream band keeps the text readable on any
@@ -261,11 +252,13 @@ class BookPdfBuilder {
                     style: _t(13, font: _serifItalic, color: _muted),
                   ),
                   pw.SizedBox(height: 10 * _scale),
-                  pw.Row(children: [
-                    pw.Container(width: 36 * _scale, height: 2, color: _accent),
-                    pw.SizedBox(width: 10 * _scale),
-                    pw.Text(d.yearsLabel, style: _t(9.5, color: _muted, letter: 2)),
-                  ]),
+                  pw.Row(
+                    children: [
+                      pw.Container(width: 36 * _scale, height: 2, color: _accent),
+                      pw.SizedBox(width: 10 * _scale),
+                      pw.Text(d.yearsLabel, style: _t(9.5, color: _muted, letter: 2)),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -310,7 +303,7 @@ class BookPdfBuilder {
         for (var i = 0; i < 12; i++)
           pw.Container(
             height: 26 * _scale,
-            decoration: pw.BoxDecoration(
+            decoration: const pw.BoxDecoration(
               border: pw.Border(bottom: pw.BorderSide(color: _sand, width: 0.8)),
             ),
           ),
@@ -322,18 +315,22 @@ class BookPdfBuilder {
 
   // Section headers -----------------------------------------------------------------
   List<pw.Widget> _sectionTitle(String title, {String? subtitle, String? summary, String? note, String? kicker}) => [
-    if (kicker != null) pw.Text(kicker, style: _t(9, font: _sansBold, color: _accent, letter: 2)),
+    if (kicker != null)
+      pw.Text(
+        kicker,
+        style: _t(9, font: _sansBold, color: _accent, letter: 2),
+      ),
     if (kicker != null) pw.SizedBox(height: 4 * _scale),
     pw.Text(clean(title), style: _t(26, font: _serifBold)),
-    if (subtitle != null) ...[
-      pw.SizedBox(height: 4 * _scale),
-      pw.Text(subtitle, style: _t(10, color: _muted)),
-    ],
+    if (subtitle != null) ...[pw.SizedBox(height: 4 * _scale), pw.Text(subtitle, style: _t(10, color: _muted))],
     pw.SizedBox(height: 10 * _scale),
     pw.Container(width: 36 * _scale, height: 2, color: _accent),
     if (summary != null) ...[
       pw.SizedBox(height: 10 * _scale),
-      pw.Text(summary, style: _t(11, font: _serifItalic, color: _muted)),
+      pw.Text(
+        summary,
+        style: _t(11, font: _serifItalic, color: _muted),
+      ),
     ],
     if (note?.trim().isNotEmpty ?? false) ...[
       pw.SizedBox(height: 10 * _scale),
@@ -342,19 +339,10 @@ class BookPdfBuilder {
     pw.SizedBox(height: 18 * _scale),
   ];
 
-  List<pw.Widget> _monthIntro(RenderPage p) => _sectionTitle(
-    p.title,
-    kicker: '${p.monthIndex}. AY',
-    subtitle: p.subtitle,
-    summary: p.summary,
-    note: p.note,
-  );
+  List<pw.Widget> _monthIntro(RenderPage p) =>
+      _sectionTitle(p.title, kicker: '${p.monthIndex}. AY', subtitle: p.subtitle, summary: p.summary, note: p.note);
 
-  List<pw.Widget> _welcomeIntro(RenderPage p) => _sectionTitle(
-    p.title,
-    kicker: 'HOŞ GELDİN',
-    note: p.note,
-  );
+  List<pw.Widget> _welcomeIntro(RenderPage p) => _sectionTitle(p.title, kicker: 'HOŞ GELDİN', note: p.note);
 
   // Generic flowing content (memories + photo grid) ------------------------------------
   pw.MultiPage _contentPages(
@@ -377,7 +365,10 @@ class BookPdfBuilder {
       build: (ctx) => [
         ...intro,
         if (continued) ...[
-          pw.Text(clean(page.title), style: _t(14, font: _serifBold, color: _muted)),
+          pw.Text(
+            clean(page.title),
+            style: _t(14, font: _serifBold, color: _muted),
+          ),
           pw.SizedBox(height: 12 * _scale),
         ],
         if (showMemories)
@@ -386,7 +377,10 @@ class BookPdfBuilder {
         if ((page.memories.isEmpty || !showMemories) && loose.isEmpty && intro.isNotEmpty)
           pw.Padding(
             padding: pw.EdgeInsets.only(top: 20 * _scale),
-            child: pw.Text('Bu sayfaya henüz içerik eklenmedi.', style: _t(10, color: _muted, font: _serifItalic)),
+            child: pw.Text(
+              'Bu sayfaya henüz içerik eklenmedi.',
+              style: _t(10, color: _muted, font: _serifItalic),
+            ),
           ),
       ],
     );
@@ -395,10 +389,7 @@ class BookPdfBuilder {
   List<pw.Widget> _memoryBlock(RenderMemory m, List<RenderPhoto> photos) => [
     pw.Text(clean(m.title), style: _t(15, font: _serifBold)),
     pw.SizedBox(height: 3 * _scale),
-    pw.Text(
-      [m.dateLabel, if (m.author != null) m.author!].join('  ·  '),
-      style: _t(8.5, color: _muted),
-    ),
+    pw.Text([m.dateLabel, if (m.author != null) m.author!].join('  ·  '), style: _t(8.5, color: _muted)),
     if (m.body?.trim().isNotEmpty ?? false) ...[
       pw.SizedBox(height: 6 * _scale),
       pw.Paragraph(text: clean(m.body!), style: _t(10.5, spacing: 3)),
@@ -449,15 +440,13 @@ class BookPdfBuilder {
     final cols = photos.length == 1 ? 1 : 2;
     final w = (_contentW - gap * (cols - 1)) / cols;
     final cellAspect = format.isSquare ? 1.0 : 0.8; // w/h
-    final h = cols == 1
-        ? math.min(_contentW / photos.first.aspect.clamp(0.6, 2.0), _contentH * 0.7)
-        : w / cellAspect;
+    final h = cols == 1 ? math.min(_contentW / photos.first.aspect.clamp(0.6, 2.0), _contentH * 0.7) : w / cellAspect;
     final rows = <pw.Widget>[];
     for (var i = 0; i < photos.length; i += cols) {
       final chunk = photos.sublist(i, math.min(i + cols, photos.length));
       rows.add(
         pw.Padding(
-          padding: pw.EdgeInsets.only(bottom: gap),
+          padding: const pw.EdgeInsets.only(bottom: gap),
           child: pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -471,7 +460,11 @@ class BookPdfBuilder {
                       _photoBox(chunk[k], w, math.min(h, _contentH - 30)),
                       if (captions && (chunk[k].caption?.trim().isNotEmpty ?? false)) ...[
                         pw.SizedBox(height: 3),
-                        pw.Text(clean(chunk[k].caption!), style: _t(8, color: _muted, font: _serifItalic), maxLines: 2),
+                        pw.Text(
+                          clean(chunk[k].caption!),
+                          style: _t(8, color: _muted, font: _serifItalic),
+                          maxLines: 2,
+                        ),
                       ],
                     ],
                   ),
@@ -503,7 +496,9 @@ class BookPdfBuilder {
         children: [
           ..._sectionTitle(page.title, kicker: 'MERHABA DÜNYA'),
           if (hero != null) ...[
-            pw.Center(child: _photoBox(hero, _contentW, math.min(_contentW / hero.aspect.clamp(0.6, 2.0), _contentH * 0.42))),
+            pw.Center(
+              child: _photoBox(hero, _contentW, math.min(_contentW / hero.aspect.clamp(0.6, 2.0), _contentH * 0.42)),
+            ),
             pw.SizedBox(height: 14 * _scale),
           ],
           pw.Container(
@@ -516,8 +511,13 @@ class BookPdfBuilder {
                     padding: pw.EdgeInsets.symmetric(vertical: 3 * _scale),
                     child: pw.Row(
                       children: [
-                        pw.SizedBox(width: 90 * _scale, child: pw.Text(r.$1, style: _t(9.5, color: _muted))),
-                        pw.Expanded(child: pw.Text(clean(r.$2), style: _t(10.5, font: _sansBold))),
+                        pw.SizedBox(
+                          width: 90 * _scale,
+                          child: pw.Text(r.$1, style: _t(9.5, color: _muted)),
+                        ),
+                        pw.Expanded(
+                          child: pw.Text(clean(r.$2), style: _t(10.5, font: _sansBold)),
+                        ),
                       ],
                     ),
                   ),
@@ -532,8 +532,7 @@ class BookPdfBuilder {
             for (final m in page.memories) ...[
               pw.SizedBox(height: 12 * _scale),
               pw.Text(clean(m.title), style: _t(12.5, font: _serifBold)),
-              if (m.body?.trim().isNotEmpty ?? false)
-                pw.Text(clean(m.body!), style: _t(10, spacing: 2.5), maxLines: 4),
+              if (m.body?.trim().isNotEmpty ?? false) pw.Text(clean(m.body!), style: _t(10, spacing: 2.5), maxLines: 4),
             ],
           pw.Spacer(),
           _footer(ctx),
@@ -568,8 +567,11 @@ class BookPdfBuilder {
                 width: badge,
                 height: badge,
                 alignment: pw.Alignment.center,
-                decoration: pw.BoxDecoration(shape: pw.BoxShape.circle, color: _sage),
-                child: pw.Text('$n', style: _t(10, font: _sansBold, color: PdfColors.white)),
+                decoration: const pw.BoxDecoration(shape: pw.BoxShape.circle, color: _sage),
+                child: pw.Text(
+                  '$n',
+                  style: _t(10, font: _sansBold, color: PdfColors.white),
+                ),
               ),
               pw.SizedBox(width: 10 * _scale),
               pw.Expanded(
@@ -588,10 +590,7 @@ class BookPdfBuilder {
               ),
             ],
           ),
-          if (m.photos.isNotEmpty) ...[
-            pw.SizedBox(height: 8 * _scale),
-            _photoRow(m.photos.take(3).toList()),
-          ],
+          if (m.photos.isNotEmpty) ...[pw.SizedBox(height: 8 * _scale), _photoRow(m.photos.take(3).toList())],
         ],
       ),
     );
@@ -599,7 +598,7 @@ class BookPdfBuilder {
 
   // Letters ------------------------------------------------------------------------------
   pw.MultiPage _lettersPages(RenderPage page) => pw.MultiPage(
-    pageTheme: _innerTheme(background: PdfColor.fromInt(0xFFFBF6EF)),
+    pageTheme: _innerTheme(background: const PdfColor.fromInt(0xFFFBF6EF)),
     maxPages: 100,
     footer: _footer,
     build: (ctx) => [
@@ -609,14 +608,19 @@ class BookPdfBuilder {
           pw.Text(clean(l.title!), style: _t(15, font: _serifBold)),
           pw.SizedBox(height: 6 * _scale),
         ],
-        pw.Paragraph(text: clean(l.body), style: _t(11.5, font: _serifItalic, spacing: 4)),
+        pw.Paragraph(
+          text: clean(l.body),
+          style: _t(11.5, font: _serifItalic, spacing: 4),
+        ),
         pw.Align(
           alignment: pw.Alignment.centerRight,
           child: pw.Text('— ${clean(l.signature)}, ${l.dateLabel}', style: _t(9.5, color: _muted)),
         ),
         if (l.photos.isNotEmpty) ...[pw.SizedBox(height: 8 * _scale), _photoRow(l.photos.take(2).toList())],
         pw.SizedBox(height: 14 * _scale),
-        pw.Center(child: pw.Container(width: 24 * _scale, height: 1, color: _accent)),
+        pw.Center(
+          child: pw.Container(width: 24 * _scale, height: 1, color: _accent),
+        ),
         pw.SizedBox(height: 18 * _scale),
       ],
       if (page.loosePhotos.isNotEmpty) ..._photoGrid(page.loosePhotos),
@@ -631,7 +635,10 @@ class BookPdfBuilder {
     pw.Widget stat(String value, String label) => pw.Expanded(
       child: pw.Column(
         children: [
-          pw.Text(value, style: _t(20, font: _serifBold, color: _accent)),
+          pw.Text(
+            value,
+            style: _t(20, font: _serifBold, color: _accent),
+          ),
           pw.Text(label, style: _t(8.5, color: _muted)),
         ],
       ),
@@ -642,22 +649,31 @@ class BookPdfBuilder {
         crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
           pw.SizedBox(height: 6 * _scale),
-          pw.Text('BİR YAŞINDAYIM', style: _t(9, font: _sansBold, color: _accent, letter: 2)),
+          pw.Text(
+            'BİR YAŞINDAYIM',
+            style: _t(9, font: _sansBold, color: _accent, letter: 2),
+          ),
           pw.SizedBox(height: 6 * _scale),
           pw.Text(clean(page.title), style: _t(28, font: _serifBold)),
           pw.SizedBox(height: 14 * _scale),
           if (img != null && hero != null)
             _photoBox(hero, _contentW * 0.8, math.min(_contentW * 0.8 / hero.aspect.clamp(0.6, 1.8), _contentH * 0.5)),
           pw.SizedBox(height: 18 * _scale),
-          pw.Row(children: [
-            stat('365', 'gün'),
-            stat('${s.memories}', 'anı'),
-            stat('${s.photos}', 'fotoğraf'),
-            stat('${s.milestones}', 'ilk'),
-          ]),
+          pw.Row(
+            children: [
+              stat('365', 'gün'),
+              stat('${s.memories}', 'anı'),
+              stat('${s.photos}', 'fotoğraf'),
+              stat('${s.milestones}', 'ilk'),
+            ],
+          ),
           if (page.note?.trim().isNotEmpty ?? false) ...[
             pw.SizedBox(height: 16 * _scale),
-            pw.Text(clean(page.note!), textAlign: pw.TextAlign.center, style: _t(11.5, font: _serifItalic, spacing: 4)),
+            pw.Text(
+              clean(page.note!),
+              textAlign: pw.TextAlign.center,
+              style: _t(11.5, font: _serifItalic, spacing: 4),
+            ),
           ],
           pw.Spacer(),
           _footer(ctx),

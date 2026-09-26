@@ -45,7 +45,11 @@ class MemoryDetailScreen extends ConsumerWidget {
           if (d == null || baby == null) {
             return Scaffold(
               appBar: AppBar(),
-              body: const EmptyState(icon: Icons.search_off_rounded, title: 'Anı bulunamadı', message: 'Silinmiş olabilir ya da erişim yetkiniz yok.'),
+              body: const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Anı bulunamadı',
+                message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+              ),
             );
           }
           final m = d.memory;
@@ -58,11 +62,21 @@ class MemoryDetailScreen extends ConsumerWidget {
           final age = baby.ageOn(m.date);
           final linked = m.milestoneId == null
               ? null
-              : ref.watch(milestoneSlotsProvider(m.babyId)).value?.where((s) => s.milestone?.id == m.milestoneId).firstOrNull;
+              : ref
+                    .watch(milestoneSlotsProvider(m.babyId))
+                    .value
+                    ?.where((s) => s.milestone?.id == m.milestoneId)
+                    .firstOrNull;
           final fy = baby.firstYear;
 
           Future<void> delete() async {
-            final ok = await confirm(context, title: 'Anı silinsin mi?', message: 'Anı ve bağlı fotoğraf/videolar kalıcı olarak silinir.', confirmLabel: 'Sil', destructive: true);
+            final ok = await confirm(
+              context,
+              title: 'Anı silinsin mi?',
+              message: 'Anı ve bağlı fotoğraf/videolar kalıcı olarak silinir.',
+              confirmLabel: 'Sil',
+              destructive: true,
+            );
             if (!ok || !context.mounted) return;
             final done = await runWithProgress(context, () async {
               await ref.read(memoryRepositoryProvider).delete(m.id, d.media);
@@ -89,7 +103,10 @@ class MemoryDetailScreen extends ConsumerWidget {
                                 media: d.media[i],
                                 radius: 0,
                                 memCacheWidth: 1200,
-                                onTap: () => context.push('/viewer', extra: MediaViewerArgs(media: d.media, initialIndex: i)),
+                                onTap: () => context.push(
+                                  '/viewer',
+                                  extra: MediaViewerArgs(media: d.media, initialIndex: i),
+                                ),
                               ),
                           ],
                         ),
@@ -98,9 +115,12 @@ class MemoryDetailScreen extends ConsumerWidget {
                   IconButton(
                     tooltip: 'Favori',
                     icon: Icon(isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded),
-                    onPressed: () => ref.read(favoritesProvider(m.babyId).notifier).toggle(TargetKind.memory, m.id).catchError((Object e) {
-                      if (context.mounted) showError(context, e);
-                    }),
+                    onPressed: () => ref
+                        .read(favoritesProvider(m.babyId).notifier)
+                        .toggle(TargetKind.memory, m.id)
+                        .catchError((Object e) {
+                          if (context.mounted) showError(context, e);
+                        }),
                   ),
                   if (canEdit)
                     PopupMenuButton<String>(
@@ -109,7 +129,10 @@ class MemoryDetailScreen extends ConsumerWidget {
                           case 'edit':
                             context.push('/memory/${m.id}/edit');
                           case 'book':
-                            await runWithProgress(context, () => ref.read(memoryRepositoryProvider).setIncludeInBook(m.id, !m.includeInBook));
+                            await runWithProgress(
+                              context,
+                              () => ref.read(memoryRepositoryProvider).setIncludeInBook(m.id, !m.includeInBook),
+                            );
                             ref.read(contentRevisionProvider.notifier).bump();
                           case 'delete':
                             await delete();
@@ -117,7 +140,10 @@ class MemoryDetailScreen extends ConsumerWidget {
                       },
                       itemBuilder: (_) => [
                         const PopupMenuItem(value: 'edit', child: Text('Düzenle')),
-                        PopupMenuItem(value: 'book', child: Text(m.includeInBook ? 'Kitaptan çıkar' : 'Kitaba dahil et')),
+                        PopupMenuItem(
+                          value: 'book',
+                          child: Text(m.includeInBook ? 'Kitaptan çıkar' : 'Kitaba dahil et'),
+                        ),
                         const PopupMenuItem(value: 'delete', child: Text('Sil')),
                       ],
                     ),
@@ -139,7 +165,10 @@ class MemoryDetailScreen extends ConsumerWidget {
                       runSpacing: 6,
                       children: [
                         Pill(label: m.category.label, icon: m.category.icon),
-                        Pill(label: age == null ? 'Doğumdan önce' : '${baby.firstName} ${age.whileLabel}', color: theme.colorScheme.secondary),
+                        Pill(
+                          label: age == null ? 'Doğumdan önce' : '${baby.firstName} ${age.whileLabel}',
+                          color: theme.colorScheme.secondary,
+                        ),
                         if (fy.isBookCandidate(m.date))
                           Pill(
                             label: m.includeInBook ? 'İlk Yılım kitabında' : 'Kitap dışı',
@@ -166,7 +195,10 @@ class MemoryDetailScreen extends ConsumerWidget {
                       SelectableText(m.body!, style: theme.textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.6)),
                     ],
                     const SizedBox(height: 16),
-                    Text('— $author', style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      '— $author',
+                      style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
                     if (d.media.length > 1) ...[
                       const SizedBox(height: 20),
                       GridView.count(
@@ -180,7 +212,10 @@ class MemoryDetailScreen extends ConsumerWidget {
                             MediaThumb(
                               media: d.media[i],
                               radius: 10,
-                              onTap: () => context.push('/viewer', extra: MediaViewerArgs(media: d.media, initialIndex: i)),
+                              onTap: () => context.push(
+                                '/viewer',
+                                extra: MediaViewerArgs(media: d.media, initialIndex: i),
+                              ),
                             ),
                         ],
                       ),

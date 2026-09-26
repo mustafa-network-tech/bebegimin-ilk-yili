@@ -33,13 +33,15 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
     final project = await runWithProgress(context, () async {
       final source = await ref.read(bookGeneratorProvider).loadSource(baby);
       final plan = const BookComposer().plan(source);
-      return ref.read(bookRepositoryProvider).create(
-        babyId: baby.id,
-        title: '${Turkish.genitive(baby.firstName)} İlk Yılı',
-        subtitle: baby.fullName,
-        format: _format,
-        plan: plan,
-      );
+      return ref
+          .read(bookRepositoryProvider)
+          .create(
+            babyId: baby.id,
+            title: '${Turkish.genitive(baby.firstName)} İlk Yılı',
+            subtitle: baby.fullName,
+            format: _format,
+            plan: plan,
+          );
     }, message: 'İlk 365 günün içerikleri toplanıyor…');
     if (project != null && mounted) {
       ref.invalidate(bookProjectProvider(baby.id));
@@ -74,7 +76,9 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      fy.isComplete(today) ? '${baby.firstName} ilk yılını tamamladı 🎉' : 'İlk yıl devam ediyor · ${fy.dayNumber(today) ?? 0}/365',
+                      fy.isComplete(today)
+                          ? '${baby.firstName} ilk yılını tamamladı 🎉'
+                          : 'İlk yıl devam ediyor · ${fy.dayNumber(today) ?? 0}/365',
                       style: theme.textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
@@ -86,7 +90,11 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
                     ),
                     if (!fy.isComplete(today)) ...[
                       const SizedBox(height: 12),
-                      LinearProgressIndicator(value: fy.progress(today), minHeight: 6, borderRadius: BorderRadius.circular(6)),
+                      LinearProgressIndicator(
+                        value: fy.progress(today),
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ],
                   ],
                 ),
@@ -111,7 +119,11 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
                   style: theme.textTheme.bodySmall,
                 ),
               ] else
-                const EmptyState(icon: Icons.menu_book_outlined, title: 'Kitap henüz oluşturulmadı', message: 'Aile yöneticisi kitabı oluşturduğunda burada görünecek.'),
+                const EmptyState(
+                  icon: Icons.menu_book_outlined,
+                  title: 'Kitap henüz oluşturulmadı',
+                  message: 'Aile yöneticisi kitabı oluşturduğunda burada görünecek.',
+                ),
             ] else ...[
               if (canCreate) _ProjectCard(baby: baby, project: p),
               _Exports(project: p, canDelete: access.isAdmin),
@@ -169,13 +181,20 @@ class _ProjectCard extends ConsumerWidget {
             children: [
               Text(project.title, style: theme.textTheme.headlineSmall),
               const SizedBox(height: 4),
-              Text('${project.format.label} ${project.format.sizeLabel} · $visiblePages bölüm · $items içerik', style: theme.textTheme.bodyMedium),
-              if (project.hasBeenGenerated) Text('Son sürüm: ${project.currentVersion}', style: theme.textTheme.bodySmall),
+              Text(
+                '${project.format.label} ${project.format.sizeLabel} · $visiblePages bölüm · $items içerik',
+                style: theme.textTheme.bodyMedium,
+              ),
+              if (project.hasBeenGenerated)
+                Text('Son sürüm: ${project.currentVersion}', style: theme.textTheme.bodySmall),
               if (sync != null && !sync.isEmpty) ...[
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: theme.colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Row(
                     children: [
                       const Icon(Icons.new_releases_outlined),
@@ -183,7 +202,11 @@ class _ProjectCard extends ConsumerWidget {
                       Expanded(child: Text('İlk yıla ait ${sync.newItemCount} yeni içerik bulundu.')),
                       TextButton(
                         onPressed: () async {
-                          await runWithProgress(context, () => ref.read(bookRepositoryProvider).applySync(project, sync), success: 'Taslak güncellendi');
+                          await runWithProgress(
+                            context,
+                            () => ref.read(bookRepositoryProvider).applySync(project, sync),
+                            success: 'Taslak güncellendi',
+                          );
                           ref.invalidate(bookProjectProvider(baby.id));
                         },
                         child: const Text('Ekle'),
@@ -225,7 +248,11 @@ class _ProjectCard extends ConsumerWidget {
                     ref.invalidate(bookExportsProvider(project.id));
                   },
                   icon: const Icon(Icons.picture_as_pdf_rounded),
-                  label: Text(project.hasBeenGenerated ? 'Kitabı güncelle (sürüm ${project.currentVersion + 1})' : 'Baskıya hazır PDF oluştur'),
+                  label: Text(
+                    project.hasBeenGenerated
+                        ? 'Kitabı güncelle (sürüm ${project.currentVersion + 1})'
+                        : 'Baskıya hazır PDF oluştur',
+                  ),
                 ),
               ),
             ],
@@ -274,9 +301,18 @@ class _Exports extends ConsumerWidget {
                                   tooltip: 'Sil',
                                   icon: const Icon(Icons.delete_outline_rounded),
                                   onPressed: () async {
-                                    final ok = await confirm(context, title: 'Sürüm ${e.version} silinsin mi?', message: 'PDF dosyası kalıcı olarak silinir.', confirmLabel: 'Sil', destructive: true);
+                                    final ok = await confirm(
+                                      context,
+                                      title: 'Sürüm ${e.version} silinsin mi?',
+                                      message: 'PDF dosyası kalıcı olarak silinir.',
+                                      confirmLabel: 'Sil',
+                                      destructive: true,
+                                    );
                                     if (!ok || !context.mounted) return;
-                                    await runWithProgress(context, () => ref.read(bookRepositoryProvider).deleteExport(e));
+                                    await runWithProgress(
+                                      context,
+                                      () => ref.read(bookRepositoryProvider).deleteExport(e),
+                                    );
                                     ref.invalidate(bookExportsProvider(project.id));
                                   },
                                 )

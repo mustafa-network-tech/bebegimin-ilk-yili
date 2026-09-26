@@ -77,7 +77,8 @@ class BookGenerator {
     final photos = {for (final p in data.allPhotos) p.mediaId: p}.values.toList();
     final signer = _ref.read(signedUrlCacheProvider);
     await signer.prefetch(Buckets.babyMedia, photos.map((p) => p.path));
-    final cacheDir = await Directory('${(await getTemporaryDirectory()).path}/book_images/${quality.key}').create(recursive: true);
+    final cacheDir = await Directory('${(await getTemporaryDirectory()).path}/book_images/${quality.key}')
+        .create(recursive: true);
     final result = <String, Uint8List>{};
     final client = http.Client();
     try {

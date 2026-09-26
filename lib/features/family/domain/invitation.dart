@@ -64,14 +64,12 @@ abstract final class InviteCode {
   /// Normalises user input: trims, upper-cases, removes spaces/dashes and
   /// maps look-alike characters (O→0 is not in the alphabet, so O stays
   /// invalid rather than silently becoming something else).
-  static String normalize(String input) =>
-      input.trim().toUpperCase().replaceAll(RegExp(r'[\s\-_]'), '');
+  static String normalize(String input) => input.trim().toUpperCase().replaceAll(RegExp(r'[\s\-_]'), '');
 
   static bool isValid(String input) => _valid.hasMatch(normalize(input));
 
   /// "DEDE2-DAVET" style for display.
-  static String pretty(String code) =>
-      code.length == length ? '${code.substring(0, 5)}-${code.substring(5)}' : code;
+  static String pretty(String code) => code.length == length ? '${code.substring(0, 5)}-${code.substring(5)}' : code;
 
   static String link(String code, {String? base}) {
     final b = (base ?? Env.inviteLinkBase).replaceAll(RegExp(r'/+$'), '');

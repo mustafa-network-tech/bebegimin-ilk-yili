@@ -43,10 +43,12 @@ class TimelineQuery {
       other.authorId == authorId &&
       other.text == text &&
       other.onlyBookCandidates == onlyBookCandidates &&
-      ((other.ids == null && ids == null) || (other.ids != null && ids != null && other.ids!.length == ids!.length && other.ids!.containsAll(ids!)));
+      ((other.ids == null && ids == null) ||
+          (other.ids != null && ids != null && other.ids!.length == ids!.length && other.ids!.containsAll(ids!)));
 
   @override
-  int get hashCode => Object.hash(Object.hashAllUnordered(types), from, to, authorId, text, onlyBookCandidates, ids?.length);
+  int get hashCode =>
+      Object.hash(Object.hashAllUnordered(types), from, to, authorId, text, onlyBookCandidates, ids?.length);
 }
 
 class TimelineRepository {

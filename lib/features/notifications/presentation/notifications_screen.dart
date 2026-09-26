@@ -46,10 +46,16 @@ class NotificationsScreen extends ConsumerWidget {
           value: list,
           onRetry: () => ref.invalidate(notificationsProvider),
           data: (items) => items.isEmpty
-              ? ListView(children: const [
-                  SizedBox(height: 80),
-                  EmptyState(icon: Icons.notifications_none_rounded, title: 'Henüz bildirim yok', message: 'Ay dönümleri, aileden yeni anılar ve kitap haberleri burada görünür.'),
-                ])
+              ? ListView(
+                  children: const [
+                    SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.notifications_none_rounded,
+                      title: 'Henüz bildirim yok',
+                      message: 'Ay dönümleri, aileden yeni anılar ve kitap haberleri burada görünür.',
+                    ),
+                  ],
+                )
               : ListView.separated(
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
@@ -58,7 +64,12 @@ class NotificationsScreen extends ConsumerWidget {
                     return Dismissible(
                       key: ValueKey(n.id),
                       direction: DismissDirection.endToStart,
-                      background: Container(color: theme.colorScheme.errorContainer, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), child: const Icon(Icons.delete_outline_rounded)),
+                      background: Container(
+                        color: theme.colorScheme.errorContainer,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Icon(Icons.delete_outline_rounded),
+                      ),
                       onDismissed: (_) => ref.read(notificationRepositoryProvider).delete(n.id).ignore(),
                       child: ListTile(
                         tileColor: n.isRead ? null : theme.colorScheme.primary.withValues(alpha: 0.06),
@@ -66,8 +77,13 @@ class NotificationsScreen extends ConsumerWidget {
                           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.14),
                           child: Icon(_icon(n.type), color: theme.colorScheme.primary),
                         ),
-                        title: Text(n.title, style: TextStyle(fontWeight: n.isRead ? FontWeight.w600 : FontWeight.w800)),
-                        subtitle: Text([if (n.body?.isNotEmpty ?? false) n.body!, Dates.short(n.createdAt.toLocal())].join(' · ')),
+                        title: Text(
+                          n.title,
+                          style: TextStyle(fontWeight: n.isRead ? FontWeight.w600 : FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          [if (n.body?.isNotEmpty ?? false) n.body!, Dates.short(n.createdAt.toLocal())].join(' · '),
+                        ),
                         onTap: () async {
                           if (!n.isRead) {
                             ref.read(notificationRepositoryProvider).markRead(n.id).ignore();
@@ -75,7 +91,9 @@ class NotificationsScreen extends ConsumerWidget {
                           if (n.babyId != null) await ref.read(activeBabyIdProvider.notifier).select(n.babyId);
                           final route = n.route;
                           if (route != null && context.mounted) {
-                            route.startsWith('/timeline') || route.startsWith('/calendar') || route.startsWith('/family')
+                            route.startsWith('/timeline') ||
+                                    route.startsWith('/calendar') ||
+                                    route.startsWith('/family')
                                 ? context.go(route)
                                 : context.push(route);
                           }

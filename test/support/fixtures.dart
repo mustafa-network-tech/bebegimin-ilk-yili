@@ -9,7 +9,17 @@ import 'package:bebegimin_ilk_yili/features/milestones/domain/milestone.dart';
 
 DateTime d(int y, int m, int day) => DateTime.utc(y, m, day);
 
-final defne = Baby(id: 'baby-defne', firstName: 'Defne', lastName: 'Yılmaz', birthDate: d(2025, 9, 12), birthTime: '04:35:00', birthPlace: 'İstanbul', birthWeightGrams: 3250, birthLengthCm: 50.5, story: 'Bir sonbahar sabahı geldin.');
+final defne = Baby(
+  id: 'baby-defne',
+  firstName: 'Defne',
+  lastName: 'Yılmaz',
+  birthDate: d(2025, 9, 12),
+  birthTime: '04:35:00',
+  birthPlace: 'İstanbul',
+  birthWeightGrams: 3250,
+  birthLengthCm: 50.5,
+  story: 'Bir sonbahar sabahı geldin.',
+);
 
 Memory memory(String id, DateTime date, {bool include = true, String? milestoneId, String title = 'Anı'}) => Memory(
   id: id,
@@ -25,7 +35,18 @@ Memory memory(String id, DateTime date, {bool include = true, String? milestoneI
   createdAt: date,
 );
 
-MediaItem photo(String id, DateTime takenOn, {String? memoryId, String? milestoneId, String? letterId, bool include = true, bool video = false, String status = 'ready', int w = 3024, int h = 4032}) => MediaItem(
+MediaItem photo(
+  String id,
+  DateTime takenOn, {
+  String? memoryId,
+  String? milestoneId,
+  String? letterId,
+  bool include = true,
+  bool video = false,
+  String status = 'ready',
+  int w = 3024,
+  int h = 4032,
+}) => MediaItem(
   id: id,
   babyId: defne.id,
   uploaderId: 'user-anne',
@@ -47,8 +68,24 @@ MediaItem photo(String id, DateTime takenOn, {String? memoryId, String? mileston
   createdAt: takenOn,
 );
 
-final firstStepsType = const MilestoneType(id: 'type-steps', key: 'first_steps', babyId: null, title: 'İlk adımım', emoji: '👣', sortOrder: 80, createdBy: null);
-final firstToothType = const MilestoneType(id: 'type-tooth', key: 'first_tooth', babyId: null, title: 'İlk dişim', emoji: '🦷', sortOrder: 40, createdBy: null);
+const firstStepsType = MilestoneType(
+  id: 'type-steps',
+  key: 'first_steps',
+  babyId: null,
+  title: 'İlk adımım',
+  emoji: '👣',
+  sortOrder: 80,
+  createdBy: null,
+);
+const firstToothType = MilestoneType(
+  id: 'type-tooth',
+  key: 'first_tooth',
+  babyId: null,
+  title: 'İlk dişim',
+  emoji: '🦷',
+  sortOrder: 40,
+  createdBy: null,
+);
 
 Milestone milestone(String id, String typeId, DateTime on, {bool include = true}) => Milestone(
   id: id,
@@ -113,9 +150,6 @@ BookSource demoSource() {
       milestone('ms-late', firstToothType.id, Dates.addDays(birth, 500)),
     ],
     milestoneTypes: {firstStepsType.id: firstStepsType, firstToothType.id: firstToothType},
-    letters: [
-      letter('l-teyze', Dates.addDays(birth, 2)),
-      letter('l-later', Dates.addDays(birth, 700)),
-    ],
+    letters: [letter('l-teyze', Dates.addDays(birth, 2)), letter('l-later', Dates.addDays(birth, 700))],
   );
 }

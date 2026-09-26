@@ -75,7 +75,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   bool get _hasFilters =>
-      _query.isNotEmpty || _type != SearchType.all || _year != null || _range != null || _authorId != null || _favorites || _firstYear;
+      _query.isNotEmpty ||
+      _type != SearchType.all ||
+      _year != null ||
+      _range != null ||
+      _authorId != null ||
+      _favorites ||
+      _firstYear;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +95,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     Widget results;
     if (!_hasFilters) {
-      results = const EmptyState(icon: Icons.manage_search_rounded, title: 'Arşivde arayın', message: 'Başlık, açıklama veya fotoğraf notu yazın ya da filtreleri kullanın.');
+      results = const EmptyState(
+        icon: Icons.manage_search_rounded,
+        title: 'Arşivde arayın',
+        message: 'Başlık, açıklama veya fotoğraf notu yazın ya da filtreleri kullanın.',
+      );
     } else if (_type.isMedia) {
       final key = AlbumKey(
         baby.id,
@@ -110,12 +120,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           if (items.isEmpty) return const EmptyState(icon: Icons.search_off_rounded, title: 'Sonuç bulunamadı');
           return GridView.builder(
             padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 4, crossAxisSpacing: 4),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+            ),
             itemCount: items.length,
             itemBuilder: (_, i) => MediaThumb(
               media: items[i],
               radius: 10,
-              onTap: () => context.push('/viewer', extra: MediaViewerArgs(media: items, initialIndex: i)),
+              onTap: () => context.push(
+                '/viewer',
+                extra: MediaViewerArgs(media: items, initialIndex: i),
+              ),
             ),
           );
         },
@@ -145,7 +162,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ? const EmptyState(icon: Icons.search_off_rounded, title: 'Sonuç bulunamadı')
             : NotificationListener<ScrollNotification>(
                 onNotification: (n) {
-                  if (n.metrics.pixels > n.metrics.maxScrollExtent - 400) ref.read(timelineProvider(key).notifier).loadMore().ignore();
+                  if (n.metrics.pixels > n.metrics.maxScrollExtent - 400) {
+                    ref.read(timelineProvider(key).notifier).loadMore().ignore();
+                  }
                   return false;
                 },
                 child: ListView.separated(
@@ -204,7 +223,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 for (final t in SearchType.values)
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(label: Text(t.label), selected: _type == t, onSelected: (_) => setState(() => _type = t)),
+                    child: ChoiceChip(
+                      label: Text(t.label),
+                      selected: _type == t,
+                      onSelected: (_) => setState(() => _type = t),
+                    ),
                   ),
               ],
             ),
@@ -214,7 +237,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: Row(
               children: [
-                FilterChip(label: const Text('Favoriler'), selected: _favorites, onSelected: (v) => setState(() => _favorites = v)),
+                FilterChip(
+                  label: const Text('Favoriler'),
+                  selected: _favorites,
+                  onSelected: (v) => setState(() => _favorites = v),
+                ),
                 const SizedBox(width: 6),
                 FilterChip(
                   label: const Text('İlk Yılım'),
@@ -245,13 +272,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   _Dropdown<int?>(
                     label: _month == null ? 'Ay' : Dates.monthYear(DateTime.utc(_year!, _month!)).split(' ').first,
                     active: _month != null,
-                    items: {null: 'Tüm aylar', for (var m = 1; m <= 12; m++) m: Dates.monthYear(DateTime.utc(2024, m)).split(' ').first},
+                    items: {
+                      null: 'Tüm aylar',
+                      for (var m = 1; m <= 12; m++) m: Dates.monthYear(DateTime.utc(2024, m)).split(' ').first,
+                    },
                     onSelected: (v) => setState(() => _month = v),
                   ),
                 const SizedBox(width: 6),
                 ActionChip(
                   avatar: const Icon(Icons.date_range_rounded, size: 18),
-                  label: Text(_range == null ? 'Tarih aralığı' : '${Dates.short(_range!.start)} – ${Dates.short(_range!.end)}'),
+                  label: Text(
+                    _range == null ? 'Tarih aralığı' : '${Dates.short(_range!.start)} – ${Dates.short(_range!.end)}',
+                  ),
                   onPressed: () async {
                     final r = await showDateRangePicker(
                       context: context,
@@ -271,7 +303,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 const SizedBox(width: 6),
                 _Dropdown<String?>(
-                  label: _authorId == null ? 'Aile üyesi' : (members.where((m) => m.userId == _authorId).firstOrNull?.shownName ?? 'Üye'),
+                  label: _authorId == null
+                      ? 'Aile üyesi'
+                      : (members.where((m) => m.userId == _authorId).firstOrNull?.shownName ?? 'Üye'),
                   active: _authorId != null,
                   items: {null: 'Herkes', for (final m in members) m.userId: m.introduction},
                   onSelected: (v) => setState(() => _authorId = v),

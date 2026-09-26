@@ -60,22 +60,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/reset-password', builder: (_, _) => const ResetPasswordScreen()),
       GoRoute(path: '/onboarding/profile', builder: (_, _) => const ProfileSetupScreen()),
       GoRoute(path: '/onboarding/start', builder: (_, _) => const StartChoiceScreen()),
-      GoRoute(path: '/join', builder: (_, s) => JoinFamilyScreen(initialCode: s.uri.queryParameters['code'])),
+      GoRoute(
+        path: '/join',
+        builder: (_, s) => JoinFamilyScreen(initialCode: s.uri.queryParameters['code']),
+      ),
       GoRoute(path: '/baby/new', builder: (_, _) => const BabyFormScreen()),
-      GoRoute(path: '/baby/:id/edit', builder: (_, s) => BabyFormScreen(babyId: s.pathParameters['id'])),
+      GoRoute(
+        path: '/baby/:id/edit',
+        builder: (_, s) => BabyFormScreen(babyId: s.pathParameters['id']),
+      ),
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
         branches: [
-          StatefulShellBranch(routes: [GoRoute(path: '/home', builder: (_, _) => const HomeScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/timeline', builder: (_, _) => const TimelineScreen())]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/calendar',
-              builder: (_, s) => CalendarScreen(initialDate: Dates.tryFromSql(s.uri.queryParameters['date'])),
-            ),
-          ]),
-          StatefulShellBranch(routes: [GoRoute(path: '/family', builder: (_, _) => const FamilyScreen())]),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/home', builder: (_, _) => const HomeScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/timeline', builder: (_, _) => const TimelineScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/calendar',
+                builder: (_, s) => CalendarScreen(initialDate: Dates.tryFromSql(s.uri.queryParameters['date'])),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/family', builder: (_, _) => const FamilyScreen())],
+          ),
         ],
       ),
 
@@ -87,8 +101,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           autoPick: s.uri.queryParameters['pick'],
         ),
       ),
-      GoRoute(path: '/memory/:id', builder: (_, s) => MemoryDetailScreen(memoryId: s.pathParameters['id']!)),
-      GoRoute(path: '/memory/:id/edit', builder: (_, s) => MemoryFormScreen(memoryId: s.pathParameters['id'])),
+      GoRoute(
+        path: '/memory/:id',
+        builder: (_, s) => MemoryDetailScreen(memoryId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/memory/:id/edit',
+        builder: (_, s) => MemoryFormScreen(memoryId: s.pathParameters['id']),
+      ),
       GoRoute(path: '/album', builder: (_, _) => const AlbumScreen()),
       GoRoute(
         path: '/viewer',
@@ -99,19 +119,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/milestone/new',
         builder: (_, s) => MilestoneFormScreen(typeId: s.uri.queryParameters['typeId']),
       ),
-      GoRoute(path: '/milestone/:id', builder: (_, s) => MilestoneDetailScreen(milestoneId: s.pathParameters['id']!)),
-      GoRoute(path: '/milestone/:id/edit', builder: (_, s) => MilestoneFormScreen(milestoneId: s.pathParameters['id'])),
+      GoRoute(
+        path: '/milestone/:id',
+        builder: (_, s) => MilestoneDetailScreen(milestoneId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/milestone/:id/edit',
+        builder: (_, s) => MilestoneFormScreen(milestoneId: s.pathParameters['id']),
+      ),
       GoRoute(path: '/letters', builder: (_, _) => const LettersScreen()),
       GoRoute(path: '/letter/new', builder: (_, _) => const LetterFormScreen()),
-      GoRoute(path: '/letter/:id', builder: (_, s) => LetterDetailScreen(letterId: s.pathParameters['id']!)),
-      GoRoute(path: '/letter/:id/edit', builder: (_, s) => LetterFormScreen(letterId: s.pathParameters['id'])),
+      GoRoute(
+        path: '/letter/:id',
+        builder: (_, s) => LetterDetailScreen(letterId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/letter/:id/edit',
+        builder: (_, s) => LetterFormScreen(letterId: s.pathParameters['id']),
+      ),
       GoRoute(path: '/capsules', builder: (_, _) => const CapsulesScreen()),
       GoRoute(path: '/capsule/new', builder: (_, _) => const CapsuleFormScreen()),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
       GoRoute(path: '/book', builder: (_, _) => const BookHomeScreen()),
       GoRoute(path: '/book/editor', builder: (_, _) => const BookEditorScreen()),
-      GoRoute(path: '/book/view', builder: (_, s) => BookPdfViewScreen(file: s.extra! as File)),
-      GoRoute(path: '/book/page/:pageId', builder: (_, s) => BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
+      GoRoute(
+        path: '/book/view',
+        builder: (_, s) => BookPdfViewScreen(file: s.extra! as File),
+      ),
+      GoRoute(
+        path: '/book/page/:pageId',
+        builder: (_, s) => BookPageEditorScreen(pageId: s.pathParameters['pageId']!),
+      ),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/settings/profile', builder: (_, _) => const EditProfileScreen()),
@@ -120,7 +158,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/delete-account', builder: (_, _) => const DeleteAccountScreen()),
       GoRoute(path: '/settings/privacy', builder: (_, _) => const PrivacyScreen()),
       GoRoute(path: '/family/invite', builder: (_, _) => const InviteScreen()),
-      GoRoute(path: '/family/member/:id', builder: (_, s) => MemberEditScreen(memberId: s.pathParameters['id']!)),
+      GoRoute(
+        path: '/family/member/:id',
+        builder: (_, s) => MemberEditScreen(memberId: s.pathParameters['id']!),
+      ),
       GoRoute(path: '/family/activity', builder: (_, _) => const ActivityLogScreen()),
       GoRoute(path: '/family/add-from-sibling', builder: (_, _) => const AddFromSiblingScreen()),
     ],
@@ -128,7 +169,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 const _publicRoutes = {'/login', '/register', '/forgot-password', '/verify-email', '/config-error'};
-const _onboardingRoutes = {'/onboarding/profile', '/onboarding/start', '/baby/new', '/join', '/settings', '/settings/profile', '/settings/delete-account', '/settings/privacy'};
+const _onboardingRoutes = {
+  '/onboarding/profile',
+  '/onboarding/start',
+  '/baby/new',
+  '/join',
+  '/settings',
+  '/settings/profile',
+  '/settings/delete-account',
+  '/settings/privacy',
+};
 
 String? _redirect(Ref ref, GoRouterState state) {
   final loc = state.matchedLocation;
@@ -165,8 +215,11 @@ String? _redirect(Ref ref, GoRouterState state) {
     if (_onboardingRoutes.contains(loc)) return null;
     return '/onboarding/start';
   }
-  if (_publicRoutes.contains(loc) || loc == '/splash' || loc == '/onboarding/start' ||
-      loc == '/onboarding/profile' || loc == '/reset-password') {
+  if (_publicRoutes.contains(loc) ||
+      loc == '/splash' ||
+      loc == '/onboarding/start' ||
+      loc == '/onboarding/profile' ||
+      loc == '/reset-password') {
     if (pending != null) return '/join?code=$pending';
     return '/home';
   }

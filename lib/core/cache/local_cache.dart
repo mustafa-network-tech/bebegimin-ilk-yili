@@ -9,9 +9,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
   (ref) => throw UnimplementedError('overridden in main()'),
 );
 
-final localCacheProvider = Provider<LocalCache>(
-  (ref) => LocalCache(ref.watch(sharedPreferencesProvider)),
-);
+final localCacheProvider = Provider<LocalCache>((ref) => LocalCache(ref.watch(sharedPreferencesProvider)));
 
 /// Small JSON cache for "last seen" data so the app still shows something
 /// useful without a connection. Never used for authorisation decisions.
@@ -21,8 +19,7 @@ class LocalCache {
   final SharedPreferences _prefs;
   static const _prefix = 'cache.v1.';
 
-  Future<void> put(String key, Object? json) =>
-      _prefs.setString('$_prefix$key', jsonEncode(json));
+  Future<void> put(String key, Object? json) => _prefs.setString('$_prefix$key', jsonEncode(json));
 
   Object? get(String key) {
     final raw = _prefs.getString('$_prefix$key');

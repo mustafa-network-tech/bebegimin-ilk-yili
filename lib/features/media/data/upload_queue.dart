@@ -69,10 +69,8 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
     return items;
   }
 
-  Future<void> _persist() => ref.read(sharedPreferencesProvider).setString(
-    _prefsKey,
-    jsonEncode(state.map((e) => e.toJson()).toList()),
-  );
+  Future<void> _persist() =>
+      ref.read(sharedPreferencesProvider).setString(_prefsKey, jsonEncode(state.map((e) => e.toJson()).toList()));
 
   Future<Directory> _workDir() async {
     if (_dir != null) return _dir!;
@@ -98,22 +96,26 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
     final added = <PendingUpload>[];
     for (final f in files) {
       final id = const Uuid().v4();
-      final ext = f.path.contains('.') ? f.path.split('.').last.toLowerCase() : (f.kind == MediaKind.photo ? 'jpg' : 'mp4');
+      final ext = f.path.contains('.')
+          ? f.path.split('.').last.toLowerCase()
+          : (f.kind == MediaKind.photo ? 'jpg' : 'mp4');
       final local = await File(f.path).copy('${dir.path}/$id.src.$ext');
-      added.add(PendingUpload(
-        id: id,
-        babyId: babyId,
-        kind: f.kind,
-        localPath: local.path,
-        mimeType: f.kind == MediaKind.photo ? 'image/jpeg' : ImageProcessing.mimeForVideo(f.path),
-        takenOn: Dates.dateOnly(takenOn),
-        memoryId: memoryId,
-        milestoneId: milestoneId,
-        letterId: letterId,
-        caption: f.caption,
-        tags: tags,
-        durationMs: f.durationMs,
-      ));
+      added.add(
+        PendingUpload(
+          id: id,
+          babyId: babyId,
+          kind: f.kind,
+          localPath: local.path,
+          mimeType: f.kind == MediaKind.photo ? 'image/jpeg' : ImageProcessing.mimeForVideo(f.path),
+          takenOn: Dates.dateOnly(takenOn),
+          memoryId: memoryId,
+          milestoneId: milestoneId,
+          letterId: letterId,
+          caption: f.caption,
+          tags: tags,
+          durationMs: f.durationMs,
+        ),
+      );
     }
     state = [...state, ...added];
     await _persist();
@@ -122,7 +124,8 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
 
   Future<void> retryFailed() async {
     state = [
-      for (final u in state) u.state == UploadState.failed ? u.copyWith(state: UploadState.queued, attempts: 0, clearError: true) : u,
+      for (final u in state)
+        u.state == UploadState.failed ? u.copyWith(state: UploadState.queued, attempts: 0, clearError: true) : u,
     ];
     await _persist();
     await process();
@@ -240,11 +243,13 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
       }
       debugPrint('upload failed: $e');
       final attempts = u.attempts + 1;
-      _replace(u.copyWith(
-        attempts: attempts,
-        state: attempts >= maxAttempts ? UploadState.failed : UploadState.queued,
-        error: err.message,
-      ));
+      _replace(
+        u.copyWith(
+          attempts: attempts,
+          state: attempts >= maxAttempts ? UploadState.failed : UploadState.queued,
+          error: err.message,
+        ),
+      );
       await _persist();
       // small back-off before the next item / retry
       await Future<void>.delayed(Duration(seconds: attempts * 2));

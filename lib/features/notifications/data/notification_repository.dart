@@ -36,10 +36,11 @@ class NotificationRepository {
 
   Future<void> delete(String id) => _client.from('notifications').delete().eq('id', id);
 
-  Future<void> registerDeviceToken(String token, String platform) => _client.from('device_tokens').upsert(
-    {'token': token, 'platform': platform, 'user_id': _client.auth.currentUser!.id},
-    onConflict: 'token',
-  );
+  Future<void> registerDeviceToken(String token, String platform) => _client.from('device_tokens').upsert({
+    'token': token,
+    'platform': platform,
+    'user_id': _client.auth.currentUser!.id,
+  }, onConflict: 'token');
 
   Future<void> removeDeviceToken(String token) => _client.from('device_tokens').delete().eq('token', token);
 }

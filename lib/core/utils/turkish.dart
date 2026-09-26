@@ -48,15 +48,15 @@ abstract final class Turkish {
   }
 
   /// Turkish-aware upper case (i → İ, ı → I).
-  static String upper(String s) =>
-      s.replaceAll('i', 'İ').replaceAll('ı', 'I').toUpperCase();
+  static String upper(String s) => s.replaceAll('i', 'İ').replaceAll('ı', 'I').toUpperCase();
 
   /// Turkish-aware, accent-insensitive folding used for client-side search.
-  static String fold(String s) => _lower(s)
-      .replaceAll('ı', 'i')
-      .replaceAll('ö', 'o')
-      .replaceAll('ü', 'u')
-      .replaceAll('ç', 'c')
-      .replaceAll('ş', 's')
-      .replaceAll('ğ', 'g');
+  static String fold(String s) =>
+      _lower(s)
+          .replaceAll('ı', 'i')
+          .replaceAll('ö', 'o')
+          .replaceAll('ü', 'u')
+          .replaceAll('ç', 'c')
+          .replaceAll('ş', 's')
+          .replaceAll('ğ', 'g');
 }

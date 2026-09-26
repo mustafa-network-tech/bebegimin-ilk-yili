@@ -1,10 +1,5 @@
 class Comment {
-  const Comment({
-    required this.id,
-    required this.authorId,
-    required this.body,
-    required this.createdAt,
-  });
+  const Comment({required this.id, required this.authorId, required this.body, required this.createdAt});
 
   factory Comment.fromJson(Map<String, dynamic> j) => Comment(
     id: j['id'] as String,

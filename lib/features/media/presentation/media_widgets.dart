@@ -8,7 +8,14 @@ import 'media_viewer_screen.dart';
 
 /// Square thumbnail for a photo / video.
 class MediaThumb extends StatelessWidget {
-  const MediaThumb({super.key, required this.media, this.onTap, this.radius = 14, this.favorite = false, this.memCacheWidth = 400});
+  const MediaThumb({
+    super.key,
+    required this.media,
+    this.onTap,
+    this.radius = 14,
+    this.favorite = false,
+    this.memCacheWidth = 400,
+  });
 
   final MediaItem media;
   final VoidCallback? onTap;
@@ -45,7 +52,10 @@ class MediaThumb extends StatelessWidget {
                       children: [
                         const Icon(Icons.play_arrow_rounded, size: 14, color: Colors.white),
                         if (media.durationLabel != null)
-                          Text(media.durationLabel!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                          Text(
+                            media.durationLabel!,
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
                       ],
                     ),
                   ),
@@ -71,8 +81,10 @@ class MediaCollage extends StatelessWidget {
   final List<MediaItem> media;
   final double height;
 
-  void _open(BuildContext context, int index) =>
-      context.push('/viewer', extra: MediaViewerArgs(media: media, initialIndex: index));
+  void _open(BuildContext context, int index) => context.push(
+    '/viewer',
+    extra: MediaViewerArgs(media: media, initialIndex: index),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +100,10 @@ class MediaCollage extends StatelessWidget {
               child: Container(
                 color: Colors.black45,
                 alignment: Alignment.center,
-                child: Text('+$extra', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                child: Text(
+                  '+$extra',
+                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                ),
               ),
             ),
         ],
@@ -101,23 +116,51 @@ class MediaCollage extends StatelessWidget {
         height: height,
         child: switch (n) {
           1 => Row(children: [cell(0)]),
-          2 => Row(children: [cell(0), const SizedBox(width: gap), cell(1)]),
-          3 => Row(children: [
+          2 => Row(
+            children: [
               cell(0),
               const SizedBox(width: gap),
-              Expanded(child: Column(children: [cell(1), const SizedBox(height: gap), cell(2)])),
-            ]),
-          _ => Row(children: [
+              cell(1),
+            ],
+          ),
+          3 => Row(
+            children: [
               cell(0),
               const SizedBox(width: gap),
               Expanded(
-                child: Column(children: [
-                  cell(1),
-                  const SizedBox(height: gap),
-                  Expanded(child: Row(children: [cell(2), const SizedBox(width: gap), cell(3, extra: n - 4)])),
-                ]),
+                child: Column(
+                  children: [
+                    cell(1),
+                    const SizedBox(height: gap),
+                    cell(2),
+                  ],
+                ),
               ),
-            ]),
+            ],
+          ),
+          _ => Row(
+            children: [
+              cell(0),
+              const SizedBox(width: gap),
+              Expanded(
+                child: Column(
+                  children: [
+                    cell(1),
+                    const SizedBox(height: gap),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          cell(2),
+                          const SizedBox(width: gap),
+                          cell(3, extra: n - 4),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         },
       ),
     );

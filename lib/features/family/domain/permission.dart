@@ -29,8 +29,9 @@ enum AppPermission {
     return null;
   }
 
-  static Set<AppPermission> parse(Iterable<dynamic>? keys) =>
-      {for (final k in keys ?? const []) ?AppPermission.fromKey(k.toString())};
+  static Set<AppPermission> parse(Iterable<dynamic>? keys) => {
+    for (final k in keys ?? const []) ?AppPermission.fromKey(k.toString()),
+  };
 
   /// Permissions only an admin may hand out.
   bool get isManagement =>
@@ -51,8 +52,7 @@ class MemberAccess {
 
   /// Same rule as the RLS UPDATE/DELETE policies on memories/milestones.
   bool canEditContent(String? authorId) =>
-      can(AppPermission.manageContent) ||
-      (authorId != null && authorId == userId && can(AppPermission.editOwnMemory));
+      can(AppPermission.manageContent) || (authorId != null && authorId == userId && can(AppPermission.editOwnMemory));
 
   /// Media: the uploader or content managers.
   bool canEditMedia(String? uploaderId) =>
@@ -60,8 +60,7 @@ class MemberAccess {
 
   bool canEditLetter(String? authorId) => authorId != null && authorId == userId;
 
-  bool canDeleteLetter(String? authorId) =>
-      canEditLetter(authorId) || can(AppPermission.manageContent);
+  bool canDeleteLetter(String? authorId) => canEditLetter(authorId) || can(AppPermission.manageContent);
 
   bool get canCreateAnything =>
       can(AppPermission.addMemory) ||

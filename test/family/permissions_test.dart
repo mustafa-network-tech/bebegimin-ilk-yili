@@ -48,19 +48,36 @@ void main() {
 
   test('permission keys match the database catalog', () {
     expect(AppPermission.values.map((p) => p.key).toSet(), {
-      'view_memories', 'view_album', 'add_memory', 'edit_own_memory', 'add_photo', 'add_video',
-      'comment', 'add_milestone', 'write_letter', 'create_book', 'invite_members',
-      'manage_members', 'manage_content', 'manage_baby',
+      'view_memories',
+      'view_album',
+      'add_memory',
+      'edit_own_memory',
+      'add_photo',
+      'add_video',
+      'comment',
+      'add_milestone',
+      'write_letter',
+      'create_book',
+      'invite_members',
+      'manage_members',
+      'manage_content',
+      'manage_baby',
     });
-    expect(AppPermission.parse(['add_memory', 'unknown', 'view_album']),
-        {AppPermission.addMemory, AppPermission.viewAlbum});
+    expect(AppPermission.parse(['add_memory', 'unknown', 'view_album']), {
+      AppPermission.addMemory,
+      AppPermission.viewAlbum,
+    });
   });
 
   test('relation presets', () {
     expect(Relation.anne.defaultAdmin, isTrue);
     expect(Relation.teyze.defaultAdmin, isFalse);
     expect(Relation.teyze.defaultPermissions.contains(AppPermission.manageMembers), isFalse);
-    expect(Relation.diger.defaultPermissions, {AppPermission.viewMemories, AppPermission.viewAlbum, AppPermission.comment});
+    expect(Relation.diger.defaultPermissions, {
+      AppPermission.viewMemories,
+      AppPermission.viewAlbum,
+      AppPermission.comment,
+    });
     expect(Relation.fromKey('dayi').label, 'Dayı');
     expect(Relation.fromKey('???'), Relation.diger);
   });

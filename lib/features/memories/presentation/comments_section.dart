@@ -14,7 +14,13 @@ import '../domain/comment.dart';
 
 /// Comments on memories / "aile notları" on milestones.
 class CommentsSection extends ConsumerStatefulWidget {
-  const CommentsSection({super.key, required this.babyId, required this.kind, required this.targetId, this.title = 'Yorumlar'});
+  const CommentsSection({
+    super.key,
+    required this.babyId,
+    required this.kind,
+    required this.targetId,
+    this.title = 'Yorumlar',
+  });
 
   final String babyId;
   final TargetKind kind;
@@ -40,12 +46,9 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     if (text.isEmpty) return;
     setState(() => _sending = true);
     try {
-      await ref.read(memoryRepositoryProvider).addComment(
-        babyId: widget.babyId,
-        kind: widget.kind,
-        targetId: widget.targetId,
-        body: text,
-      );
+      await ref
+          .read(memoryRepositoryProvider)
+          .addComment(babyId: widget.babyId, kind: widget.kind, targetId: widget.targetId, body: text);
       _ctrl.clear();
       ref.read(contentRevisionProvider.notifier).bump();
     } catch (e) {
@@ -77,32 +80,40 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                   child: Text('İlk notu siz bırakın.', style: theme.textTheme.bodySmall),
                 ),
               for (final c in list)
-                Builder(builder: (context) {
-                  final author = members.where((m) => m.userId == c.authorId).firstOrNull;
-                  final canDelete = c.authorId == access.userId || access.can(AppPermission.manageContent);
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: AppAvatar(name: author?.shownName ?? '?', path: author?.avatarPath, radius: 18),
-                    title: Text(author?.introduction ?? 'Eski bir aile üyesi', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(c.body, style: theme.textTheme.bodyMedium),
-                        Text(Dates.short(c.createdAt.toLocal()), style: theme.textTheme.labelSmall),
-                      ],
-                    ),
-                    trailing: canDelete
-                        ? IconButton(
-                            tooltip: 'Sil',
-                            icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                            onPressed: () async {
-                              await runWithProgress(context, () => ref.read(memoryRepositoryProvider).deleteComment(c.id));
-                              ref.read(contentRevisionProvider.notifier).bump();
-                            },
-                          )
-                        : null,
-                  );
-                }),
+                Builder(
+                  builder: (context) {
+                    final author = members.where((m) => m.userId == c.authorId).firstOrNull;
+                    final canDelete = c.authorId == access.userId || access.can(AppPermission.manageContent);
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: AppAvatar(name: author?.shownName ?? '?', path: author?.avatarPath, radius: 18),
+                      title: Text(
+                        author?.introduction ?? 'Eski bir aile üyesi',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.body, style: theme.textTheme.bodyMedium),
+                          Text(Dates.short(c.createdAt.toLocal()), style: theme.textTheme.labelSmall),
+                        ],
+                      ),
+                      trailing: canDelete
+                          ? IconButton(
+                              tooltip: 'Sil',
+                              icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                              onPressed: () async {
+                                await runWithProgress(
+                                  context,
+                                  () => ref.read(memoryRepositoryProvider).deleteComment(c.id),
+                                );
+                                ref.read(contentRevisionProvider.notifier).bump();
+                              },
+                            )
+                          : null,
+                    );
+                  },
+                ),
             ],
           ),
         ),

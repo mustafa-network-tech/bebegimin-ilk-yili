@@ -45,15 +45,17 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
     try {
-      final inv = await ref.read(familyRepositoryProvider).createInvitation(
-        babyId: babyId,
-        relation: _relation,
-        relationLabel: _relation == Relation.diger ? _label.text : null,
-        isAdmin: _admin,
-        permissions: _permissions,
-        email: _email.text,
-        validFor: Duration(days: _days),
-      );
+      final inv = await ref
+          .read(familyRepositoryProvider)
+          .createInvitation(
+            babyId: babyId,
+            relation: _relation,
+            relationLabel: _relation == Relation.diger ? _label.text : null,
+            isAdmin: _admin,
+            permissions: _permissions,
+            email: _email.text,
+            validFor: Duration(days: _days),
+          );
       ref.invalidate(invitationsProvider(babyId));
       setState(() => _created = inv);
     } catch (e) {
@@ -79,8 +81,11 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
           children: [
             const Icon(Icons.mark_email_read_outlined, size: 64),
             const SizedBox(height: 16),
-            Text('Bu kodu ${relationText(created.relation, created.relationLabel).toLowerCase()} ile paylaşın',
-                textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
+            Text(
+              'Bu kodu ${relationText(created.relation, created.relationLabel).toLowerCase()} ile paylaşın',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleLarge,
+            ),
             const SizedBox(height: 20),
             Card(
               child: Padding(
@@ -88,7 +93,11 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
                 child: SelectableText(
                   InviteCode.pretty(created.code),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 4, fontFamily: 'Nunito', fontWeight: FontWeight.w800),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    letterSpacing: 4,
+                    fontFamily: 'Nunito',
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -222,17 +231,25 @@ class _AddFromSiblingScreenState extends ConsumerState<AddFromSiblingScreen> {
     for (final b in babies) {
       if (!ref.watch(accessProvider(b.id)).isAdmin) continue;
       for (final m in ref.watch(membersProvider(b.id)).value ?? const []) {
-        if (!current.contains(m.userId)) candidates[m.userId] = (m.shownName, m.avatarPath, '${b.firstName}: ${m.relationName}');
+        if (!current.contains(m.userId)) {
+          candidates[m.userId] = (m.shownName, m.avatarPath, '${b.firstName}: ${m.relationName}');
+        }
       }
     }
     return Scaffold(
       appBar: AppBar(title: Text('${baby.firstName} ailesine ekle')),
       body: candidates.isEmpty
-          ? const EmptyState(icon: Icons.diversity_1_rounded, title: 'Eklenecek kimse yok', message: 'Diğer çocuklarınızın ailesindeki herkes zaten burada.')
+          ? const EmptyState(
+              icon: Icons.diversity_1_rounded,
+              title: 'Eklenecek kimse yok',
+              message: 'Diğer çocuklarınızın ailesindeki herkes zaten burada.',
+            )
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: [
-                const Text('Yakınlık her çocuk için ayrı tutulur (Defne, Ege\'nin ablasıdır). Seçtiğiniz kişiler varsayılan yetkilerle eklenir; sonra değiştirebilirsiniz.'),
+                const Text(
+                  'Yakınlık her çocuk için ayrı tutulur (Defne, Ege\'nin ablasıdır). Seçtiğiniz kişiler varsayılan yetkilerle eklenir; sonra değiştirebilirsiniz.',
+                ),
                 const SizedBox(height: 12),
                 for (final e in candidates.entries)
                   Card(
@@ -243,7 +260,8 @@ class _AddFromSiblingScreenState extends ConsumerState<AddFromSiblingScreen> {
                         children: [
                           CheckboxListTile(
                             value: _selected.containsKey(e.key),
-                            onChanged: (v) => setState(() => v == true ? _selected[e.key] = Relation.diger : _selected.remove(e.key)),
+                            onChanged: (v) =>
+                                setState(() => v == true ? _selected[e.key] = Relation.diger : _selected.remove(e.key)),
                             title: Text(e.value.$1, style: const TextStyle(fontWeight: FontWeight.w800)),
                             subtitle: Text(e.value.$3),
                           ),
@@ -253,7 +271,9 @@ class _AddFromSiblingScreenState extends ConsumerState<AddFromSiblingScreen> {
                               child: DropdownButtonFormField<Relation>(
                                 initialValue: _selected[e.key],
                                 decoration: InputDecoration(labelText: '${baby.firstName} için yakınlık'),
-                                items: [for (final r in Relation.values) DropdownMenuItem(value: r, child: Text(r.label))],
+                                items: [
+                                  for (final r in Relation.values) DropdownMenuItem(value: r, child: Text(r.label)),
+                                ],
                                 onChanged: (r) => setState(() => _selected[e.key] = r ?? Relation.diger),
                               ),
                             ),
@@ -272,13 +292,15 @@ class _AddFromSiblingScreenState extends ConsumerState<AddFromSiblingScreen> {
                   onPressed: () async {
                     final done = await runWithProgress(context, () async {
                       for (final e in _selected.entries) {
-                        await ref.read(familyRepositoryProvider).addFromSibling(
-                          babyId: baby.id,
-                          userId: e.key,
-                          relation: e.value,
-                          permissions: e.value.defaultPermissions.where((p) => !p.isManagement).toSet(),
-                          isAdmin: e.value.defaultAdmin,
-                        );
+                        await ref
+                            .read(familyRepositoryProvider)
+                            .addFromSibling(
+                              babyId: baby.id,
+                              userId: e.key,
+                              relation: e.value,
+                              permissions: e.value.defaultPermissions.where((p) => !p.isManagement).toSet(),
+                              isAdmin: e.value.defaultAdmin,
+                            );
                       }
                       return true;
                     }, success: 'Aile üyeleri eklendi');

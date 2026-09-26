@@ -32,15 +32,14 @@ class AuthScaffold extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (!showBack) ...[
-                    const SizedBox(height: 12),
-                    const AppLogo(),
-                    const SizedBox(height: 28),
-                  ],
+                  if (!showBack) ...[const SizedBox(height: 12), const AppLogo(), const SizedBox(height: 28)],
                   Text(title, style: theme.textTheme.headlineMedium),
                   if (subtitle != null) ...[
                     const SizedBox(height: 8),
-                    Text(subtitle!, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      subtitle!,
+                      style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
                   ],
                   const SizedBox(height: 28),
                   ...children,
@@ -78,10 +77,7 @@ class AppLogo extends StatelessWidget {
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: Text(
-            'Bebeğimin\nİlk Yılı',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(height: 1.1),
-          ),
+          child: Text('Bebeğimin\nİlk Yılı', style: Theme.of(context).textTheme.headlineSmall?.copyWith(height: 1.1)),
         ),
       ],
     );
@@ -213,7 +209,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: 8),
         FilledButton(
           onPressed: _busy ? null : _submit,
-          child: _busy ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5)) : const Text('Giriş yap'),
+          child: _busy
+              ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
+              : const Text('Giriş yap'),
         ),
         const SizedBox(height: 12),
         OutlinedButton(onPressed: () => context.push('/register'), child: const Text('Yeni hesap oluştur')),
@@ -280,11 +278,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     setState(() => _busy = true);
     try {
-      final signedIn = await ref.read(authRepositoryProvider).signUp(
-        email: _email.text,
-        password: _password.text,
-        displayName: _name.text,
-      );
+      final signedIn = await ref
+          .read(authRepositoryProvider)
+          .signUp(email: _email.text, password: _password.text, displayName: _name.text);
       if (!mounted) return;
       if (!signedIn) context.go('/verify-email?email=${Uri.encodeComponent(_email.text.trim())}');
     } catch (e) {
@@ -310,7 +306,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _name,
                   textCapitalization: TextCapitalization.words,
                   autofillHints: const [AutofillHints.name],
-                  decoration: const InputDecoration(labelText: 'Adınız', prefixIcon: Icon(Icons.person_outline_rounded)),
+                  decoration: const InputDecoration(
+                    labelText: 'Adınız',
+                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  ),
                   validator: (v) => Validators.required(v, field: 'Ad') ?? Validators.maxLength(v, 80),
                 ),
                 const SizedBox(height: 14),
@@ -337,7 +336,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _password2,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Şifre (tekrar)', prefixIcon: Icon(Icons.lock_outline_rounded)),
+                  decoration: const InputDecoration(
+                    labelText: 'Şifre (tekrar)',
+                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                  ),
                   validator: (v) => v != _password.text ? 'Şifreler eşleşmiyor' : null,
                 ),
               ],
@@ -350,7 +352,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           onChanged: (v) => setState(() => _accepted = v ?? false),
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
-          title: const Text('Paylaştığım içeriklerin yalnızca davet ettiğim aile üyeleriyle paylaşılacağını ve gizlilik ilkelerini okudum.'),
+          title: const Text(
+            'Paylaştığım içeriklerin yalnızca davet ettiğim aile üyeleriyle paylaşılacağını ve gizlilik ilkelerini okudum.',
+          ),
           subtitle: TextButton(
             style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
             onPressed: () => context.push('/settings/privacy'),
@@ -360,7 +364,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _busy ? null : _submit,
-          child: _busy ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5)) : const Text('Hesap oluştur'),
+          child: _busy
+              ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
+              : const Text('Hesap oluştur'),
         ),
       ],
     );
@@ -395,7 +401,8 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   Widget build(BuildContext context) {
     return AuthScaffold(
       title: 'E-postanızı doğrulayın',
-      subtitle: '${widget.email} adresine bir doğrulama bağlantısı gönderdik. '
+      subtitle:
+          '${widget.email} adresine bir doğrulama bağlantısı gönderdik. '
           'Bağlantıya bu cihazdan dokunduğunuzda uygulama otomatik açılır ve oturumunuz başlar.',
       children: [
         const Icon(Icons.mark_email_unread_outlined, size: 72),
@@ -520,7 +527,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               TextFormField(
                 controller: _password,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Yeni şifre', helperText: 'En az 8 karakter, harf ve rakam'),
+                decoration: const InputDecoration(
+                  labelText: 'Yeni şifre',
+                  helperText: 'En az 8 karakter, harf ve rakam',
+                ),
                 validator: Validators.password,
               ),
               const SizedBox(height: 14),

@@ -37,8 +37,7 @@ class FirstYearPeriod {
 
   bool isPregnancy(DateTime date) {
     final d = Dates.dateOnly(date);
-    return d.isBefore(start) &&
-        !d.isBefore(Dates.addDays(start, -pregnancyDays));
+    return d.isBefore(start) && !d.isBefore(Dates.addDays(start, -pregnancyDays));
   }
 
   bool isFirstBirthday(DateTime date) => Dates.isSameDay(Dates.dateOnly(date), firstBirthday);
@@ -52,8 +51,7 @@ class FirstYearPeriod {
 
   /// Everything that can appear in the book: pregnancy + 365 days + the
   /// first birthday itself.
-  bool isBookCandidate(DateTime date) =>
-      contains(date) || isPregnancy(date) || isBirthdayWindow(date);
+  bool isBookCandidate(DateTime date) => contains(date) || isPregnancy(date) || isBirthdayWindow(date);
 
   bool isComplete(DateTime today) => Dates.dateOnly(today).isAfter(end);
 

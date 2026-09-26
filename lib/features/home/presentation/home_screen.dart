@@ -31,7 +31,9 @@ class HomeScreen extends ConsumerWidget {
     final today = Dates.today();
     final oneYearAgo = Dates.addYears(today, -1);
     final timeline = ref.watch(timelineProvider(TimelineKey(baby.id)));
-    final onThisDay = ref.watch(timelineProvider(TimelineKey(baby.id, TimelineQuery(from: oneYearAgo, to: oneYearAgo))));
+    final onThisDay = ref.watch(
+      timelineProvider(TimelineKey(baby.id, TimelineQuery(from: oneYearAgo, to: oneYearAgo))),
+    );
     final access = ref.watch(accessProvider(baby.id));
 
     Future<void> refresh() async {
@@ -57,7 +59,12 @@ class HomeScreen extends ConsumerWidget {
               for (final e in onThisDay.value!.entries.take(2))
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: TimelineEntryCard(entry: e, baby: baby, media: onThisDay.value!.media[e.id] ?? const [], compact: true),
+                  child: TimelineEntryCard(
+                    entry: e,
+                    baby: baby,
+                    media: onThisDay.value!.media[e.id] ?? const [],
+                    compact: true,
+                  ),
                 ),
             ],
             SectionHeader(title: 'Son anılar', action: 'Tümü', onAction: () => context.go('/timeline')),
@@ -77,7 +84,12 @@ class HomeScreen extends ConsumerWidget {
                     for (final e in state.entries.take(4))
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                        child: TimelineEntryCard(entry: e, baby: baby, media: state.media[e.id] ?? const [], compact: true),
+                        child: TimelineEntryCard(
+                          entry: e,
+                          baby: baby,
+                          media: state.media[e.id] ?? const [],
+                          compact: true,
+                        ),
                       ),
                   ],
                 );
@@ -106,8 +118,8 @@ class _Hero extends StatelessWidget {
     final headline = age.totalDays == 0
         ? '${baby.firstName} bugün dünyaya geldi 🤍'
         : age.years == 0
-            ? '${baby.firstName} bugün ${age.totalDays} günlük ❤️'
-            : '${baby.firstName} bugün ${age.label} ❤️';
+        ? '${baby.firstName} bugün ${age.totalDays} günlük ❤️'
+        : '${baby.firstName} bugün ${age.label} ❤️';
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: ClipRRect(
@@ -147,8 +159,17 @@ class _Hero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 3)),
-                      child: AppAvatar(name: baby.firstName, bucket: Buckets.babyMedia, path: baby.avatarPath, radius: 32, color: Colors.white),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                      ),
+                      child: AppAvatar(
+                        name: baby.firstName,
+                        bucket: Buckets.babyMedia,
+                        path: baby.avatarPath,
+                        radius: 32,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -156,7 +177,10 @@ class _Hero extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(headline, style: theme.textTheme.headlineSmall?.copyWith(color: Colors.white, fontSize: 22)),
+                          Text(
+                            headline,
+                            style: theme.textTheme.headlineSmall?.copyWith(color: Colors.white, fontSize: 22),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             '${age.label} · ${Dates.longWithWeekday(today)}',
@@ -199,14 +223,20 @@ class _FirstYearCard extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             child: Row(
               children: [
-                const CircleAvatar(radius: 24, backgroundColor: AppColors.apricot, child: Icon(Icons.menu_book_rounded, color: Colors.white)),
+                const CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.apricot,
+                  child: Icon(Icons.menu_book_rounded, color: Colors.white),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        complete ? '${Turkish.genitive(baby.firstName)} İlk Yılım kitabı hazır olabilir' : 'İlk Yılım · ${day ?? 0}. gün',
+                        complete
+                            ? '${Turkish.genitive(baby.firstName)} İlk Yılım kitabı hazır olabilir'
+                            : 'İlk Yılım · ${day ?? 0}. gün',
                         style: theme.textTheme.titleMedium,
                       ),
                       const SizedBox(height: 6),
@@ -216,11 +246,15 @@ class _FirstYearCard extends StatelessWidget {
                           child: LinearProgressIndicator(value: fy.progress(today), minHeight: 7),
                         ),
                         const SizedBox(height: 6),
-                        Text('Kitap için ${fy.daysRemaining(today)} gün kaldı · taslağı şimdiden oluşturabilirsiniz',
-                            style: theme.textTheme.bodySmall),
+                        Text(
+                          'Kitap için ${fy.daysRemaining(today)} gün kaldı · taslağı şimdiden oluşturabilirsiniz',
+                          style: theme.textTheme.bodySmall,
+                        ),
                       ] else
                         Text(
-                          canCreateBook ? 'İlk 365 günü kitaba dönüştürün. Anı eklemeye devam edebilirsiniz.' : 'Aile kitabını görüntüleyin.',
+                          canCreateBook
+                              ? 'İlk 365 günü kitaba dönüştürün. Anı eklemeye devam edebilirsiniz.'
+                              : 'Aile kitabını görüntüleyin.',
                           style: theme.textTheme.bodySmall,
                         ),
                     ],
@@ -266,7 +300,11 @@ class _QuickActions extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircleAvatar(radius: 20, backgroundColor: color.withValues(alpha: 0.16), child: Icon(icon, color: color, size: 22)),
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: color.withValues(alpha: 0.16),
+                      child: Icon(icon, color: color, size: 22),
+                    ),
                     const SizedBox(height: 8),
                     Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   ],
@@ -309,12 +347,25 @@ class _Upcoming extends ConsumerWidget {
                     leading: Container(
                       width: 48,
                       padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('${d.date.day}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: theme.colorScheme.primary)),
-                          Text(Dates.dayMonth(d.date).split(' ').last.substring(0, 3), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                          Text(
+                            '${d.date.day}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 17,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          Text(
+                            Dates.dayMonth(d.date).split(' ').last.substring(0, 3),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
                         ],
                       ),
                     ),
@@ -323,8 +374,8 @@ class _Upcoming extends ConsumerWidget {
                     onTap: d.kind == UpcomingKind.capsule
                         ? () => context.push('/capsules')
                         : d.kind == UpcomingKind.firstYearComplete
-                            ? () => context.push('/book')
-                            : null,
+                        ? () => context.push('/book')
+                        : null,
                   ),
               ],
             ),
@@ -349,7 +400,11 @@ class _Firsts extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(title: 'İlkler · ${achieved.length}', action: 'Tümü', onAction: () => context.push('/milestones')),
+        SectionHeader(
+          title: 'İlkler · ${achieved.length}',
+          action: 'Tümü',
+          onAction: () => context.push('/milestones'),
+        ),
         SizedBox(
           height: 112,
           child: ListView(
@@ -372,11 +427,25 @@ class _Firsts extends ConsumerWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(s.type.emoji ?? '⭐', style: TextStyle(fontSize: 26, color: s.achieved ? null : Colors.black.withValues(alpha: 0.35))),
+                              Text(
+                                s.type.emoji ?? '⭐',
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  color: s.achieved ? null : Colors.black.withValues(alpha: 0.35),
+                                ),
+                              ),
                               const SizedBox(height: 6),
-                              Text(s.type.title, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              Text(
+                                s.type.title,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                              ),
                               if (s.achieved)
-                                Text(baby.ageOn(s.milestone!.achievedOn)?.label ?? '', style: const TextStyle(fontSize: 10.5)),
+                                Text(
+                                  baby.ageOn(s.milestone!.achievedOn)?.label ?? '',
+                                  style: const TextStyle(fontSize: 10.5),
+                                ),
                             ],
                           ),
                         ),

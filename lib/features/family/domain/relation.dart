@@ -23,8 +23,7 @@ enum Relation {
   /// "Teyzesi", used in sentences: "Teyzesi Zeynep yeni bir anı ekledi".
   final String possessive;
 
-  static Relation fromKey(String? key) =>
-      values.firstWhere((r) => r.key == key, orElse: () => Relation.diger);
+  static Relation fromKey(String? key) => values.firstWhere((r) => r.key == key, orElse: () => Relation.diger);
 
   bool get isParent => this == anne || this == baba;
 

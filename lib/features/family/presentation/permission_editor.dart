@@ -5,7 +5,13 @@ import '../domain/permission.dart';
 /// Switch list for granular permissions. Management permissions can only be
 /// granted by admins (enforced again by the database).
 class PermissionEditor extends StatelessWidget {
-  const PermissionEditor({super.key, required this.value, required this.onChanged, required this.canGrantManagement, this.enabled = true});
+  const PermissionEditor({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.canGrantManagement,
+    this.enabled = true,
+  });
 
   final Set<AppPermission> value;
   final ValueChanged<Set<AppPermission>> onChanged;

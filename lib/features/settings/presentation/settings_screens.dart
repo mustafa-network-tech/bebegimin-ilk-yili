@@ -25,7 +25,12 @@ class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final ok = await confirm(context, title: 'Çıkış yapılsın mı?', message: 'Bu cihazdaki önbellek temizlenir.', confirmLabel: 'Çıkış yap');
+    final ok = await confirm(
+      context,
+      title: 'Çıkış yapılsın mı?',
+      message: 'Bu cihazdaki önbellek temizlenir.',
+      confirmLabel: 'Çıkış yap',
+    );
     if (!ok) return;
     await ref.read(pushServiceProvider).unregister();
     await ref.read(localCacheProvider).clear();
@@ -62,14 +67,26 @@ class SettingsScreen extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => context.push('/baby/${b.id}/edit'),
             ),
-          ListTile(leading: const Icon(Icons.add_rounded), title: const Text('Yeni çocuk ekle'), onTap: () => context.push('/baby/new')),
-          ListTile(leading: const Icon(Icons.vpn_key_outlined), title: const Text('Davet koduyla katıl'), onTap: () => context.push('/join')),
+          ListTile(
+            leading: const Icon(Icons.add_rounded),
+            title: const Text('Yeni çocuk ekle'),
+            onTap: () => context.push('/baby/new'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.vpn_key_outlined),
+            title: const Text('Davet koduyla katıl'),
+            onTap: () => context.push('/join'),
+          ),
           const SectionHeader(title: 'Görünüm'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: SegmentedButton<ThemeMode>(
               segments: const [
-                ButtonSegment(value: ThemeMode.system, label: Text('Sistem'), icon: Icon(Icons.brightness_auto_outlined)),
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  label: Text('Sistem'),
+                  icon: Icon(Icons.brightness_auto_outlined),
+                ),
                 ButtonSegment(value: ThemeMode.light, label: Text('Açık'), icon: Icon(Icons.light_mode_outlined)),
                 ButtonSegment(value: ThemeMode.dark, label: Text('Koyu'), icon: Icon(Icons.dark_mode_outlined)),
               ],
@@ -83,8 +100,16 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Bildirimler'),
             onTap: () => context.push('/settings/notifications'),
           ),
-          ListTile(leading: const Icon(Icons.password_rounded), title: const Text('Şifre değiştir'), onTap: () => context.push('/settings/password')),
-          ListTile(leading: const Icon(Icons.shield_outlined), title: const Text('Gizlilik ve veri güvenliği'), onTap: () => context.push('/settings/privacy')),
+          ListTile(
+            leading: const Icon(Icons.password_rounded),
+            title: const Text('Şifre değiştir'),
+            onTap: () => context.push('/settings/password'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Gizlilik ve veri güvenliği'),
+            onTap: () => context.push('/settings/privacy'),
+          ),
           ListTile(
             leading: const Icon(Icons.cleaning_services_outlined),
             title: const Text('Önbelleği temizle'),
@@ -95,14 +120,23 @@ class SettingsScreen extends ConsumerWidget {
               if (context.mounted) showSnack(context, 'Önbellek temizlendi');
             },
           ),
-          ListTile(leading: const Icon(Icons.logout_rounded), title: const Text('Çıkış yap'), onTap: () => _signOut(context, ref)),
+          ListTile(
+            leading: const Icon(Icons.logout_rounded),
+            title: const Text('Çıkış yap'),
+            onTap: () => _signOut(context, ref),
+          ),
           ListTile(
             leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
             title: Text('Hesabımı sil', style: TextStyle(color: Theme.of(context).colorScheme.error)),
             onTap: () => context.push('/settings/delete-account'),
           ),
           const SizedBox(height: 16),
-          Center(child: Text('Bebeğimin İlk Yılı · v0.1.0${Env.demoMode ? ' · DEMO' : ''}', style: Theme.of(context).textTheme.bodySmall)),
+          Center(
+            child: Text(
+              'Bebeğimin İlk Yılı · v0.1.0${Env.demoMode ? ' · DEMO' : ''}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
         ],
       ),
     );
@@ -169,7 +203,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     _avatar != null
                         ? CircleAvatar(radius: 48, backgroundImage: FileImage(_avatar!))
                         : AppAvatar(name: profile?.displayName ?? '?', path: profile?.avatarPath, radius: 48),
-                    const Positioned(right: 0, bottom: 0, child: CircleAvatar(radius: 16, child: Icon(Icons.edit, size: 16))),
+                    const Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: CircleAvatar(radius: 16, child: Icon(Icons.edit, size: 16)),
+                    ),
                   ],
                 ),
               ),
@@ -218,7 +256,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            TextFormField(controller: _p1, obscureText: true, decoration: const InputDecoration(labelText: 'Yeni şifre'), validator: Validators.password),
+            TextFormField(
+              controller: _p1,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Yeni şifre'),
+              validator: Validators.password,
+            ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _p2,
@@ -271,9 +314,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                push.isAvailable
-                    ? 'Bildirimler uygulama içinde ve telefonunuza anlık bildirim olarak gelir.'
-                    : 'Bildirimler uygulama içindeki kutuda görünür. Anlık (push) bildirimler bu sürümde yapılandırılmamış.',
+                push.isAvailable ? 'Bildirimler uygulama içinde ve telefonunuza anlık bildirim olarak gelir.' : 'Bildirimler uygulama içindeki kutuda görünür. Anlık (push) bildirimler bu sürümde yapılandırılmamış.',
               ),
             ),
             for (final e in NotificationPrefKeys.labels.entries)
@@ -340,10 +381,16 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
             title: const Text('Paylaşılan arşivlere eklediğim tüm anı, fotoğraf, video, mektup ve yorumları da sil'),
           ),
           const SizedBox(height: 12),
-          TextField(controller: _confirm, decoration: const InputDecoration(labelText: 'Onay için SİL yazın')),
+          TextField(
+            controller: _confirm,
+            decoration: const InputDecoration(labelText: 'Onay için SİL yazın'),
+          ),
           const SizedBox(height: 20),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error, foregroundColor: theme.colorScheme.onError),
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             onPressed: _busy
                 ? null
                 : () async {
@@ -386,18 +433,36 @@ class PrivacyScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
-          item(Icons.lock_outline_rounded, 'Varsayılan olarak özel',
-              'Hiçbir bebek profili, fotoğraf ya da anı herkese açık değildir ve arama motorlarında görünmez.'),
-          item(Icons.family_restroom_rounded, 'Yalnızca davet ettiğiniz aile',
-              'İçeriklere yalnızca davet kodunu kabul eden aile üyeleri, verilen yetkiler kadar erişebilir. Yetkiler sunucuda (veritabanı güvenlik politikalarıyla) denetlenir.'),
-          item(Icons.cloud_done_outlined, 'Özel dosya depolama',
-              'Fotoğraf ve videolar herkese açık bağlantılarla değil, bir saat geçerli imzalı bağlantılarla gösterilir.'),
-          item(Icons.location_off_outlined, 'Konum bilgisi silinir',
-              'Yüklenen fotoğrafların EXIF (konum dahil) bilgileri cihazda temizlenir.'),
-          item(Icons.hourglass_bottom_rounded, 'Mühürlü zaman kapsülleri',
-              'Zaman kapsülü içerikleri açılış tarihine kadar sunucudan hiç kimseye gönderilmez.'),
-          item(Icons.delete_outline_rounded, 'Silme hakkı',
-              'Hesabınızı, bebek arşivini ve tüm dosyaları istediğiniz zaman kalıcı olarak silebilirsiniz.'),
+          item(
+            Icons.lock_outline_rounded,
+            'Varsayılan olarak özel',
+            'Hiçbir bebek profili, fotoğraf ya da anı herkese açık değildir ve arama motorlarında görünmez.',
+          ),
+          item(
+            Icons.family_restroom_rounded,
+            'Yalnızca davet ettiğiniz aile',
+            'İçeriklere yalnızca davet kodunu kabul eden aile üyeleri, verilen yetkiler kadar erişebilir. Yetkiler sunucuda (veritabanı güvenlik politikalarıyla) denetlenir.',
+          ),
+          item(
+            Icons.cloud_done_outlined,
+            'Özel dosya depolama',
+            'Fotoğraf ve videolar herkese açık bağlantılarla değil, bir saat geçerli imzalı bağlantılarla gösterilir.',
+          ),
+          item(
+            Icons.location_off_outlined,
+            'Konum bilgisi silinir',
+            'Yüklenen fotoğrafların EXIF (konum dahil) bilgileri cihazda temizlenir.',
+          ),
+          item(
+            Icons.hourglass_bottom_rounded,
+            'Mühürlü zaman kapsülleri',
+            'Zaman kapsülü içerikleri açılış tarihine kadar sunucudan hiç kimseye gönderilmez.',
+          ),
+          item(
+            Icons.delete_outline_rounded,
+            'Silme hakkı',
+            'Hesabınızı, bebek arşivini ve tüm dosyaları istediğiniz zaman kalıcı olarak silebilirsiniz.',
+          ),
         ],
       ),
     );

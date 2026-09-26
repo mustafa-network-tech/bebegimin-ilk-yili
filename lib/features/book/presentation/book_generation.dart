@@ -41,7 +41,10 @@ Future<(File, int)?> generateWithProgress(
               const SizedBox(height: 14),
               LinearProgressIndicator(value: p.fraction),
               const SizedBox(height: 10),
-              const Text('Büyük kitaplarda bu işlem birkaç dakika sürebilir. Uygulamayı açık tutun.', style: TextStyle(fontSize: 12.5)),
+              const Text(
+                'Büyük kitaplarda bu işlem birkaç dakika sürebilir. Uygulamayı açık tutun.',
+                style: TextStyle(fontSize: 12.5),
+              ),
             ],
           ),
         ),
@@ -49,7 +52,9 @@ Future<(File, int)?> generateWithProgress(
     ),
   );
   try {
-    final result = await ref.read(bookGeneratorProvider).generate(project, baby, quality, onProgress: (p) => progress.value = p);
+    final result = await ref
+        .read(bookGeneratorProvider)
+        .generate(project, baby, quality, onProgress: (p) => progress.value = p);
     navigator.pop();
     return result;
   } catch (e) {
@@ -68,15 +73,18 @@ Future<void> publishBook(BuildContext context, WidgetRef ref, BookProject projec
   if (res == null || !context.mounted) return;
   final (file, pages) = res;
   try {
-    final export = await ref.read(bookRepositoryProvider).publish(project, file, pageCount: pages, quality: BookQuality.print);
+    final export = await ref
+        .read(bookRepositoryProvider)
+        .publish(project, file, pageCount: pages, quality: BookQuality.print);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kitap hazır: sürüm ${export.version}, $pages sayfa 📖')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Kitap hazır: sürüm ${export.version}, $pages sayfa 📖')));
   } catch (e) {
     if (!context.mounted) return;
     // The local PDF is still usable even if the upload failed (offline).
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('PDF cihazınıza kaydedildi ancak aileyle paylaşılamadı: ${AppException.from(e).message}'),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('PDF cihazınıza kaydedildi ancak aileyle paylaşılamadı: ${AppException.from(e).message}')),
+    );
   }
   if (context.mounted) context.push('/book/view', extra: file);
 }
@@ -97,7 +105,12 @@ class BookPdfViewScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Paylaş / Dosyalara kaydet',
             icon: const Icon(Icons.ios_share_rounded),
-            onPressed: () => SharePlus.instance.share(ShareParams(files: [XFile(file.path, mimeType: 'application/pdf')], fileNameOverrides: [name])),
+            onPressed: () => SharePlus.instance.share(
+              ShareParams(
+                files: [XFile(file.path, mimeType: 'application/pdf')],
+                fileNameOverrides: [name],
+              ),
+            ),
           ),
         ],
       ),

@@ -54,13 +54,15 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
     final m = _member!;
     setState(() => _busy = true);
     try {
-      await ref.read(familyRepositoryProvider).updateMember(
-        m.id,
-        relation: _relation,
-        relationLabel: _relation == Relation.diger ? _label.text : null,
-        isAdmin: _admin,
-        permissions: _permissions,
-      );
+      await ref
+          .read(familyRepositoryProvider)
+          .updateMember(
+            m.id,
+            relation: _relation,
+            relationLabel: _relation == Relation.diger ? _label.text : null,
+            isAdmin: _admin,
+            permissions: _permissions,
+          );
       ref.invalidate(membersProvider(m.babyId));
       if (mounted) {
         showSnack(context, 'Kaydedildi');
@@ -75,11 +77,13 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
 
   Future<void> _remove() async {
     final m = _member!;
-    final ok = await confirm(context,
-        title: '${m.shownName} aileden çıkarılsın mı?',
-        message: 'Bu kişi artık hiçbir içeriği göremez. Eklediği anılar ailede kalır.',
-        confirmLabel: 'Çıkar',
-        destructive: true);
+    final ok = await confirm(
+      context,
+      title: '${m.shownName} aileden çıkarılsın mı?',
+      message: 'Bu kişi artık hiçbir içeriği göremez. Eklediği anılar ailede kalır.',
+      confirmLabel: 'Çıkar',
+      destructive: true,
+    );
     if (!ok || !mounted) return;
     final done = await runWithProgress(context, () async {
       await ref.read(familyRepositoryProvider).removeMember(m.id);
@@ -110,10 +114,14 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
-          Center(child: AppAvatar(name: m.shownName, path: m.avatarPath, radius: 40)),
+          Center(
+            child: AppAvatar(name: m.shownName, path: m.avatarPath, radius: 40),
+          ),
           const SizedBox(height: 10),
           Center(child: Text(m.introduction, style: theme.textTheme.titleLarge)),
-          Center(child: Text('${Dates.long(m.joinedAt.toLocal())} tarihinden beri ailede', style: theme.textTheme.bodySmall)),
+          Center(
+            child: Text('${Dates.long(m.joinedAt.toLocal())} tarihinden beri ailede', style: theme.textTheme.bodySmall),
+          ),
           const SizedBox(height: 20),
           if (!canManage) ...[
             Card(
@@ -143,7 +151,11 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
             ),
             if (_relation == Relation.diger) ...[
               const SizedBox(height: 12),
-              TextField(controller: _label, maxLength: 40, decoration: const InputDecoration(labelText: 'Yakınlık adı')),
+              TextField(
+                controller: _label,
+                maxLength: 40,
+                decoration: const InputDecoration(labelText: 'Yakınlık adı'),
+              ),
             ],
             if (access.isAdmin)
               SwitchListTile(
@@ -154,7 +166,11 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
                 subtitle: const Text('Tüm yetkiler, üyeleri yönetme ve bebeği silme.'),
               ),
             if (!_admin)
-              PermissionEditor(value: _permissions, canGrantManagement: access.isAdmin, onChanged: (v) => setState(() => _permissions = v)),
+              PermissionEditor(
+                value: _permissions,
+                canGrantManagement: access.isAdmin,
+                onChanged: (v) => setState(() => _permissions = v),
+              ),
             const SizedBox(height: 20),
             FilledButton(onPressed: _busy ? null : _save, child: const Text('Kaydet')),
             const SizedBox(height: 10),

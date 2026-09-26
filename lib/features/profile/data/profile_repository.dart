@@ -35,7 +35,13 @@ class ProfileRepository {
     decode: (j) => j == null ? null : Profile.fromJson((j as Map).cast<String, dynamic>()),
   );
 
-  Future<void> update(String uid, {String? displayName, bool? onboardingCompleted, Map<String, bool>? notificationPrefs, String? avatarPath}) async {
+  Future<void> update(
+    String uid, {
+    String? displayName,
+    bool? onboardingCompleted,
+    Map<String, bool>? notificationPrefs,
+    String? avatarPath,
+  }) async {
     final patch = <String, dynamic>{
       'display_name': ?displayName?.trim(),
       'onboarding_completed': ?onboardingCompleted,
@@ -49,11 +55,13 @@ class ProfileRepository {
   /// Uploads a new avatar (already compressed JPEG) and removes the old one.
   Future<String> uploadAvatar(String uid, File jpeg, {String? previousPath}) async {
     final path = '$uid/avatar-${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _client.storage.from(Buckets.avatars).upload(
-      path,
-      jpeg,
-      fileOptions: const FileOptions(contentType: 'image/jpeg', cacheControl: '3600'),
-    );
+    await _client.storage
+        .from(Buckets.avatars)
+        .upload(
+          path,
+          jpeg,
+          fileOptions: const FileOptions(contentType: 'image/jpeg', cacheControl: '3600'),
+        );
     await update(uid, avatarPath: path);
     if (previousPath != null) {
       try {

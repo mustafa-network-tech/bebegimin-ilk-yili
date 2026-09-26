@@ -21,9 +21,19 @@ void main() {
     final p = projectFromPlan(const BookComposer().plan(src));
     for (final format in BookFormat.values) {
       final data = const BookRenderResolver().resolve(
-        project: BookProject(id: p.id, babyId: p.babyId, title: 'Defne\'nin İlk Yılı', subtitle: 'Defne Yılmaz',
-          format: format, coverMediaId: p.coverMediaId, backCoverText: null, currentVersion: 0,
-          lastSyncedAt: null, updatedAt: p.updatedAt, pages: p.pages),
+        project: BookProject(
+          id: p.id,
+          babyId: p.babyId,
+          title: 'Defne\'nin İlk Yılı',
+          subtitle: 'Defne Yılmaz',
+          format: format,
+          coverMediaId: p.coverMediaId,
+          backCoverText: null,
+          currentVersion: 0,
+          lastSyncedAt: null,
+          updatedAt: p.updatedAt,
+          pages: p.pages,
+        ),
         source: src,
         members: const [],
       );

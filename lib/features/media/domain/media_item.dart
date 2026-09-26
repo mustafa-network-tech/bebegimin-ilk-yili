@@ -72,8 +72,7 @@ class MediaItem {
   /// Small image for grids (videos fall back to a placeholder).
   String? get previewPath => thumbPath ?? (isVideo ? null : storagePath);
 
-  double get aspectRatio =>
-      (width != null && height != null && height! > 0) ? width! / height! : 1;
+  double get aspectRatio => (width != null && height != null && height! > 0) ? width! / height! : 1;
 
   bool get isLandscape => aspectRatio > 1.05;
 

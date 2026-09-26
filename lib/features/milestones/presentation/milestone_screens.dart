@@ -45,7 +45,11 @@ class MilestonesScreen extends ConsumerWidget {
               maxLength: 80,
               decoration: const InputDecoration(labelText: 'Başlık', hintText: 'İlk bisiklet turum'),
             ),
-            TextField(controller: emoji, maxLength: 4, decoration: const InputDecoration(labelText: 'Emoji')),
+            TextField(
+              controller: emoji,
+              maxLength: 4,
+              decoration: const InputDecoration(labelText: 'Emoji'),
+            ),
           ],
         ),
         actions: [
@@ -55,7 +59,10 @@ class MilestonesScreen extends ConsumerWidget {
       ),
     );
     if (ok != true || title.text.trim().isEmpty || !context.mounted) return;
-    final type = await runWithProgress(context, () => ref.read(milestoneRepositoryProvider).createCustomType(babyId, title.text, emoji.text));
+    final type = await runWithProgress(
+      context,
+      () => ref.read(milestoneRepositoryProvider).createCustomType(babyId, title.text, emoji.text),
+    );
     if (type != null && context.mounted) {
       ref.read(contentRevisionProvider.notifier).bump();
       context.push('/milestone/new?typeId=${type.id}');
@@ -100,14 +107,16 @@ class MilestonesScreen extends ConsumerWidget {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         leading: Text(s.type.emoji ?? '⭐', style: const TextStyle(fontSize: 30)),
                         title: Text(s.type.title, style: theme.textTheme.titleMedium),
-                        subtitle: Text('${Dates.long(s.milestone!.achievedOn)} · ${baby.ageOn(s.milestone!.achievedOn)?.label ?? ''}'),
+                        subtitle: Text(
+                          '${Dates.long(s.milestone!.achievedOn)} · ${baby.ageOn(s.milestone!.achievedOn)?.label ?? ''}',
+                        ),
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => context.push('/milestone/${s.milestone!.id}'),
                       ),
                     ),
                   ),
               ],
-              SectionHeader(title: 'Sırada neler var?'),
+              const SectionHeader(title: 'Sırada neler var?'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: GridView.count(
@@ -124,9 +133,18 @@ class MilestonesScreen extends ConsumerWidget {
                           onTap: canAdd ? () => context.push('/milestone/new?typeId=${s.type.id}') : null,
                           onLongPress: s.type.isCustom && canAdd
                               ? () async {
-                                  final ok = await confirm(context, title: 'Özel ilk silinsin mi?', message: s.type.title, confirmLabel: 'Sil', destructive: true);
+                                  final ok = await confirm(
+                                    context,
+                                    title: 'Özel ilk silinsin mi?',
+                                    message: s.type.title,
+                                    confirmLabel: 'Sil',
+                                    destructive: true,
+                                  );
                                   if (ok && context.mounted) {
-                                    await runWithProgress(context, () => ref.read(milestoneRepositoryProvider).deleteCustomType(s.type.id));
+                                    await runWithProgress(
+                                      context,
+                                      () => ref.read(milestoneRepositoryProvider).deleteCustomType(s.type.id),
+                                    );
                                     ref.read(contentRevisionProvider.notifier).bump();
                                   }
                                 }
@@ -136,9 +154,17 @@ class MilestonesScreen extends ConsumerWidget {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Opacity(opacity: 0.55, child: Text(s.type.emoji ?? '⭐', style: const TextStyle(fontSize: 30))),
+                                Opacity(
+                                  opacity: 0.55,
+                                  child: Text(s.type.emoji ?? '⭐', style: const TextStyle(fontSize: 30)),
+                                ),
                                 const SizedBox(height: 8),
-                                Text(s.type.title, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                                Text(
+                                  s.type.title,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                                ),
                                 if (s.type.isCustom) const Text('özel', style: TextStyle(fontSize: 10.5)),
                               ],
                             ),
@@ -189,11 +215,20 @@ class _MilestoneFormScreenState extends ConsumerState<MilestoneFormScreen> {
     if (typeId == null) return;
     setState(() => _busy = true);
     try {
-      final draft = MilestoneDraft(babyId: babyId, typeId: typeId, achievedOn: _date, time: _time, description: _desc.text, includeInBook: _include);
+      final draft = MilestoneDraft(
+        babyId: babyId,
+        typeId: typeId,
+        achievedOn: _date,
+        time: _time,
+        description: _desc.text,
+        includeInBook: _include,
+      );
       final repo = ref.read(milestoneRepositoryProvider);
       final m = _isEdit ? await repo.update(widget.milestoneId!, draft) : await repo.create(draft);
       if (_media.isNotEmpty) {
-        await ref.read(uploadQueueProvider.notifier).enqueue(babyId: babyId, files: List.of(_media), takenOn: _date, milestoneId: m.id);
+        await ref
+            .read(uploadQueueProvider.notifier)
+            .enqueue(babyId: babyId, files: List.of(_media), takenOn: _date, milestoneId: m.id);
       }
       ref.read(contentRevisionProvider.notifier).bump();
       if (!mounted) return;
@@ -261,8 +296,11 @@ class _MilestoneFormScreenState extends ConsumerState<MilestoneFormScreen> {
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () async {
-                    final p = await MediaPicker.choose(context,
-                        photos: access.can(AppPermission.addPhoto), videos: access.can(AppPermission.addVideo));
+                    final p = await MediaPicker.choose(
+                      context,
+                      photos: access.can(AppPermission.addPhoto),
+                      videos: access.can(AppPermission.addVideo),
+                    );
                     setState(() => _media.addAll(p));
                   },
                   icon: const Icon(Icons.add_photo_alternate_outlined),
@@ -316,12 +354,22 @@ class MilestoneDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         actions: [
           if (slot.value != null && access.canEditContent(slot.value!.milestone!.createdBy)) ...[
-            IconButton(tooltip: 'Düzenle', icon: const Icon(Icons.edit_outlined), onPressed: () => context.push('/milestone/$milestoneId/edit')),
+            IconButton(
+              tooltip: 'Düzenle',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push('/milestone/$milestoneId/edit'),
+            ),
             IconButton(
               tooltip: 'Sil',
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () async {
-                final ok = await confirm(context, title: 'Silinsin mi?', message: 'Bu ilk ve fotoğrafları silinecek.', confirmLabel: 'Sil', destructive: true);
+                final ok = await confirm(
+                  context,
+                  title: 'Silinsin mi?',
+                  message: 'Bu ilk ve fotoğrafları silinecek.',
+                  confirmLabel: 'Sil',
+                  destructive: true,
+                );
                 if (!ok || !context.mounted) return;
                 final done = await runWithProgress(context, () async {
                   await ref.read(milestoneRepositoryProvider).delete(milestoneId, media);
@@ -376,4 +424,3 @@ class MilestoneDetailScreen extends ConsumerWidget {
     );
   }
 }
-

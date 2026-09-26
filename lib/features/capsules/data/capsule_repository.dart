@@ -8,9 +8,7 @@ import '../../../core/supabase_providers.dart';
 import '../../../core/utils/dates.dart';
 import '../domain/time_capsule.dart';
 
-final capsuleRepositoryProvider = Provider<CapsuleRepository>(
-  (ref) => CapsuleRepository(ref.watch(supabaseProvider)),
-);
+final capsuleRepositoryProvider = Provider<CapsuleRepository>((ref) => CapsuleRepository(ref.watch(supabaseProvider)));
 
 class CapsuleRepository {
   CapsuleRepository(this._client);
@@ -36,20 +34,25 @@ class CapsuleRepository {
     required CapsuleOccasion occasion,
     File? photoJpeg,
   }) async {
-    final id = await _client.rpc('create_time_capsule', params: {
-      'p_baby_id': babyId,
-      'p_title': title.trim(),
-      'p_body': body.trim(),
-      'p_open_on': Dates.toSql(openOn),
-      'p_occasion': occasion.key,
-      'p_has_photo': photoJpeg != null,
-    }) as String;
+    final id = await _client.rpc(
+      'create_time_capsule',
+      params: {
+        'p_baby_id': babyId,
+        'p_title': title.trim(),
+        'p_body': body.trim(),
+        'p_open_on': Dates.toSql(openOn),
+        'p_occasion': occasion.key,
+        'p_has_photo': photoJpeg != null,
+      },
+    ) as String;
     if (photoJpeg != null) {
-      await _client.storage.from(Buckets.babyMedia).upload(
-        '$babyId/capsules/$id/photo.jpg',
-        photoJpeg,
-        fileOptions: const FileOptions(contentType: 'image/jpeg'),
-      );
+      await _client.storage
+          .from(Buckets.babyMedia)
+          .upload(
+            '$babyId/capsules/$id/photo.jpg',
+            photoJpeg,
+            fileOptions: const FileOptions(contentType: 'image/jpeg'),
+          );
     }
     return id;
   }

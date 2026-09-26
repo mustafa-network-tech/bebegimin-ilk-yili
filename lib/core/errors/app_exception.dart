@@ -35,8 +35,11 @@ class AppException implements Exception {
     if (error is FunctionException) {
       final details = error.details;
       final msg = details is Map && details['error'] is String ? details['error'] as String : null;
-      return AppException(msg ?? 'Sunucu işlemi tamamlanamadı (${error.status}).',
-          kind: AppErrorKind.server, cause: error);
+      return AppException(
+        msg ?? 'Sunucu işlemi tamamlanamadı (${error.status}).',
+        kind: AppErrorKind.server,
+        cause: error,
+      );
     }
     return AppException('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.', cause: error);
   }

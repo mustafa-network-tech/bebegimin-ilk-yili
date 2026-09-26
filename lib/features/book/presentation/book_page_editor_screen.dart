@@ -42,7 +42,11 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
     await runWithProgress(
       context,
       () => ref.read(bookRepositoryProvider).savePages(babyId, [
-        page.copyWith(title: _title.text.trim().isEmpty ? page.title : _title.text.trim(), body: _note.text.trim(), clearBody: _note.text.trim().isEmpty),
+        page.copyWith(
+          title: _title.text.trim().isEmpty ? page.title : _title.text.trim(),
+          body: _note.text.trim(),
+          clearBody: _note.text.trim().isEmpty,
+        ),
       ]),
       success: 'Kaydedildi',
     );
@@ -81,7 +85,8 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
           PlannedItem(type: BookItemType.media, refId: m.id, date: m.takenOn),
       if (page.type == BookPageType.milestones || page.type == BookPageType.custom)
         for (final m in src.milestones)
-          if (!onPage.contains(m.id) && fy.isBookCandidate(m.achievedOn)) PlannedItem(type: BookItemType.milestone, refId: m.id, date: m.achievedOn),
+          if (!onPage.contains(m.id) && fy.isBookCandidate(m.achievedOn))
+            PlannedItem(type: BookItemType.milestone, refId: m.id, date: m.achievedOn),
       // letters may come from any date (family messages)
       if (page.type == BookPageType.letters || page.type == BookPageType.custom)
         for (final l in src.letters)
@@ -108,7 +113,10 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
             children: [
               ListTile(
                 title: const Text('İçerik ekle', style: TextStyle(fontWeight: FontWeight.w800)),
-                trailing: FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Ekle (${selected.length})')),
+                trailing: FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text('Ekle (${selected.length})'),
+                ),
               ),
               Expanded(
                 child: ListView.builder(
@@ -136,7 +144,9 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
     final start = items.fold<int>(0, (m, i) => i.sortOrder > m ? i.sortOrder : m) + 1;
     await runWithProgress(
       context,
-      () => ref.read(bookRepositoryProvider).addItems(babyId, page.id, candidates.where((c) => selected.contains(c.refId)).toList(), start),
+      () => ref
+          .read(bookRepositoryProvider)
+          .addItems(babyId, page.id, candidates.where((c) => selected.contains(c.refId)).toList(), start),
       success: '${selected.length} içerik eklendi',
     );
     ref.invalidate(bookProjectProvider(babyId));
@@ -148,7 +158,12 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Kitaptaki açıklama'),
-        content: TextField(controller: ctrl, maxLength: 500, maxLines: 3, decoration: const InputDecoration(hintText: 'Boş bırakılırsa fotoğrafın kendi açıklaması kullanılır')),
+        content: TextField(
+          controller: ctrl,
+          maxLength: 500,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: 'Boş bırakılırsa fotoğrafın kendi açıklaması kullanılır'),
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
           FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text('Kaydet')),
@@ -169,7 +184,9 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
     if (page == null || !source.hasValue) {
       return Scaffold(
         appBar: AppBar(),
-        body: source.hasError ? ErrorView(error: source.error!, onRetry: () => ref.invalidate(bookSourceProvider(baby.id))) : const LoadingView(),
+        body: source.hasError
+            ? ErrorView(error: source.error!, onRetry: () => ref.invalidate(bookSourceProvider(baby.id)))
+            : const LoadingView(),
       );
     }
     if (!_initialised) {
@@ -188,9 +205,7 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(page.title),
-        actions: [
-          if (_dirtyText) TextButton(onPressed: () => _saveText(page, baby.id), child: const Text('Kaydet')),
-        ],
+        actions: [if (_dirtyText) TextButton(onPressed: () => _saveText(page, baby.id), child: const Text('Kaydet'))],
       ),
       floatingActionButton: page.type.holdsContent
           ? FloatingActionButton.extended(
@@ -227,13 +242,10 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
                 if (page.type == BookPageType.month)
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      () {
-                        final (from, to) = baby.firstYear.monthRange(page.monthIndex!);
-                        return '${Dates.long(from)} – ${Dates.long(to)} · otomatik özet PDF\'e eklenir';
-                      }(),
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    child: Text(() {
+                      final (from, to) = baby.firstYear.monthRange(page.monthIndex!);
+                      return '${Dates.long(from)} – ${Dates.long(to)} · otomatik özet PDF\'e eklenir';
+                    }(), style: theme.textTheme.bodySmall),
                   ),
               ],
             ),
@@ -242,7 +254,10 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
           if (items.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
-              child: Text('Bu bölümde içerik yok. "İçerik ekle" ile arşivden seçebilirsiniz.', textAlign: TextAlign.center),
+              child: Text(
+                'Bu bölümde içerik yok. "İçerik ekle" ile arşivden seçebilirsiniz.',
+                textAlign: TextAlign.center,
+              ),
             ),
           ReorderableListView(
             shrinkWrap: true,
@@ -264,7 +279,11 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
                       opacity: item.isHidden ? 0.45 : 1,
                       child: ListTile(
                         leading: BookItemLeading(source: src, type: item.type, refId: item.refId),
-                        title: Text(item.caption?.isNotEmpty ?? false ? item.caption! : info.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(
+                          item.caption?.isNotEmpty ?? false ? item.caption! : info.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         subtitle: Text(item.isHidden ? 'Kitapta gösterilmiyor' : info.subtitle),
                         onTap: item.type == BookItemType.media ? () => _editCaption(baby.id, item, items) : null,
                         trailing: Row(
@@ -272,8 +291,12 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
                           children: [
                             IconButton(
                               tooltip: item.isHidden ? 'Kitaba ekle' : 'Kitaptan çıkar',
-                              icon: Icon(item.isHidden ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded),
-                              onPressed: () => _saveItems(baby.id, [for (final x in items) x.id == item.id ? x.copyWith(isHidden: !x.isHidden) : x]),
+                              icon: Icon(
+                                item.isHidden ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+                              ),
+                              onPressed: () => _saveItems(baby.id, [
+                                for (final x in items) x.id == item.id ? x.copyWith(isHidden: !x.isHidden) : x,
+                              ]),
                             ),
                             ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_handle_rounded)),
                           ],
@@ -290,7 +313,13 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
               child: TextButton.icon(
                 style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
                 onPressed: () async {
-                  final ok = await confirm(context, title: 'Sayfa silinsin mi?', message: 'Yalnızca kitaptaki sayfa silinir, anılar arşivde kalır.', confirmLabel: 'Sil', destructive: true);
+                  final ok = await confirm(
+                    context,
+                    title: 'Sayfa silinsin mi?',
+                    message: 'Yalnızca kitaptaki sayfa silinir, anılar arşivde kalır.',
+                    confirmLabel: 'Sil',
+                    destructive: true,
+                  );
                   if (!ok || !context.mounted) return;
                   await runWithProgress(context, () => ref.read(bookRepositoryProvider).deletePage(page.id));
                   ref.invalidate(bookProjectProvider(baby.id));

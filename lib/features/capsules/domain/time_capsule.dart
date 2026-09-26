@@ -16,8 +16,7 @@ enum CapsuleOccasion {
   static CapsuleOccasion fromKey(String? k) =>
       values.firstWhere((o) => o.key == k, orElse: () => CapsuleOccasion.custom);
 
-  DateTime? openDateFor(DateTime birthDate) =>
-      years == null ? null : Dates.addYears(birthDate, years!);
+  DateTime? openDateFor(DateTime birthDate) => years == null ? null : Dates.addYears(birthDate, years!);
 }
 
 class TimeCapsule {

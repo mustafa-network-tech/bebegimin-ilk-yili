@@ -38,12 +38,15 @@ class FamilyRepository {
     required bool isAdmin,
     required Set<AppPermission> permissions,
   }) async {
-    await _client.from('family_members').update({
-      'relation': relation.key,
-      'relation_label': (relationLabel?.trim().isEmpty ?? true) ? null : relationLabel!.trim(),
-      'is_admin': isAdmin,
-      'permissions': permissions.map((p) => p.key).toList(),
-    }).eq('id', memberId);
+    await _client
+        .from('family_members')
+        .update({
+          'relation': relation.key,
+          'relation_label': (relationLabel?.trim().isEmpty ?? true) ? null : relationLabel!.trim(),
+          'is_admin': isAdmin,
+          'permissions': permissions.map((p) => p.key).toList(),
+        })
+        .eq('id', memberId);
   }
 
   Future<void> removeMember(String memberId) => _client.from('family_members').delete().eq('id', memberId);
@@ -105,14 +108,17 @@ class FamilyRepository {
     String? relationLabel,
     required Set<AppPermission> permissions,
     bool isAdmin = false,
-  }) => _client.rpc('add_member_from_sibling', params: {
-    'p_target_baby_id': babyId,
-    'p_user_id': userId,
-    'p_relation': relation.key,
-    'p_relation_label': relationLabel,
-    'p_permissions': permissions.map((p) => p.key).toList(),
-    'p_is_admin': isAdmin,
-  });
+  }) => _client.rpc(
+    'add_member_from_sibling',
+    params: {
+      'p_target_baby_id': babyId,
+      'p_user_id': userId,
+      'p_relation': relation.key,
+      'p_relation_label': relationLabel,
+      'p_permissions': permissions.map((p) => p.key).toList(),
+      'p_is_admin': isAdmin,
+    },
+  );
 
   Future<List<ActivityEntry>> activity(String babyId) async {
     final rows = await _client

@@ -32,13 +32,17 @@ class TimelineState {
   final bool hasMore;
   final bool loadingMore;
 
-  TimelineState copyWith({List<TimelineEntry>? entries, Map<String, List<MediaItem>>? media, bool? hasMore, bool? loadingMore}) =>
-      TimelineState(
-        entries: entries ?? this.entries,
-        media: media ?? this.media,
-        hasMore: hasMore ?? this.hasMore,
-        loadingMore: loadingMore ?? this.loadingMore,
-      );
+  TimelineState copyWith({
+    List<TimelineEntry>? entries,
+    Map<String, List<MediaItem>>? media,
+    bool? hasMore,
+    bool? loadingMore,
+  }) => TimelineState(
+    entries: entries ?? this.entries,
+    media: media ?? this.media,
+    hasMore: hasMore ?? this.hasMore,
+    loadingMore: loadingMore ?? this.loadingMore,
+  );
 }
 
 final timelineProvider = AsyncNotifierProvider.autoDispose.family<TimelineController, TimelineState, TimelineKey>(
@@ -63,11 +67,13 @@ class TimelineController extends AsyncNotifier<TimelineState> {
 
   Future<Map<String, List<MediaItem>>> _mediaFor(List<TimelineEntry> entries) async {
     try {
-      final media = await ref.read(mediaRepositoryProvider).forParents(
-        memoryIds: entries.where((e) => e.type == EntryType.memory).map((e) => e.id),
-        milestoneIds: entries.where((e) => e.type == EntryType.milestone).map((e) => e.id),
-        letterIds: entries.where((e) => e.type == EntryType.letter).map((e) => e.id),
-      );
+      final media = await ref
+          .read(mediaRepositoryProvider)
+          .forParents(
+            memoryIds: entries.where((e) => e.type == EntryType.memory).map((e) => e.id),
+            milestoneIds: entries.where((e) => e.type == EntryType.milestone).map((e) => e.id),
+            letterIds: entries.where((e) => e.type == EntryType.letter).map((e) => e.id),
+          );
       final map = <String, List<MediaItem>>{};
       for (final m in media) {
         final parent = m.memoryId ?? m.milestoneId ?? m.letterId;
@@ -84,18 +90,18 @@ class TimelineController extends AsyncNotifier<TimelineState> {
     if (current == null || !current.hasMore || current.loadingMore) return;
     state = AsyncData(current.copyWith(loadingMore: true));
     try {
-      final more = await ref.read(timelineRepositoryProvider).page(
-        key.babyId,
-        offset: current.entries.length,
-        query: key.query,
-      );
+      final more = await ref
+          .read(timelineRepositoryProvider)
+          .page(key.babyId, offset: current.entries.length, query: key.query);
       final media = await _mediaFor(more);
-      state = AsyncData(current.copyWith(
-        entries: [...current.entries, ...more],
-        media: {...current.media, ...media},
-        hasMore: more.length == TimelineRepository.pageSize,
-        loadingMore: false,
-      ));
+      state = AsyncData(
+        current.copyWith(
+          entries: [...current.entries, ...more],
+          media: {...current.media, ...media},
+          hasMore: more.length == TimelineRepository.pageSize,
+          loadingMore: false,
+        ),
+      );
     } catch (e) {
       state = AsyncData(current.copyWith(loadingMore: false));
       rethrow;
@@ -124,7 +130,9 @@ final commentsProvider = FutureProvider.autoDispose.family<List<Comment>, (Targe
 });
 
 /// The user's favourites for a baby (ids of memories / media / milestones / letters).
-final favoritesProvider = AsyncNotifierProvider.family<FavoritesController, Set<String>, String>(FavoritesController.new);
+final favoritesProvider = AsyncNotifierProvider.family<FavoritesController, Set<String>, String>(
+  FavoritesController.new,
+);
 
 class FavoritesController extends AsyncNotifier<Set<String>> {
   FavoritesController(this.babyId);

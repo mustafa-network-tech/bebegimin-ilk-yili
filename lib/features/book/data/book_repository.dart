@@ -10,9 +10,7 @@ import '../../../core/supabase_providers.dart';
 import '../domain/book_composer.dart';
 import '../domain/book_models.dart';
 
-final bookRepositoryProvider = Provider<BookRepository>(
-  (ref) => BookRepository(ref.watch(supabaseProvider)),
-);
+final bookRepositoryProvider = Provider<BookRepository>((ref) => BookRepository(ref.watch(supabaseProvider)));
 
 class BookRepository {
   BookRepository(this._client);
@@ -60,23 +58,30 @@ class BookRepository {
     return _reload(projectId);
   }
 
-  Future<void> _insertPlanned(String babyId, String projectId, List<PlannedPage> pages, {required int startOrder}) async {
+  Future<void> _insertPlanned(
+    String babyId,
+    String projectId,
+    List<PlannedPage> pages, {
+    required int startOrder,
+  }) async {
     final pageRows = <Map<String, dynamic>>[];
     final itemRows = <Map<String, dynamic>>[];
     var order = startOrder;
     for (final p in pages) {
       final pageId = _uuid.v4();
-      pageRows.add(BookPage(
-        id: pageId,
-        projectId: projectId,
-        type: p.type,
-        monthIndex: p.monthIndex,
-        title: p.title,
-        body: null,
-        sortOrder: order++,
-        isHidden: false,
-        items: const [],
-      ).toRow(babyId));
+      pageRows.add(
+        BookPage(
+          id: pageId,
+          projectId: projectId,
+          type: p.type,
+          monthIndex: p.monthIndex,
+          title: p.title,
+          body: null,
+          sortOrder: order++,
+          isHidden: false,
+          items: const [],
+        ).toRow(babyId),
+      );
       for (var i = 0; i < p.items.length; i++) {
         itemRows.add(_itemRow(babyId, pageId, p.items[i], i));
       }
@@ -130,13 +135,16 @@ class BookRepository {
     String? backCoverText,
     bool clearSubtitle = false,
   }) async {
-    await _client.from('book_projects').update({
-      'title': ?title,
-      if (subtitle != null || clearSubtitle) 'subtitle': subtitle,
-      if (format != null) 'format': format.key,
-      'cover_media_id': ?coverMediaId,
-      'back_cover_text': ?backCoverText,
-    }).eq('id', id);
+    await _client
+        .from('book_projects')
+        .update({
+          'title': ?title,
+          if (subtitle != null || clearSubtitle) 'subtitle': subtitle,
+          if (format != null) 'format': format.key,
+          'cover_media_id': ?coverMediaId,
+          'back_cover_text': ?backCoverText,
+        })
+        .eq('id', id);
   }
 
   Future<void> savePages(String babyId, List<BookPage> pages) async {
@@ -191,20 +199,26 @@ class BookRepository {
 
   /// Uploads a generated PDF to the private `books` bucket and registers a
   /// new version (atomic version bump on the server).
-  Future<BookExport> publish(BookProject project, File pdf, {required int pageCount, required BookQuality quality}) async {
+  Future<BookExport> publish(
+    BookProject project,
+    File pdf, {
+    required int pageCount,
+    required BookQuality quality,
+  }) async {
     final path = '${project.babyId}/${project.id}/ilk-yilim-${DateTime.now().millisecondsSinceEpoch}.pdf';
-    await _client.storage.from(Buckets.books).upload(
-      path,
-      pdf,
-      fileOptions: const FileOptions(contentType: 'application/pdf'),
+    await _client.storage
+        .from(Buckets.books)
+        .upload(path, pdf, fileOptions: const FileOptions(contentType: 'application/pdf'));
+    final row = await _client.rpc(
+      'register_book_export',
+      params: {
+        'p_project_id': project.id,
+        'p_storage_path': path,
+        'p_page_count': pageCount,
+        'p_size_bytes': await pdf.length(),
+        'p_quality': quality.key,
+      },
     );
-    final row = await _client.rpc('register_book_export', params: {
-      'p_project_id': project.id,
-      'p_storage_path': path,
-      'p_page_count': pageCount,
-      'p_size_bytes': await pdf.length(),
-      'p_quality': quality.key,
-    });
     return BookExport.fromJson((row as Map).cast<String, dynamic>());
   }
 

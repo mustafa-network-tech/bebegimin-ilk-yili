@@ -108,7 +108,11 @@ class StartChoiceScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              CircleAvatar(radius: 26, backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.14), child: Icon(icon, color: theme.colorScheme.primary)),
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.14),
+                child: Icon(icon, color: theme.colorScheme.primary),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -131,11 +135,19 @@ class StartChoiceScreen extends ConsumerWidget {
       title: 'Hadi başlayalım',
       subtitle: 'Bebeğinizin dijital aile arşivi tamamen özeldir; yalnızca davet ettiğiniz kişiler görebilir.',
       children: [
-        option(Icons.child_care_rounded, 'Bebek profili oluştur', 'Yeni bir arşiv başlatın, aile üyelerinizi davet edin.',
-            () => context.push('/baby/new')),
+        option(
+          Icons.child_care_rounded,
+          'Bebek profili oluştur',
+          'Yeni bir arşiv başlatın, aile üyelerinizi davet edin.',
+          () => context.push('/baby/new'),
+        ),
         const SizedBox(height: 12),
-        option(Icons.vpn_key_outlined, 'Davet koduyla katıl', 'Bir aile üyeniz size kod veya bağlantı gönderdiyse.',
-            () => context.push('/join')),
+        option(
+          Icons.vpn_key_outlined,
+          'Davet koduyla katıl',
+          'Bir aile üyeniz size kod veya bağlantı gönderdiyse.',
+          () => context.push('/join'),
+        ),
         const SizedBox(height: 24),
         TextButton(onPressed: () => ref.read(authRepositoryProvider).signOut(), child: const Text('Çıkış yap')),
       ],
@@ -240,8 +252,10 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${p.inviterName} sizi ${p.babyFirstName} için aileye davet ediyor.',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    '${p.inviterName} sizi ${p.babyFirstName} için aileye davet ediyor.',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text('Rolünüz: ${relationText(p.relation, p.relationLabel)}'),
                   Text('Son geçerlilik: ${Dates.long(p.expiresAt.toLocal())}'),

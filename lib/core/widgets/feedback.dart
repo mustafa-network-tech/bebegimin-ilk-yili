@@ -8,16 +8,10 @@ void showSnack(BuildContext context, String message, {bool error = false}) {
   final scheme = Theme.of(context).colorScheme;
   messenger
     ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: error ? scheme.error : null,
-      ),
-    );
+    ..showSnackBar(SnackBar(content: Text(message), backgroundColor: error ? scheme.error : null));
 }
 
-void showError(BuildContext context, Object error) =>
-    showSnack(context, AppException.from(error).message, error: true);
+void showError(BuildContext context, Object error) => showSnack(context, AppException.from(error).message, error: true);
 
 Future<bool> confirm(
   BuildContext context, {
@@ -35,7 +29,9 @@ Future<bool> confirm(
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
         FilledButton(
-          style: destructive ? FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError) : null,
+          style: destructive
+              ? FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError)
+              : null,
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(confirmLabel),
         ),

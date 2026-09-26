@@ -10,7 +10,11 @@ import '../../../app/env.dart';
 import '../../../core/supabase_providers.dart';
 import 'notification_repository.dart';
 
-final pushServiceProvider = Provider<PushService>((ref) => PushService(ref));
+final pushServiceProvider = Provider<PushService>((ref) {
+  final service = PushService(ref);
+  ref.onDispose(service.dispose);
+  return service;
+});
 
 /// Optional Firebase Cloud Messaging integration.
 ///
@@ -71,6 +75,11 @@ class PushService {
     } catch (e) {
       debugPrint('Push disabled: $e');
     }
+  }
+
+  void dispose() {
+    _foreground.close();
+    openedRoute.dispose();
   }
 
   Future<void> _register(String token) async {

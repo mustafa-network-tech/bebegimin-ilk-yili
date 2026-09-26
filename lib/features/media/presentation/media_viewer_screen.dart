@@ -65,11 +65,19 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: captionCtrl, decoration: const InputDecoration(labelText: 'Açıklama'), maxLines: 3, maxLength: 2000),
+                TextField(
+                  controller: captionCtrl,
+                  decoration: const InputDecoration(labelText: 'Açıklama'),
+                  maxLines: 3,
+                  maxLength: 2000,
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: tagsCtrl,
-                  decoration: const InputDecoration(labelText: 'Etiketler', helperText: 'Virgülle ayırın: deniz, tatil'),
+                  decoration: const InputDecoration(
+                    labelText: 'Etiketler',
+                    helperText: 'Virgülle ayırın: deniz, tatil',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ListTile(
@@ -101,7 +109,9 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
     final tags = tagsCtrl.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
     final updated = await runWithProgress(
       context,
-      () => ref.read(mediaRepositoryProvider).update(_current.id, caption: captionCtrl.text.trim(), tags: tags, takenOn: date),
+      () => ref
+          .read(mediaRepositoryProvider)
+          .update(_current.id, caption: captionCtrl.text.trim(), tags: tags, takenOn: date),
       success: 'Kaydedildi',
     );
     if (updated != null) {
@@ -124,8 +134,13 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
   }
 
   Future<void> _delete() async {
-    final ok = await confirm(context,
-        title: 'Silinsin mi?', message: 'Bu ${_current.isVideo ? 'video' : 'fotoğraf'} kalıcı olarak silinecek.', confirmLabel: 'Sil', destructive: true);
+    final ok = await confirm(
+      context,
+      title: 'Silinsin mi?',
+      message: 'Bu ${_current.isVideo ? 'video' : 'fotoğraf'} kalıcı olarak silinecek.',
+      confirmLabel: 'Sil',
+      destructive: true,
+    );
     if (!ok || !mounted) return;
     final m = _current;
     final done = await runWithProgress(context, () async {
@@ -162,7 +177,9 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
   Widget build(BuildContext context) {
     final baby = ref.watch(activeBabyProvider);
     final access = ref.watch(activeAccessProvider);
-    final favorites = baby == null ? const <String>{} : (ref.watch(favoritesProvider(baby.id)).value ?? const <String>{});
+    final favorites = baby == null
+        ? const <String>{}
+        : (ref.watch(favoritesProvider(baby.id)).value ?? const <String>{});
     final m = _current;
     final canEdit = access.canEditMedia(m.uploaderId);
     final isFav = favorites.contains(m.id);
@@ -170,7 +187,9 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
     final age = baby?.ageOn(m.takenOn);
 
     return Theme(
-      data: ThemeData.dark(useMaterial3: true).copyWith(textTheme: Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white)),
+      data: ThemeData.dark(useMaterial3: true).copyWith(
+        textTheme: Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+      ),
       child: Scaffold(
         backgroundColor: Colors.black,
         extendBodyBehindAppBar: true,
@@ -184,9 +203,12 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
                     IconButton(
                       tooltip: 'Favori',
                       icon: Icon(isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded),
-                      onPressed: () => ref.read(favoritesProvider(baby.id).notifier).toggle(TargetKind.media, m.id).catchError((Object e) {
-                        if (context.mounted) showError(context, e);
-                      }),
+                      onPressed: () => ref
+                          .read(favoritesProvider(baby.id).notifier)
+                          .toggle(TargetKind.media, m.id)
+                          .catchError((Object e) {
+                            if (context.mounted) showError(context, e);
+                          }),
                     ),
                   IconButton(tooltip: 'Paylaş / kaydet', icon: const Icon(Icons.ios_share_rounded), onPressed: _share),
                   if (canEdit)
@@ -199,7 +221,10 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
                       },
                       itemBuilder: (_) => [
                         const PopupMenuItem(value: 'edit', child: Text('Açıklama / etiket / tarih')),
-                        PopupMenuItem(value: 'book', child: Text(m.includeInBook ? 'Kitaptan çıkar' : 'Kitaba dahil et')),
+                        PopupMenuItem(
+                          value: 'book',
+                          child: Text(m.includeInBook ? 'Kitaptan çıkar' : 'Kitaba dahil et'),
+                        ),
                         const PopupMenuItem(value: 'delete', child: Text('Sil')),
                       ],
                     ),
@@ -237,17 +262,28 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
                   child: Container(
                     padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + MediaQuery.paddingOf(context).bottom),
                     decoration: const BoxDecoration(
-                      gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black87]),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Colors.black87],
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (m.caption?.isNotEmpty ?? false)
-                          Text(m.caption!, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                          Text(
+                            m.caption!,
+                            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
                         const SizedBox(height: 4),
                         Text(
-                          [Dates.long(m.takenOn), if (age != null) age.label, if (uploader.isNotEmpty) uploader].join(' · '),
+                          [
+                            Dates.long(m.takenOn),
+                            if (age != null) age.label,
+                            if (uploader.isNotEmpty) uploader,
+                          ].join(' · '),
                           style: const TextStyle(color: Colors.white70, fontSize: 12.5),
                         ),
                         if (m.tags.isNotEmpty || !m.includeInBook) ...[
@@ -257,9 +293,17 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
                             runSpacing: 4,
                             children: [
                               for (final t in m.tags)
-                                Chip(label: Text('#$t'), visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+                                Chip(
+                                  label: Text('#$t'),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                ),
                               if (!m.includeInBook)
-                                const Chip(label: Text('Kitap dışı'), visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+                                const Chip(
+                                  label: Text('Kitap dışı'),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                ),
                             ],
                           ),
                         ],
@@ -319,7 +363,9 @@ class _VideoViewState extends ConsumerState<_VideoView> {
   Widget build(BuildContext context) {
     final c = _controller;
     if (_error != null) {
-      return const Center(child: Text('Video oynatılamadı. Bağlantınızı kontrol edin.', style: TextStyle(color: Colors.white70)));
+      return const Center(
+        child: Text('Video oynatılamadı. Bağlantınızı kontrol edin.', style: TextStyle(color: Colors.white70)),
+      );
     }
     if (c == null) return const Center(child: CircularProgressIndicator());
     return Center(

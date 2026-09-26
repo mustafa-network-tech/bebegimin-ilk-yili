@@ -67,7 +67,11 @@ class TimeField extends StatelessWidget {
           prefixIcon: const Icon(Icons.schedule_rounded),
           suffixIcon: value == null
               ? null
-              : IconButton(tooltip: 'Saati kaldır', icon: const Icon(Icons.close_rounded), onPressed: () => onChanged(null)),
+              : IconButton(
+                  tooltip: 'Saati kaldır',
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => onChanged(null),
+                ),
         ),
         child: Text(value == null ? 'İsteğe bağlı' : value!.format(context)),
       ),
