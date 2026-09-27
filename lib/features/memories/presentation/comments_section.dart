@@ -60,7 +60,8 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final comments = ref.watch(commentsProvider((widget.kind, widget.targetId)));
+    final commentsKey = (widget.babyId, widget.kind, widget.targetId);
+    final comments = ref.watch(commentsProvider(commentsKey));
     final access = ref.watch(accessProvider(widget.babyId));
     final members = ref.watch(membersProvider(widget.babyId)).value ?? const [];
     final theme = Theme.of(context);
@@ -71,7 +72,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
         const SizedBox(height: 10),
         AsyncValueView<List<Comment>>(
           value: comments,
-          onRetry: () => ref.invalidate(commentsProvider((widget.kind, widget.targetId))),
+          onRetry: () => ref.invalidate(commentsProvider(commentsKey)),
           data: (list) => Column(
             children: [
               if (list.isEmpty)
@@ -105,7 +106,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                               onPressed: () async {
                                 await runWithProgress(
                                   context,
-                                  () => ref.read(memoryRepositoryProvider).deleteComment(c.id),
+                                  () => ref.read(memoryRepositoryProvider).deleteComment(widget.babyId, c.id),
                                 );
                                 ref.read(contentRevisionProvider.notifier).bump();
                               },

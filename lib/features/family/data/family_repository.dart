@@ -22,7 +22,11 @@ class FamilyRepository {
   static const _memberSelect = '*, profiles(display_name, avatar_path)';
 
   Future<List<FamilyMember>> members(String babyId) => _cache.networkFirst<List<FamilyMember>>(
-    key: 'members.$babyId',
+    key: LocalCache.userBabyKey(
+      userId: _client.auth.currentUser?.id ?? 'signed-out',
+      babyId: babyId,
+      resource: 'members',
+    ),
     fetch: () async {
       final rows = await _client.from('family_members').select(_memberSelect).eq('baby_id', babyId).order('joined_at');
       return rows.map(FamilyMember.fromJson).toList();

@@ -38,7 +38,8 @@ final uploadQueueProvider = NotifierProvider<UploadQueue, List<PendingUpload>>(U
 /// files uploaded, (4) row marked `ready`. Every step is idempotent, so an
 /// interrupted upload simply resumes from the start of the failed step.
 class UploadQueue extends Notifier<List<PendingUpload>> {
-  static const _prefsKey = 'upload_queue.v1';
+  static const _legacyPrefsKey = 'upload_queue.v1';
+  static const _prefsPrefix = 'upload_queue.v2.';
   static const maxAttempts = 6;
   bool _running = false;
   Directory? _dir;
@@ -47,8 +48,15 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
 
   @override
   List<PendingUpload> build() {
+    final userId = ref.watch(currentUserIdProvider);
+    if (userId == null) return const [];
     final prefs = ref.read(sharedPreferencesProvider);
-    final raw = prefs.getString(_prefsKey);
+    final legacyRaw = prefs.getString(_legacyPrefsKey);
+    if (legacyRaw != null) {
+      unawaited(prefs.remove(_legacyPrefsKey));
+      unawaited(_purgeLegacyQueue(legacyRaw));
+    }
+    final raw = prefs.getString('$_prefsPrefix$userId');
     var items = <PendingUpload>[];
     if (raw != null) {
       try {
@@ -62,15 +70,17 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
     ref.listen(isOnlineProvider, (_, next) {
       if (next.value == true) unawaited(process());
     });
-    ref.listen(currentUserIdProvider, (prev, next) {
-      if (next != null) unawaited(process());
-    });
     Future.microtask(process);
     return items;
   }
 
-  Future<void> _persist() =>
-      ref.read(sharedPreferencesProvider).setString(_prefsKey, jsonEncode(state.map((e) => e.toJson()).toList()));
+  Future<void> _persist() async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    await ref
+        .read(sharedPreferencesProvider)
+        .setString('$_prefsPrefix$userId', jsonEncode(state.map((e) => e.toJson()).toList()));
+  }
 
   Future<Directory> _workDir() async {
     if (_dir != null) return _dir!;
@@ -92,17 +102,21 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
     String? letterId,
     List<String> tags = const [],
   }) async {
-    final dir = await _workDir();
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) throw StateError('Upload requires an authenticated user.');
+    final root = await _workDir();
     final added = <PendingUpload>[];
     for (final f in files) {
       final id = const Uuid().v4();
       final ext = f.path.contains('.')
           ? f.path.split('.').last.toLowerCase()
           : (f.kind == MediaKind.photo ? 'jpg' : 'mp4');
-      final local = await File(f.path).copy('${dir.path}/$id.src.$ext');
+      final dir = await Directory('${root.path}/$userId/$babyId/$id').create(recursive: true);
+      final local = await File(f.path).copy('${dir.path}/source.$ext');
       added.add(
         PendingUpload(
           id: id,
+          userId: userId,
           babyId: babyId,
           kind: f.kind,
           localPath: local.path,
@@ -122,10 +136,12 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
     unawaited(process());
   }
 
-  Future<void> retryFailed() async {
+  Future<void> retryFailed({String? babyId}) async {
     state = [
       for (final u in state)
-        u.state == UploadState.failed ? u.copyWith(state: UploadState.queued, attempts: 0, clearError: true) : u,
+        u.state == UploadState.failed && (babyId == null || u.babyId == babyId)
+            ? u.copyWith(state: UploadState.queued, attempts: 0, clearError: true)
+            : u,
     ];
     await _persist();
     await process();
@@ -139,8 +155,21 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
     await _cleanupLocal(item);
     if (item.rowCreated) {
       try {
-        await _client.from('media').delete().eq('id', item.id);
+        await _client.from('media').delete().eq('baby_id', item.babyId).eq('id', item.id);
       } catch (_) {}
+    }
+  }
+
+  Future<void> clearAll() async {
+    final userId = ref.read(currentUserIdProvider);
+    final items = List<PendingUpload>.of(state);
+    state = const [];
+    if (userId != null) {
+      await ref.read(sharedPreferencesProvider).remove('$_prefsPrefix$userId');
+    }
+    await ref.read(sharedPreferencesProvider).remove(_legacyPrefsKey);
+    for (final item in items) {
+      await _cleanupLocal(item);
     }
   }
 
@@ -176,7 +205,8 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
       File? thumb;
 
       if (u.kind == MediaKind.photo) {
-        final processed = await ImageProcessing.processPhoto(u.localPath, dir.path, u.id);
+        final processedDir = await Directory('${dir.path}/${u.localNamespace}').create(recursive: true);
+        final processed = await ImageProcessing.processPhoto(u.localPath, processedDir.path, u.id);
         original = processed.original;
         thumb = processed.thumb;
         width = processed.width;
@@ -227,7 +257,7 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
           fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true, cacheControl: '31536000'),
         );
       }
-      await _client.from('media').update({'status': 'ready'}).eq('id', u.id);
+      await _client.from('media').update({'status': 'ready'}).eq('baby_id', u.babyId).eq('id', u.id);
 
       state = state.where((x) => x.id != u.id).toList();
       await _persist();
@@ -259,11 +289,37 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
 
   Future<void> _cleanupLocal(PendingUpload u) async {
     final dir = await _workDir();
-    for (final path in [u.localPath, '${dir.path}/${u.id}_original.jpg', '${dir.path}/${u.id}_thumb.jpg']) {
-      try {
-        final f = File(path);
-        if (await f.exists()) await f.delete();
-      } catch (_) {}
-    }
+    final itemDir = Directory('${dir.path}/${u.localNamespace}');
+    try {
+      if (await itemDir.exists()) await itemDir.delete(recursive: true);
+    } catch (_) {}
+  }
+
+  Future<void> _purgeLegacyQueue(String raw) async {
+    try {
+      final root = await _workDir();
+      final rootPath = root.absolute.path;
+      final rows = (jsonDecode(raw) as List).whereType<Map>().map((row) => row.cast<String, dynamic>());
+      for (final row in rows) {
+        final id = row['id'] as String?;
+        final localPath = row['local_path'] as String?;
+        if (id == null) continue;
+        if (localPath != null) {
+          final source = File(localPath);
+          final name = source.path.split(Platform.pathSeparator).last;
+          if (source.parent.absolute.path == rootPath && name.startsWith('$id.src.')) {
+            try {
+              if (await source.exists()) await source.delete();
+            } catch (_) {}
+          }
+        }
+        for (final path in ['${root.path}/${id}_original.jpg', '${root.path}/${id}_thumb.jpg']) {
+          try {
+            final file = File(path);
+            if (await file.exists()) await file.delete();
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
   }
 }

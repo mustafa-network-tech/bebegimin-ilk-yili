@@ -1,3 +1,5 @@
+import '../../../core/content/content_route.dart';
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -48,11 +50,11 @@ class AppNotification {
         final date = data['date'] as String?;
         return date == null ? '/timeline' : '/calendar?date=$date';
     }
-    if (id == null) return null;
+    if (id == null || babyId == null) return null;
     return switch (target) {
-      'memories' => '/memory/$id',
-      'milestones' => '/milestone/$id',
-      'letters' => '/letter/$id',
+      'memories' => contentRoute(ContentRouteKind.memory, babyId!, id),
+      'milestones' => contentRoute(ContentRouteKind.milestone, babyId!, id),
+      'letters' => contentRoute(ContentRouteKind.letter, babyId!, id),
       _ => null,
     };
   }

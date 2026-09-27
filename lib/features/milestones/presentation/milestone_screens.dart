@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/feedback.dart';
@@ -111,7 +112,9 @@ class MilestonesScreen extends ConsumerWidget {
                           '${Dates.long(s.milestone!.achievedOn)} · ${baby.ageOn(s.milestone!.achievedOn)?.label ?? ''}',
                         ),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.push('/milestone/${s.milestone!.id}'),
+                        onTap: () => context.push(
+                          contentRoute(ContentRouteKind.milestone, s.milestone!.babyId, s.milestone!.id),
+                        ),
                       ),
                     ),
                   ),
@@ -183,8 +186,9 @@ class MilestonesScreen extends ConsumerWidget {
 }
 
 class MilestoneFormScreen extends ConsumerStatefulWidget {
-  const MilestoneFormScreen({super.key, this.typeId, this.milestoneId});
+  const MilestoneFormScreen({super.key, this.babyId, this.typeId, this.milestoneId});
 
+  final String? babyId;
   final String? typeId;
   final String? milestoneId;
 
@@ -224,7 +228,7 @@ class _MilestoneFormScreenState extends ConsumerState<MilestoneFormScreen> {
         includeInBook: _include,
       );
       final repo = ref.read(milestoneRepositoryProvider);
-      final m = _isEdit ? await repo.update(widget.milestoneId!, draft) : await repo.create(draft);
+      final m = _isEdit ? await repo.update(babyId, widget.milestoneId!, draft) : await repo.create(draft);
       if (_media.isNotEmpty) {
         await ref
             .read(uploadQueueProvider.notifier)
@@ -233,7 +237,7 @@ class _MilestoneFormScreenState extends ConsumerState<MilestoneFormScreen> {
       ref.read(contentRevisionProvider.notifier).bump();
       if (!mounted) return;
       showSnack(context, 'Kaydedildi ✨');
-      _isEdit ? context.pop() : context.pushReplacement('/milestone/${m.id}');
+      _isEdit ? context.pop() : context.pushReplacement(contentRoute(ContentRouteKind.milestone, babyId, m.id));
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -243,20 +247,40 @@ class _MilestoneFormScreenState extends ConsumerState<MilestoneFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = widget.babyId == null ? ref.watch(activeBabyProvider) : ref.watch(babyByIdProvider(widget.babyId!));
+    if (baby == null) {
+      final routeBabyUnavailable = widget.babyId != null && ref.watch(babiesProvider).hasValue;
+      return Scaffold(
+        appBar: routeBabyUnavailable ? AppBar() : null,
+        body: routeBabyUnavailable
+            ? const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Bebek profili bulunamadı',
+                message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+              )
+            : const LoadingView(),
+      );
+    }
     final slots = ref.watch(milestoneSlotsProvider(baby.id)).value;
     if (slots == null) return Scaffold(appBar: AppBar(), body: const LoadingView());
     if (_isEdit && !_loaded) {
       final slot = slots.where((s) => s.milestone?.id == widget.milestoneId).firstOrNull;
-      if (slot != null) {
-        _loaded = true;
-        _typeId = slot.type.id;
-        _date = slot.milestone!.achievedOn;
-        _time = parseSqlTime(slot.milestone!.achievedTime);
-        _desc.text = slot.milestone!.description ?? '';
-        _include = slot.milestone!.includeInBook;
+      if (slot == null) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: const EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'Kilometre taşı bulunamadı',
+            message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+          ),
+        );
       }
+      _loaded = true;
+      _typeId = slot.type.id;
+      _date = slot.milestone!.achievedOn;
+      _time = parseSqlTime(slot.milestone!.achievedTime);
+      _desc.text = slot.milestone!.description ?? '';
+      _include = slot.milestone!.includeInBook;
     }
     final type = slots.map((s) => s.type).where((t) => t.id == (_typeId ?? widget.typeId)).firstOrNull;
     final access = ref.watch(accessProvider(baby.id));
@@ -337,17 +361,30 @@ class _MilestoneFormScreenState extends ConsumerState<MilestoneFormScreen> {
 }
 
 class MilestoneDetailScreen extends ConsumerWidget {
-  const MilestoneDetailScreen({super.key, required this.milestoneId});
+  const MilestoneDetailScreen({super.key, required this.babyId, required this.milestoneId});
 
+  final String babyId;
   final String milestoneId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
-    final slot = ref.watch(milestoneDetailProvider((baby.id, milestoneId)));
-    final media = ref.watch(parentMediaProvider(('milestone', milestoneId))).value ?? const <MediaItem>[];
-    final access = ref.watch(accessProvider(baby.id));
+    final baby = ref.watch(babyByIdProvider(babyId));
+    if (baby == null) {
+      final routeBabyUnavailable = ref.watch(babiesProvider).hasValue;
+      return Scaffold(
+        appBar: routeBabyUnavailable ? AppBar() : null,
+        body: routeBabyUnavailable
+            ? const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Bebek profili bulunamadı',
+                message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+              )
+            : const LoadingView(),
+      );
+    }
+    final slot = ref.watch(milestoneDetailProvider((babyId, milestoneId)));
+    final media = ref.watch(parentMediaProvider((babyId, 'milestone', milestoneId))).value ?? const <MediaItem>[];
+    final access = ref.watch(accessProvider(babyId));
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -357,7 +394,7 @@ class MilestoneDetailScreen extends ConsumerWidget {
             IconButton(
               tooltip: 'Düzenle',
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () => context.push('/milestone/$milestoneId/edit'),
+              onPressed: () => context.push(contentRoute(ContentRouteKind.milestone, babyId, milestoneId, edit: true)),
             ),
             IconButton(
               tooltip: 'Sil',
@@ -372,7 +409,7 @@ class MilestoneDetailScreen extends ConsumerWidget {
                 );
                 if (!ok || !context.mounted) return;
                 final done = await runWithProgress(context, () async {
-                  await ref.read(milestoneRepositoryProvider).delete(milestoneId, media);
+                  await ref.read(milestoneRepositoryProvider).delete(babyId, milestoneId, media);
                   return true;
                 });
                 if (done == true && context.mounted) {
@@ -411,7 +448,7 @@ class MilestoneDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 MediaCollage(media: media, height: 240),
                 TextButton(
-                  onPressed: () => context.push('/viewer', extra: MediaViewerArgs(media: media)),
+                  onPressed: () => context.push(mediaViewerRoute(babyId), extra: MediaViewerArgs(media: media)),
                   child: const Text('Tüm fotoğrafları gör'),
                 ),
               ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/content/content_route.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/states.dart';
 import '../../babies/application/baby_providers.dart';
@@ -199,7 +200,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                               radius: 10,
                               favorite: favorites.contains(m.id),
                               onTap: () => context.push(
-                                '/viewer',
+                                mediaViewerRoute(baby.id),
                                 extra: MediaViewerArgs(media: state.items, initialIndex: state.items.indexOf(m)),
                               ),
                             );

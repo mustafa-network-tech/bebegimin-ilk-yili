@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../babies/application/baby_providers.dart';
 import '../data/upload_queue.dart';
 import '../domain/pending_upload.dart';
 
@@ -10,7 +11,8 @@ class UploadStatusBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final queue = ref.watch(uploadQueueProvider);
+    final babyId = ref.watch(activeBabyProvider)?.id;
+    final queue = ref.watch(uploadQueueProvider).where((upload) => upload.babyId == babyId).toList();
     if (queue.isEmpty) return const SizedBox.shrink();
     final failed = queue.where((u) => u.state == UploadState.failed).length;
     final active = queue.length - failed;
@@ -18,7 +20,7 @@ class UploadStatusBar extends ConsumerWidget {
     return Material(
       color: failed > 0 ? scheme.errorContainer : scheme.secondaryContainer,
       child: InkWell(
-        onTap: () => _showDetails(context, ref),
+        onTap: () => _showDetails(context, ref, babyId!),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
@@ -39,7 +41,7 @@ class UploadStatusBar extends ConsumerWidget {
               ),
               if (failed > 0)
                 TextButton(
-                  onPressed: () => ref.read(uploadQueueProvider.notifier).retryFailed(),
+                  onPressed: () => ref.read(uploadQueueProvider.notifier).retryFailed(babyId: babyId),
                   child: const Text('Tekrar dene'),
                 ),
             ],
@@ -49,12 +51,12 @@ class UploadStatusBar extends ConsumerWidget {
     );
   }
 
-  void _showDetails(BuildContext context, WidgetRef ref) {
+  void _showDetails(BuildContext context, WidgetRef ref, String babyId) {
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => Consumer(
         builder: (ctx, ref, _) {
-          final queue = ref.watch(uploadQueueProvider);
+          final queue = ref.watch(uploadQueueProvider).where((upload) => upload.babyId == babyId).toList();
           return SafeArea(
             child: ListView(
               shrinkWrap: true,

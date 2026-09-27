@@ -14,8 +14,8 @@ class MemoryRepository {
 
   final SupabaseClient _client;
 
-  Future<Memory?> get(String id) async {
-    final row = await _client.from('memories').select().eq('id', id).maybeSingle();
+  Future<Memory?> get(String babyId, String id) async {
+    final row = await _client.from('memories').select().eq('baby_id', babyId).eq('id', id).maybeSingle();
     return row == null ? null : Memory.fromJson(row);
   }
 
@@ -32,24 +32,29 @@ class MemoryRepository {
     return Memory.fromJson(row);
   }
 
-  Future<Memory> update(String id, MemoryDraft draft) async {
+  Future<Memory> update(String babyId, String id, MemoryDraft draft) async {
     final json = draft.toJson()..remove('baby_id');
-    final row = await _client.from('memories').update(json).eq('id', id).select().single();
+    final row = await _client.from('memories').update(json).eq('baby_id', babyId).eq('id', id).select().single();
     return Memory.fromJson(row);
   }
 
-  Future<void> setIncludeInBook(String id, bool value) =>
-      _client.from('memories').update({'include_in_book': value}).eq('id', id);
+  Future<void> setIncludeInBook(String babyId, String id, bool value) =>
+      _client.from('memories').update({'include_in_book': value}).eq('baby_id', babyId).eq('id', id);
 
   /// Removes the files first (Storage API), then the row (cascades media rows).
-  Future<void> delete(String id, List<MediaItem> media) async {
+  Future<void> delete(String babyId, String id, List<MediaItem> media) async {
     await removeFiles(_client, media);
-    await _client.from('memories').delete().eq('id', id);
+    await _client.from('memories').delete().eq('baby_id', babyId).eq('id', id);
   }
 
   // Comments / family notes ------------------------------------------------------
-  Future<List<Comment>> comments(TargetKind kind, String targetId) async {
-    final rows = await _client.from('comments').select().eq(kind.column, targetId).order('created_at');
+  Future<List<Comment>> comments(String babyId, TargetKind kind, String targetId) async {
+    final rows = await _client
+        .from('comments')
+        .select()
+        .eq('baby_id', babyId)
+        .eq(kind.column, targetId)
+        .order('created_at');
     return rows.map(Comment.fromJson).toList();
   }
 
@@ -60,7 +65,8 @@ class MemoryRepository {
     required String body,
   }) => _client.from('comments').insert({'baby_id': babyId, kind.column: targetId, 'body': body.trim()});
 
-  Future<void> deleteComment(String id) => _client.from('comments').delete().eq('id', id);
+  Future<void> deleteComment(String babyId, String id) =>
+      _client.from('comments').delete().eq('baby_id', babyId).eq('id', id);
 
   // Favorites (per user) ---------------------------------------------------------------
   Future<Set<String>> favoriteIds(String babyId) async {
@@ -80,8 +86,15 @@ class MemoryRepository {
     if (favorite) {
       await _client.from('favorites').insert({'baby_id': babyId, kind.column: targetId});
     } else {
-      await _client.from('favorites').delete().eq(kind.column, targetId);
+      await _client.from('favorites').delete().eq('baby_id', babyId).eq(kind.column, targetId);
     }
+  }
+
+  /// RLS-authorized lookup used only to migrate legacy deep links.
+  /// Both missing and unauthorized records resolve to null.
+  Future<String?> resolveLegacyBabyId(String id) async {
+    final row = await _client.from('memories').select('baby_id').eq('id', id).maybeSingle();
+    return row?['baby_id'] as String?;
   }
 }
 

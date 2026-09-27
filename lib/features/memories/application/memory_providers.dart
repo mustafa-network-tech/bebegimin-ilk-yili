@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../../media/data/media_repository.dart';
 import '../../media/domain/media_item.dart';
@@ -70,6 +71,7 @@ class TimelineController extends AsyncNotifier<TimelineState> {
       final media = await ref
           .read(mediaRepositoryProvider)
           .forParents(
+            babyId: key.babyId,
             memoryIds: entries.where((e) => e.type == EntryType.memory).map((e) => e.id),
             milestoneIds: entries.where((e) => e.type == EntryType.milestone).map((e) => e.id),
             letterIds: entries.where((e) => e.type == EntryType.letter).map((e) => e.id),
@@ -116,17 +118,24 @@ class MemoryDetail {
   final List<MediaItem> media;
 }
 
-final memoryDetailProvider = FutureProvider.autoDispose.family<MemoryDetail?, String>((ref, id) async {
+final memoryDetailProvider = FutureProvider.autoDispose.family<MemoryDetail?, (String babyId, String id)>((
+  ref,
+  key,
+) async {
   ref.watch(contentRevisionProvider);
-  final memory = await ref.watch(memoryRepositoryProvider).get(id);
+  final memory = await ref.watch(memoryRepositoryProvider).get(key.$1, key.$2);
   if (memory == null) return null;
-  final media = await ref.watch(mediaRepositoryProvider).forParents(memoryIds: [id]);
+  if (!matchesBabyContext(routeBabyId: key.$1, modelBabyId: memory.babyId, contentId: key.$2)) return null;
+  final media = await ref.watch(mediaRepositoryProvider).forParents(babyId: key.$1, memoryIds: [key.$2]);
   return MemoryDetail(memory, media);
 });
 
-final commentsProvider = FutureProvider.autoDispose.family<List<Comment>, (TargetKind, String)>((ref, key) {
+final commentsProvider = FutureProvider.autoDispose.family<List<Comment>, (String babyId, TargetKind kind, String id)>((
+  ref,
+  key,
+) {
   ref.watch(contentRevisionProvider);
-  return ref.watch(memoryRepositoryProvider).comments(key.$1, key.$2);
+  return ref.watch(memoryRepositoryProvider).comments(key.$1, key.$2, key.$3);
 });
 
 /// The user's favourites for a baby (ids of memories / media / milestones / letters).

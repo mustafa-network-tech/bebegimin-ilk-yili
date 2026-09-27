@@ -51,7 +51,7 @@ class _StorageImageState extends ConsumerState<StorageImage> {
   Widget build(BuildContext context) {
     final path = widget.path;
     if (path == null) return _Placeholder(icon: widget.placeholderIcon);
-    final cacheKey = SignedUrlCache.cacheKey(widget.bucket, path);
+    final cacheKey = ref.read(signedUrlCacheProvider).cacheKey(widget.bucket, path);
     return FutureBuilder<String>(
       future: _url,
       builder: (context, snap) {

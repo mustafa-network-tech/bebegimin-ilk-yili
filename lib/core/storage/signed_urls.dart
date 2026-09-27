@@ -25,11 +25,14 @@ class SignedUrlCache {
   final _cache = <String, ({String url, DateTime expires})>{};
   final _inFlight = <String, Future<String>>{};
 
-  String _key(String bucket, String path) => '$bucket/$path';
+  String _key(String bucket, String path) => cacheKey(bucket, path);
 
   /// Stable cache key for image caches – survives URL re-signing so photos
   /// seen once stay available offline.
-  static String cacheKey(String bucket, String path) => '$bucket/$path';
+  String cacheKey(String bucket, String path) {
+    final userId = _client.auth.currentUser?.id ?? 'signed-out';
+    return 'user/$userId/$bucket/$path';
+  }
 
   String? peek(String bucket, String path) {
     final hit = _cache[_key(bucket, path)];

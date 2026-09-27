@@ -2,14 +2,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/env.dart';
+import '../../../core/cache/local_cache.dart';
+import '../../../core/storage/signed_urls.dart';
 import '../../../core/supabase_providers.dart';
+import '../../babies/application/baby_providers.dart';
+import '../../media/data/upload_queue.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepository(ref.watch(supabaseProvider)));
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepository(ref.watch(supabaseProvider), () async {
+    await ref.read(uploadQueueProvider.notifier).clearAll();
+    await ref.read(localCacheProvider).clear();
+    ref.read(signedUrlCacheProvider).clear();
+    await ref.read(activeBabyIdProvider.notifier).select(null);
+  }),
+);
 
 class AuthRepository {
-  AuthRepository(this._client);
+  AuthRepository(this._client, this._clearSensitiveState);
 
   final SupabaseClient _client;
+  final Future<void> Function() _clearSensitiveState;
 
   GoTrueClient get _auth => _client.auth;
 
@@ -36,7 +48,10 @@ class AuthRepository {
 
   Future<void> updatePassword(String newPassword) => _auth.updateUser(UserAttributes(password: newPassword));
 
-  Future<void> signOut() => _auth.signOut();
+  Future<void> signOut() async {
+    await _clearSensitiveState();
+    await _auth.signOut();
+  }
 
   /// Deletes the account through the `privacy-actions` Edge Function
   /// (needs the service role, which never ships with the app).
@@ -45,6 +60,7 @@ class AuthRepository {
       'privacy-actions',
       body: {'action': 'delete_account', 'delete_content': deleteMyContent},
     );
+    await _clearSensitiveState();
     await _auth.signOut(scope: SignOutScope.local);
   }
 }

@@ -148,7 +148,11 @@ class BabyRepository {
   }
 
   Future<BabyStats> stats(String babyId) => _cache.networkFirst<BabyStats>(
-    key: 'stats.$babyId',
+    key: LocalCache.userBabyKey(
+      userId: _client.auth.currentUser?.id ?? 'signed-out',
+      babyId: babyId,
+      resource: 'stats',
+    ),
     fetch: () async {
       final res = await _client.rpc('baby_stats', params: {'p_baby_id': babyId});
       return BabyStats.fromJson((res as Map).cast<String, dynamic>());

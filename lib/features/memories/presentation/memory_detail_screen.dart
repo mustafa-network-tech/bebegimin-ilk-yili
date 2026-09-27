@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/feedback.dart';
@@ -19,20 +20,22 @@ import '../domain/comment.dart';
 import 'comments_section.dart';
 
 class MemoryDetailScreen extends ConsumerWidget {
-  const MemoryDetailScreen({super.key, required this.memoryId});
+  const MemoryDetailScreen({super.key, required this.babyId, required this.memoryId});
 
+  final String babyId;
   final String memoryId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    final detail = ref.watch(memoryDetailProvider(memoryId));
+    final baby = ref.watch(babyByIdProvider(babyId));
+    final detailKey = (babyId, memoryId);
+    final detail = ref.watch(memoryDetailProvider(detailKey));
     if (!detail.hasValue) {
       return Scaffold(
         appBar: AppBar(),
         body: AsyncValueView<MemoryDetail?>(
           value: detail,
-          onRetry: () => ref.invalidate(memoryDetailProvider(memoryId)),
+          onRetry: () => ref.invalidate(memoryDetailProvider(detailKey)),
           data: (_) => const SizedBox.shrink(),
         ),
       );
@@ -40,7 +43,7 @@ class MemoryDetailScreen extends ConsumerWidget {
     return Scaffold(
       body: AsyncValueView<MemoryDetail?>(
         value: detail,
-        onRetry: () => ref.invalidate(memoryDetailProvider(memoryId)),
+        onRetry: () => ref.invalidate(memoryDetailProvider(detailKey)),
         data: (d) {
           if (d == null || baby == null) {
             return Scaffold(
@@ -79,7 +82,7 @@ class MemoryDetailScreen extends ConsumerWidget {
             );
             if (!ok || !context.mounted) return;
             final done = await runWithProgress(context, () async {
-              await ref.read(memoryRepositoryProvider).delete(m.id, d.media);
+              await ref.read(memoryRepositoryProvider).delete(babyId, m.id, d.media);
               return true;
             });
             if (done == true && context.mounted) {
@@ -104,7 +107,7 @@ class MemoryDetailScreen extends ConsumerWidget {
                                 radius: 0,
                                 memCacheWidth: 1200,
                                 onTap: () => context.push(
-                                  '/viewer',
+                                  mediaViewerRoute(babyId),
                                   extra: MediaViewerArgs(media: d.media, initialIndex: i),
                                 ),
                               ),
@@ -127,11 +130,11 @@ class MemoryDetailScreen extends ConsumerWidget {
                       onSelected: (v) async {
                         switch (v) {
                           case 'edit':
-                            context.push('/memory/${m.id}/edit');
+                            context.push(contentRoute(ContentRouteKind.memory, babyId, m.id, edit: true));
                           case 'book':
                             await runWithProgress(
                               context,
-                              () => ref.read(memoryRepositoryProvider).setIncludeInBook(m.id, !m.includeInBook),
+                              () => ref.read(memoryRepositoryProvider).setIncludeInBook(babyId, m.id, !m.includeInBook),
                             );
                             ref.read(contentRevisionProvider.notifier).bump();
                           case 'delete':
@@ -186,7 +189,8 @@ class MemoryDetailScreen extends ConsumerWidget {
                           title: Text(linked.type.title, style: const TextStyle(fontWeight: FontWeight.w800)),
                           subtitle: const Text('Bağlı kilometre taşı'),
                           trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => context.push('/milestone/${linked.milestone!.id}'),
+                          onTap: () =>
+                              context.push(contentRoute(ContentRouteKind.milestone, babyId, linked.milestone!.id)),
                         ),
                       ),
                     ],
@@ -213,7 +217,7 @@ class MemoryDetailScreen extends ConsumerWidget {
                               media: d.media[i],
                               radius: 10,
                               onTap: () => context.push(
-                                '/viewer',
+                                mediaViewerRoute(babyId),
                                 extra: MediaViewerArgs(media: d.media, initialIndex: i),
                               ),
                             ),

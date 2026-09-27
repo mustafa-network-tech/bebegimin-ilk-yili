@@ -88,7 +88,11 @@ class TimelineRepository {
     // Only the unfiltered first page is cached for offline use.
     if (offset == 0 && query.isEmpty) {
       return _cache.networkFirst<List<TimelineEntry>>(
-        key: 'timeline.$babyId',
+        key: LocalCache.userBabyKey(
+          userId: _client.auth.currentUser?.id ?? 'signed-out',
+          babyId: babyId,
+          resource: 'timeline',
+        ),
         fetch: fetch,
         encode: (l) => l.map((e) => e.toJson()).toList(),
         decode: (j) => (j as List).map((e) => TimelineEntry.fromJson((e as Map).cast<String, dynamic>())).toList(),

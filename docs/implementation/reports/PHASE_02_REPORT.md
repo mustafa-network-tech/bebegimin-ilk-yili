@@ -1,0 +1,45 @@
+# Faz 02 Sonuç Raporu
+
+- Durum: COMPLETE
+- Başlangıç commit'i: `0b33687`
+- Bitiş commit'i: Commit oluşturulmadı (kullanıcı talebi)
+- Eklenen migration: `supabase/migrations/20260927000100_lifecycle_extensions.sql`
+- Eklenen Flutter katmanı: `BabyLifecycle` modeli, repository ve Riverpod summary provider'ı; Faz 2 kapsamı gereği mutation UI eklenmedi
+- Eklenen veritabanı yapıları:
+  - Yazması yalnız güvenilir servis işlemlerine açık `platform_user_roles`
+  - Bebek başına ömür boyu tek satır garantili `baby_extension_requests`
+  - `is_super_admin`, lifecycle tarih/durum yardımcıları ve üye-okunabilir `baby_lifecycle_summary` RPC'si
+  - Üye talebi, yalnız Super Admin kararı ve idempotent lifecycle job RPC'leri
+  - Talep, karar, süre dolumu ve profil kilidi audit/notification kayıtları
+- Korunan değiştirilemez iş kuralları:
+  - Standart kapanış `birth_date + 375`, mutlak üst sınır `birth_date + 405`
+  - `ACTIVE` yalnız `Europe/Istanbul` iş tarihi etkin kapanış tarihinden küçükken; kapanış günü `LOCKED`
+  - Bebek başına yalnız bir uzatma talebi; 1–30 gün; reddedilen veya süresi dolan talep yeni hak doğurmuyor
+  - Yalnız platform Super Admin'i karar verebiliyor; aile/bebek admin'i bu rolü kazanmıyor
+  - Karar kesin ve doğrudan tablo yazımları kapalı
+  - İstemci saati lifecycle kararında kullanılmıyor
+- Kabul kriterleri ve kanıtlar:
+  - +374 `ACTIVE`, +375 `LOCKED`, 30 günlük onayla en fazla +405 test edildi.
+  - 1, 7, 12, 29 ve 30 gün onayları; 0, negatif ve 31 gün reddi test edildi.
+  - 29 Şubat doğumu, İstanbul 23:59:59/00:00 sınırı ve farklı istemci/session timezone'ları test edildi.
+  - Kapanışa üç gün kala onaylanan 30 günün 33 gün kalan süre verdiği test edildi.
+  - Pending talebin taban kapanışta `expired` olması, profilin yeniden açılmaması ve job tekrarlarının idempotentliği test edildi.
+  - Aynı bebek için iki gerçek eşzamanlı PostgreSQL oturumunda tam olarak bir talep başarılı oldu.
+  - Rol tablosuna ve karar alanlarına istemci doğrudan yazımı, bebek admin'inin Super Admin işlemi ve ikinci karar reddedildi.
+- Çalıştırılan testler ve sonuçları:
+  - `flutter analyze --no-pub`: başarılı, sorun yok.
+  - `flutter test --no-pub`: başarılı, 67 test.
+  - Temiz veritabanında tüm migration'lar ve sekiz SQL test dosyası: başarılı, toplam 214 assertion.
+  - Eşzamanlı uzatma yarışı: başarılı; iki oturumdan biri commit etti, tek satır oluştu.
+  - `git diff --check`: başarılı.
+- Çalıştırılamayan testler / neden: Yok
+- Güvenlik ve veri migration notları:
+  - Bütün `SECURITY DEFINER` fonksiyonları sabit `search_path` kullanıyor; istemci execute/table grant'leri açıkça sınırlandı.
+  - Kullanıcı hesabı silinince actor FK'leri anonimleşiyor; karar ve tek-talep kaydı korunuyor.
+  - Legacy ve yeni lifecycle sorguları yetkisiz kaynağın varlığını ayırt etmeyen hata üretiyor.
+- Rollback notu: Migration üretim verisi aldıktan sonra tabloyu düşürmek yerine ileri-düzeltme migration'ı tercih edilmeli; eski migration dosyaları değiştirilmedi.
+- Bilinen riskler:
+  - Hedef Supabase ortamında `pg_cron` kullanılamıyorsa `run_baby_lifecycle_jobs()` çağrısı günlük olarak harici scheduler ile kurulmalı.
+  - Gerçek cihaz cold-start deep-link ve platform image-cache disk davranışı Faz 1'de otomatik anahtar izolasyonu testine ek olarak cihaz entegrasyon testiyle izlenebilir.
+  - İçerik mutation lifecycle kilitleri bilinçli olarak Faz 3'e bırakıldı.
+- Faz 3 hazırlığı: Hazır. Faz 1 içerik bağlamı ve Faz 2 sunucu lifecycle çekirdeği tamamlandı; Faz 3'e başlanmadan önce hedef ortam scheduler kurulumu/doğrulaması deployment kontrol listesine eklenmeli.

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/utils/turkish.dart';
@@ -60,7 +61,7 @@ class LettersScreen extends ConsumerWidget {
                   return Card(
                     color: AppColors.lavender.withValues(alpha: 0.10),
                     child: InkWell(
-                      onTap: () => context.push('/letter/${l.id}'),
+                      onTap: () => context.push(contentRoute(ContentRouteKind.letter, l.babyId, l.id)),
                       child: Padding(
                         padding: const EdgeInsets.all(18),
                         child: Column(
@@ -100,8 +101,9 @@ class LettersScreen extends ConsumerWidget {
 }
 
 class LetterFormScreen extends ConsumerStatefulWidget {
-  const LetterFormScreen({super.key, this.letterId});
+  const LetterFormScreen({super.key, this.babyId, this.letterId});
 
+  final String? babyId;
   final String? letterId;
 
   @override
@@ -139,6 +141,7 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
               includeInBook: _include,
             )
           : await repo.update(
+              babyId,
               widget.letterId!,
               title: _title.text,
               body: _body.text,
@@ -153,7 +156,9 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
       ref.read(contentRevisionProvider.notifier).bump();
       if (!mounted) return;
       showSnack(context, 'Mektubunuz kaydedildi 💌');
-      widget.letterId == null ? context.pushReplacement('/letter/${letter.id}') : context.pop();
+      widget.letterId == null
+          ? context.pushReplacement(contentRoute(ContentRouteKind.letter, babyId, letter.id))
+          : context.pop();
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -163,11 +168,44 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = widget.babyId == null ? ref.watch(activeBabyProvider) : ref.watch(babyByIdProvider(widget.babyId!));
+    if (baby == null) {
+      final routeBabyUnavailable = widget.babyId != null && ref.watch(babiesProvider).hasValue;
+      return Scaffold(
+        appBar: routeBabyUnavailable ? AppBar() : null,
+        body: routeBabyUnavailable
+            ? const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Bebek profili bulunamadı',
+                message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+              )
+            : const LoadingView(),
+      );
+    }
     if (widget.letterId != null && !_loaded) {
-      final l = ref.watch(letterDetailProvider(widget.letterId!)).value;
-      if (l == null) return Scaffold(appBar: AppBar(), body: const LoadingView());
+      final detailKey = (baby.id, widget.letterId!);
+      final detail = ref.watch(letterDetailProvider(detailKey));
+      if (!detail.hasValue) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: AsyncValueView<Letter?>(
+            value: detail,
+            data: (_) => const SizedBox.shrink(),
+            onRetry: () => ref.invalidate(letterDetailProvider(detailKey)),
+          ),
+        );
+      }
+      final l = detail.value;
+      if (l == null) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: const EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'Mektup bulunamadı',
+            message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+          ),
+        );
+      }
       _loaded = true;
       _title.text = l.title ?? '';
       _body.text = l.body;
@@ -236,14 +274,16 @@ class _LetterFormScreenState extends ConsumerState<LetterFormScreen> {
 }
 
 class LetterDetailScreen extends ConsumerWidget {
-  const LetterDetailScreen({super.key, required this.letterId});
+  const LetterDetailScreen({super.key, required this.babyId, required this.letterId});
 
+  final String babyId;
   final String letterId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final letter = ref.watch(letterDetailProvider(letterId));
-    final media = ref.watch(parentMediaProvider(('letter', letterId))).value ?? const <MediaItem>[];
+    final letterKey = (babyId, letterId);
+    final letter = ref.watch(letterDetailProvider(letterKey));
+    final media = ref.watch(parentMediaProvider((babyId, 'letter', letterId))).value ?? const <MediaItem>[];
     final theme = Theme.of(context);
     final l = letter.value;
     final access = l == null ? null : ref.watch(accessProvider(l.babyId));
@@ -254,7 +294,7 @@ class LetterDetailScreen extends ConsumerWidget {
             IconButton(
               tooltip: 'Düzenle',
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () => context.push('/letter/$letterId/edit'),
+              onPressed: () => context.push(contentRoute(ContentRouteKind.letter, babyId, letterId, edit: true)),
             ),
           if (l != null && (access?.canDeleteLetter(l.authorId) ?? false))
             IconButton(
@@ -270,7 +310,7 @@ class LetterDetailScreen extends ConsumerWidget {
                 );
                 if (!ok || !context.mounted) return;
                 final done = await runWithProgress(context, () async {
-                  await ref.read(letterRepositoryProvider).delete(letterId, media);
+                  await ref.read(letterRepositoryProvider).delete(babyId, letterId, media);
                   return true;
                 });
                 if (done == true && context.mounted) {
@@ -283,7 +323,7 @@ class LetterDetailScreen extends ConsumerWidget {
       ),
       body: AsyncValueView<Letter?>(
         value: letter,
-        onRetry: () => ref.invalidate(letterDetailProvider(letterId)),
+        onRetry: () => ref.invalidate(letterDetailProvider(letterKey)),
         data: (l) => l == null
             ? const EmptyState(icon: Icons.search_off_rounded, title: 'Mektup bulunamadı')
             : ListView(

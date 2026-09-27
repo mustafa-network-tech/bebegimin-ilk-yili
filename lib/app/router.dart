@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/supabase_providers.dart';
+import '../core/content/content_route.dart';
+import '../core/content/legacy_content_redirect_screen.dart';
 import '../core/utils/dates.dart';
 import '../features/auth/presentation/auth_screens.dart';
 import '../features/babies/application/baby_providers.dart';
@@ -103,16 +105,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/memory/:id',
-        builder: (_, s) => MemoryDetailScreen(memoryId: s.pathParameters['id']!),
+        builder: (_, s) =>
+            LegacyContentRedirectScreen(kind: ContentRouteKind.memory, contentId: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/memory/:id/edit',
-        builder: (_, s) => MemoryFormScreen(memoryId: s.pathParameters['id']),
+        builder: (_, s) =>
+            LegacyContentRedirectScreen(kind: ContentRouteKind.memory, contentId: s.pathParameters['id']!, edit: true),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/memories/:id',
+        builder: (_, s) => MemoryDetailScreen(babyId: s.pathParameters['babyId']!, memoryId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/memories/:id/edit',
+        builder: (_, s) => MemoryFormScreen(babyId: s.pathParameters['babyId'], memoryId: s.pathParameters['id']),
       ),
       GoRoute(path: '/album', builder: (_, _) => const AlbumScreen()),
       GoRoute(
-        path: '/viewer',
-        builder: (_, s) => MediaViewerScreen(args: s.extra! as MediaViewerArgs),
+        path: '/babies/:babyId/media',
+        builder: (_, s) => MediaViewerScreen(babyId: s.pathParameters['babyId']!, args: s.extra! as MediaViewerArgs),
       ),
       GoRoute(path: '/milestones', builder: (_, _) => const MilestonesScreen()),
       GoRoute(
@@ -121,21 +133,45 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/milestone/:id',
-        builder: (_, s) => MilestoneDetailScreen(milestoneId: s.pathParameters['id']!),
+        builder: (_, s) =>
+            LegacyContentRedirectScreen(kind: ContentRouteKind.milestone, contentId: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/milestone/:id/edit',
-        builder: (_, s) => MilestoneFormScreen(milestoneId: s.pathParameters['id']),
+        builder: (_, s) => LegacyContentRedirectScreen(
+          kind: ContentRouteKind.milestone,
+          contentId: s.pathParameters['id']!,
+          edit: true,
+        ),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/milestones/:id',
+        builder: (_, s) =>
+            MilestoneDetailScreen(babyId: s.pathParameters['babyId']!, milestoneId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/milestones/:id/edit',
+        builder: (_, s) => MilestoneFormScreen(babyId: s.pathParameters['babyId'], milestoneId: s.pathParameters['id']),
       ),
       GoRoute(path: '/letters', builder: (_, _) => const LettersScreen()),
       GoRoute(path: '/letter/new', builder: (_, _) => const LetterFormScreen()),
       GoRoute(
         path: '/letter/:id',
-        builder: (_, s) => LetterDetailScreen(letterId: s.pathParameters['id']!),
+        builder: (_, s) =>
+            LegacyContentRedirectScreen(kind: ContentRouteKind.letter, contentId: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/letter/:id/edit',
-        builder: (_, s) => LetterFormScreen(letterId: s.pathParameters['id']),
+        builder: (_, s) =>
+            LegacyContentRedirectScreen(kind: ContentRouteKind.letter, contentId: s.pathParameters['id']!, edit: true),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/letters/:id',
+        builder: (_, s) => LetterDetailScreen(babyId: s.pathParameters['babyId']!, letterId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/letters/:id/edit',
+        builder: (_, s) => LetterFormScreen(babyId: s.pathParameters['babyId'], letterId: s.pathParameters['id']),
       ),
       GoRoute(path: '/capsules', builder: (_, _) => const CapsulesScreen()),
       GoRoute(path: '/capsule/new', builder: (_, _) => const CapsuleFormScreen()),

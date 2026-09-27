@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/storage/signed_urls.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/utils/turkish.dart';
@@ -420,7 +421,9 @@ class _Firsts extends ConsumerWidget {
                       color: s.achieved ? AppColors.honey.withValues(alpha: 0.14) : null,
                       child: InkWell(
                         onTap: () => s.achieved
-                            ? context.push('/milestone/${s.milestone!.id}')
+                            ? context.push(
+                                contentRoute(ContentRouteKind.milestone, s.milestone!.babyId, s.milestone!.id),
+                              )
                             : context.push('/milestone/new?typeId=${s.type.id}'),
                         child: Padding(
                           padding: const EdgeInsets.all(10),

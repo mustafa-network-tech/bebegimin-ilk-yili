@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../data/milestone_repository.dart';
 import '../domain/milestone.dart';
@@ -31,5 +32,8 @@ final milestoneDetailProvider = FutureProvider.autoDispose.family<MilestoneSlot?
   key,
 ) async {
   final slots = await ref.watch(milestoneSlotsProvider(key.$1).future);
-  return slots.firstWhereOrNull((s) => s.milestone?.id == key.$2);
+  final slot = slots.firstWhereOrNull((s) => s.milestone?.id == key.$2);
+  final milestone = slot?.milestone;
+  if (milestone == null) return null;
+  return matchesBabyContext(routeBabyId: key.$1, modelBabyId: milestone.babyId, contentId: key.$2) ? slot : null;
 });

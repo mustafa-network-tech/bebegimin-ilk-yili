@@ -62,12 +62,14 @@ final albumTagsProvider = FutureProvider.autoDispose.family<List<String>, String
   return ref.watch(mediaRepositoryProvider).tags(babyId);
 });
 
-final parentMediaProvider = FutureProvider.autoDispose.family<List<MediaItem>, (String kind, String id)>((ref, key) {
-  ref.watch(contentRevisionProvider);
-  final repo = ref.watch(mediaRepositoryProvider);
-  return switch (key.$1) {
-    'milestone' => repo.forParents(milestoneIds: [key.$2]),
-    'letter' => repo.forParents(letterIds: [key.$2]),
-    _ => repo.forParents(memoryIds: [key.$2]),
-  };
-});
+final parentMediaProvider = FutureProvider.autoDispose.family<List<MediaItem>, (String babyId, String kind, String id)>(
+  (ref, key) {
+    ref.watch(contentRevisionProvider);
+    final repo = ref.watch(mediaRepositoryProvider);
+    return switch (key.$2) {
+      'milestone' => repo.forParents(babyId: key.$1, milestoneIds: [key.$3]),
+      'letter' => repo.forParents(babyId: key.$1, letterIds: [key.$3]),
+      _ => repo.forParents(babyId: key.$1, memoryIds: [key.$3]),
+    };
+  },
+);

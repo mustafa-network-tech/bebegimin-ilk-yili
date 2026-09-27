@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../babies/domain/baby.dart';
@@ -12,9 +13,9 @@ import '../../media/presentation/media_widgets.dart';
 import '../domain/timeline_entry.dart';
 
 String entryRoute(TimelineEntry e) => switch (e.type) {
-  EntryType.memory => '/memory/${e.id}',
-  EntryType.milestone => '/milestone/${e.id}',
-  EntryType.letter => '/letter/${e.id}',
+  EntryType.memory => contentRoute(ContentRouteKind.memory, e.babyId, e.id),
+  EntryType.milestone => contentRoute(ContentRouteKind.milestone, e.babyId, e.id),
+  EntryType.letter => contentRoute(ContentRouteKind.letter, e.babyId, e.id),
 };
 
 /// Card used by the timeline, home, calendar and search.

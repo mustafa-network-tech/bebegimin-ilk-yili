@@ -19,8 +19,8 @@ class LetterRepository {
     return rows.map(Letter.fromJson).toList();
   }
 
-  Future<Letter?> get(String id) async {
-    final row = await _client.from('letters').select().eq('id', id).maybeSingle();
+  Future<Letter?> get(String babyId, String id) async {
+    final row = await _client.from('letters').select().eq('baby_id', babyId).eq('id', id).maybeSingle();
     return row == null ? null : Letter.fromJson(row);
   }
 
@@ -46,6 +46,7 @@ class LetterRepository {
   }
 
   Future<Letter> update(
+    String babyId,
     String id, {
     String? title,
     required String body,
@@ -60,17 +61,23 @@ class LetterRepository {
           'written_on': Dates.toSql(writtenOn),
           'include_in_book': includeInBook,
         })
+        .eq('baby_id', babyId)
         .eq('id', id)
         .select()
         .single();
     return Letter.fromJson(row);
   }
 
-  Future<void> setIncludeInBook(String id, bool v) =>
-      _client.from('letters').update({'include_in_book': v}).eq('id', id);
+  Future<void> setIncludeInBook(String babyId, String id, bool v) =>
+      _client.from('letters').update({'include_in_book': v}).eq('baby_id', babyId).eq('id', id);
 
-  Future<void> delete(String id, List<MediaItem> media) async {
+  Future<void> delete(String babyId, String id, List<MediaItem> media) async {
     await removeFiles(_client, media);
-    await _client.from('letters').delete().eq('id', id);
+    await _client.from('letters').delete().eq('baby_id', babyId).eq('id', id);
+  }
+
+  Future<String?> resolveLegacyBabyId(String id) async {
+    final row = await _client.from('letters').select('baby_id').eq('id', id).maybeSingle();
+    return row?['baby_id'] as String?;
   }
 }

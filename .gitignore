@@ -59,6 +59,7 @@ android/key.properties
 *.keystore
 **/google-services.json
 **/GoogleService-Info.plist
+dev.json
 
 # Supabase local
 supabase/.branches

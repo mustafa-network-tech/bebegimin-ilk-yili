@@ -49,7 +49,11 @@ class MilestoneRepository {
   final LocalCache _cache;
 
   Future<List<MilestoneType>> types(String babyId) => _cache.networkFirst<List<MilestoneType>>(
-    key: 'milestone_types.$babyId',
+    key: LocalCache.userBabyKey(
+      userId: _client.auth.currentUser?.id ?? 'signed-out',
+      babyId: babyId,
+      resource: 'milestone_types',
+    ),
     fetch: () async {
       final rows = await _client
           .from('milestone_types')
@@ -64,7 +68,11 @@ class MilestoneRepository {
   );
 
   Future<List<Milestone>> forBaby(String babyId) => _cache.networkFirst<List<Milestone>>(
-    key: 'milestones.$babyId',
+    key: LocalCache.userBabyKey(
+      userId: _client.auth.currentUser?.id ?? 'signed-out',
+      babyId: babyId,
+      resource: 'milestones',
+    ),
     fetch: () async {
       final rows = await _client.from('milestones').select().eq('baby_id', babyId).order('achieved_on');
       return rows.map(Milestone.fromJson).toList();
@@ -73,8 +81,8 @@ class MilestoneRepository {
     decode: (j) => (j as List).map((e) => Milestone.fromJson((e as Map).cast<String, dynamic>())).toList(),
   );
 
-  Future<Milestone?> get(String id) async {
-    final row = await _client.from('milestones').select().eq('id', id).maybeSingle();
+  Future<Milestone?> get(String babyId, String id) async {
+    final row = await _client.from('milestones').select().eq('baby_id', babyId).eq('id', id).maybeSingle();
     return row == null ? null : Milestone.fromJson(row);
   }
 
@@ -83,17 +91,17 @@ class MilestoneRepository {
     return Milestone.fromJson(row);
   }
 
-  Future<Milestone> update(String id, MilestoneDraft d) async {
+  Future<Milestone> update(String babyId, String id, MilestoneDraft d) async {
     final json = d.toJson()
       ..remove('baby_id')
       ..remove('milestone_type_id');
-    final row = await _client.from('milestones').update(json).eq('id', id).select().single();
+    final row = await _client.from('milestones').update(json).eq('baby_id', babyId).eq('id', id).select().single();
     return Milestone.fromJson(row);
   }
 
-  Future<void> delete(String id, List<MediaItem> media) async {
+  Future<void> delete(String babyId, String id, List<MediaItem> media) async {
     await removeFiles(_client, media);
-    await _client.from('milestones').delete().eq('id', id);
+    await _client.from('milestones').delete().eq('baby_id', babyId).eq('id', id);
   }
 
   Future<MilestoneType> createCustomType(String babyId, String title, String? emoji) async {
@@ -110,4 +118,9 @@ class MilestoneRepository {
   }
 
   Future<void> deleteCustomType(String id) => _client.from('milestone_types').delete().eq('id', id);
+
+  Future<String?> resolveLegacyBabyId(String id) async {
+    final row = await _client.from('milestones').select('baby_id').eq('id', id).maybeSingle();
+    return row?['baby_id'] as String?;
+  }
 }

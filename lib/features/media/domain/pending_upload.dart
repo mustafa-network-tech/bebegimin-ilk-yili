@@ -8,6 +8,7 @@ enum UploadState { queued, uploading, failed }
 class PendingUpload {
   const PendingUpload({
     required this.id,
+    required this.userId,
     required this.babyId,
     required this.kind,
     required this.localPath,
@@ -27,6 +28,7 @@ class PendingUpload {
 
   factory PendingUpload.fromJson(Map<String, dynamic> j) => PendingUpload(
     id: j['id'] as String,
+    userId: j['user_id'] as String,
     babyId: j['baby_id'] as String,
     kind: MediaKind.values.byName(j['kind'] as String),
     localPath: j['local_path'] as String,
@@ -46,6 +48,7 @@ class PendingUpload {
 
   /// Media id (generated on the device, so retries are idempotent).
   final String id;
+  final String userId;
   final String babyId;
   final MediaKind kind;
   final String localPath;
@@ -64,6 +67,8 @@ class PendingUpload {
 
   String get extension => kind == MediaKind.photo ? 'jpg' : localPath.split('.').last.toLowerCase();
 
+  String get localNamespace => '$userId/$babyId/$id';
+
   String get storagePath => '$babyId/$id/original.$extension';
 
   String? get thumbPath => kind == MediaKind.photo ? '$babyId/$id/thumb.jpg' : null;
@@ -76,6 +81,7 @@ class PendingUpload {
     bool? rowCreated,
   }) => PendingUpload(
     id: id,
+    userId: userId,
     babyId: babyId,
     kind: kind,
     localPath: localPath,
@@ -95,6 +101,7 @@ class PendingUpload {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'user_id': userId,
     'baby_id': babyId,
     'kind': kind.name,
     'local_path': localPath,

@@ -8,9 +8,11 @@ import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../core/content/content_revision.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/storage/signed_urls.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/feedback.dart';
+import '../../../core/widgets/states.dart';
 import '../../../core/widgets/storage_image.dart';
 import '../../babies/application/baby_providers.dart';
 import '../../family/application/family_providers.dart';
@@ -29,8 +31,9 @@ class MediaViewerArgs {
 /// Full screen photo / video viewer with caption, tags, favourite,
 /// "kitaba dahil et", sharing and deletion.
 class MediaViewerScreen extends ConsumerStatefulWidget {
-  const MediaViewerScreen({super.key, required this.args});
+  const MediaViewerScreen({super.key, required this.babyId, required this.args});
 
+  final String babyId;
   final MediaViewerArgs args;
 
   @override
@@ -55,7 +58,7 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
     final captionCtrl = TextEditingController(text: _current.caption);
     final tagsCtrl = TextEditingController(text: _current.tags.join(', '));
     DateTime date = _current.takenOn;
-    final baby = ref.read(activeBabyProvider);
+    final baby = ref.read(babyByIdProvider(widget.babyId));
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -111,7 +114,7 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
       context,
       () => ref
           .read(mediaRepositoryProvider)
-          .update(_current.id, caption: captionCtrl.text.trim(), tags: tags, takenOn: date),
+          .update(widget.babyId, _current.id, caption: captionCtrl.text.trim(), tags: tags, takenOn: date),
       success: 'Kaydedildi',
     );
     if (updated != null) {
@@ -124,7 +127,7 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
     final m = _current;
     final updated = await runWithProgress(
       context,
-      () => ref.read(mediaRepositoryProvider).update(m.id, includeInBook: !m.includeInBook),
+      () => ref.read(mediaRepositoryProvider).update(widget.babyId, m.id, includeInBook: !m.includeInBook),
     );
     if (updated != null) {
       setState(() => _items[_index] = updated);
@@ -175,16 +178,30 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    final access = ref.watch(activeAccessProvider);
-    final favorites = baby == null
-        ? const <String>{}
-        : (ref.watch(favoritesProvider(baby.id)).value ?? const <String>{});
+    final babies = ref.watch(babiesProvider);
+    final baby = ref.watch(babyByIdProvider(widget.babyId));
+    if (baby == null) {
+      return Scaffold(
+        body: babies.hasValue
+            ? const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'İçerik bulunamadı',
+                message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+              )
+            : const LoadingView(),
+      );
+    }
+    final access = ref.watch(accessProvider(widget.babyId));
+    final favorites = ref.watch(favoritesProvider(baby.id)).value ?? const <String>{};
     final m = _current;
+    if (!matchesBabyContext(routeBabyId: widget.babyId, modelBabyId: m.babyId, contentId: m.id) ||
+        _items.any((item) => item.babyId != widget.babyId)) {
+      return const Scaffold(body: Center(child: Text('İçerik bulunamadı veya erişim yetkiniz yok.')));
+    }
     final canEdit = access.canEditMedia(m.uploaderId);
     final isFav = favorites.contains(m.id);
-    final uploader = baby == null ? '' : ref.watch(authorNameProvider((baby.id, m.uploaderId)));
-    final age = baby?.ageOn(m.takenOn);
+    final uploader = ref.watch(authorNameProvider((baby.id, m.uploaderId)));
+    final age = baby.ageOn(m.takenOn);
 
     return Theme(
       data: ThemeData.dark(useMaterial3: true).copyWith(
@@ -199,17 +216,16 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
                 foregroundColor: Colors.white,
                 title: Text('${_index + 1} / ${_items.length}'),
                 actions: [
-                  if (baby != null)
-                    IconButton(
-                      tooltip: 'Favori',
-                      icon: Icon(isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded),
-                      onPressed: () => ref
-                          .read(favoritesProvider(baby.id).notifier)
-                          .toggle(TargetKind.media, m.id)
-                          .catchError((Object e) {
-                            if (context.mounted) showError(context, e);
-                          }),
-                    ),
+                  IconButton(
+                    tooltip: 'Favori',
+                    icon: Icon(isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded),
+                    onPressed: () => ref
+                        .read(favoritesProvider(baby.id).notifier)
+                        .toggle(TargetKind.media, m.id)
+                        .catchError((Object e) {
+                          if (context.mounted) showError(context, e);
+                        }),
+                  ),
                   IconButton(tooltip: 'Paylaş / kaydet', icon: const Icon(Icons.ios_share_rounded), onPressed: _share),
                   if (canEdit)
                     PopupMenuButton<String>(

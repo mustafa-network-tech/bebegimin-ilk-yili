@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/states.dart';
@@ -178,7 +179,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       media: dayMedia.value!.items[i],
                       radius: 10,
                       onTap: () => context.push(
-                        '/viewer',
+                        mediaViewerRoute(baby.id),
                         extra: MediaViewerArgs(media: dayMedia.value!.items, initialIndex: i),
                       ),
                     ),

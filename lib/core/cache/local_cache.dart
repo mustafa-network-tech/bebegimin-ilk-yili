@@ -19,6 +19,9 @@ class LocalCache {
   final SharedPreferences _prefs;
   static const _prefix = 'cache.v1.';
 
+  static String userBabyKey({required String userId, required String babyId, required String resource}) =>
+      'user.$userId.baby.$babyId.$resource';
+
   Future<void> put(String key, Object? json) => _prefs.setString('$_prefix$key', jsonEncode(json));
 
   Object? get(String key) {

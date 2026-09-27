@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/content/content_route.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/widgets/states.dart';
 import '../../babies/application/baby_providers.dart';
@@ -130,7 +131,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               media: items[i],
               radius: 10,
               onTap: () => context.push(
-                '/viewer',
+                mediaViewerRoute(baby.id),
                 extra: MediaViewerArgs(media: items, initialIndex: i),
               ),
             ),

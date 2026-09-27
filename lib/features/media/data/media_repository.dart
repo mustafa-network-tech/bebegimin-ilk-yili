@@ -62,6 +62,7 @@ class MediaRepository {
 
   /// Media attached to any of the given parents (timeline thumbnails).
   Future<List<MediaItem>> forParents({
+    required String babyId,
     Iterable<String> memoryIds = const [],
     Iterable<String> milestoneIds = const [],
     Iterable<String> letterIds = const [],
@@ -72,7 +73,13 @@ class MediaRepository {
       if (letterIds.isNotEmpty) 'letter_id.in.(${letterIds.join(',')})',
     ];
     if (filters.isEmpty) return const [];
-    final rows = await _client.from('media').select().or(filters.join(',')).order('sort_order').order('created_at');
+    final rows = await _client
+        .from('media')
+        .select()
+        .eq('baby_id', babyId)
+        .or(filters.join(','))
+        .order('sort_order')
+        .order('created_at');
     return rows.map(MediaItem.fromJson).where((m) => m.status == 'ready').toList();
   }
 
@@ -88,6 +95,7 @@ class MediaRepository {
   }
 
   Future<MediaItem> update(
+    String babyId,
     String id, {
     String? caption,
     List<String>? tags,
@@ -102,6 +110,7 @@ class MediaRepository {
           'include_in_book': ?includeInBook,
           if (takenOn != null) 'taken_on': Dates.toSql(takenOn),
         })
+        .eq('baby_id', babyId)
         .eq('id', id)
         .select()
         .single();
@@ -110,6 +119,6 @@ class MediaRepository {
 
   Future<void> delete(MediaItem media) async {
     await removeFiles(_client, [media]);
-    await _client.from('media').delete().eq('id', media.id);
+    await _client.from('media').delete().eq('baby_id', media.babyId).eq('id', media.id);
   }
 }

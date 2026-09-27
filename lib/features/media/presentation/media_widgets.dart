@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/storage/signed_urls.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/widgets/storage_image.dart';
 import '../domain/media_item.dart';
 import 'media_viewer_screen.dart';
@@ -82,7 +83,7 @@ class MediaCollage extends StatelessWidget {
   final double height;
 
   void _open(BuildContext context, int index) => context.push(
-    '/viewer',
+    mediaViewerRoute(media[index].babyId),
     extra: MediaViewerArgs(media: media, initialIndex: index),
   );
 

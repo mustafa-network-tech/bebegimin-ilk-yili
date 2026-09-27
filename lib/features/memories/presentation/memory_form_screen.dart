@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/content/content_route.dart';
 import '../../../core/content/content_revision.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/utils/validators.dart';
@@ -29,8 +30,16 @@ import '../domain/memory.dart';
 /// makes the memory a candidate for the "İlk Yılım" book even if it is
 /// added years later.
 class MemoryFormScreen extends ConsumerStatefulWidget {
-  const MemoryFormScreen({super.key, this.memoryId, this.initialCategory, this.initialDate, this.autoPick});
+  const MemoryFormScreen({
+    super.key,
+    this.babyId,
+    this.memoryId,
+    this.initialCategory,
+    this.initialDate,
+    this.autoPick,
+  });
 
+  final String? babyId;
   final String? memoryId;
   final MemoryCategory? initialCategory;
   final DateTime? initialDate;
@@ -121,7 +130,7 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
         includeInBook: _includeInBook,
       );
       final repo = ref.read(memoryRepositoryProvider);
-      final memory = _isEdit ? await repo.update(widget.memoryId!, draft) : await repo.create(draft);
+      final memory = _isEdit ? await repo.update(baby.id, widget.memoryId!, draft) : await repo.create(draft);
 
       for (final m in _existing.where((m) => _removed.contains(m.id))) {
         await ref.read(mediaRepositoryProvider).delete(m);
@@ -137,7 +146,7 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
       if (_isEdit) {
         context.pop();
       } else {
-        context.pushReplacement('/memory/${memory.id}');
+        context.pushReplacement(contentRoute(ContentRouteKind.memory, baby.id, memory.id));
       }
     } catch (e) {
       if (mounted) showError(context, e);
@@ -148,21 +157,44 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = widget.babyId == null ? ref.watch(activeBabyProvider) : ref.watch(babyByIdProvider(widget.babyId!));
+    if (baby == null) {
+      final routeBabyUnavailable = widget.babyId != null && ref.watch(babiesProvider).hasValue;
+      return Scaffold(
+        appBar: routeBabyUnavailable ? AppBar() : null,
+        body: routeBabyUnavailable
+            ? const EmptyState(
+                icon: Icons.search_off_rounded,
+                title: 'Bebek profili bulunamadı',
+                message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+              )
+            : const LoadingView(),
+      );
+    }
     if (_isEdit) {
-      final detail = ref.watch(memoryDetailProvider(widget.memoryId!));
+      final detailKey = (baby.id, widget.memoryId!);
+      final detail = ref.watch(memoryDetailProvider(detailKey));
       if (!detail.hasValue) {
         return Scaffold(
           appBar: AppBar(),
           body: AsyncValueView(
             value: detail,
             data: (_) => const SizedBox(),
-            onRetry: () => ref.invalidate(memoryDetailProvider(widget.memoryId!)),
+            onRetry: () => ref.invalidate(memoryDetailProvider(detailKey)),
           ),
         );
       }
-      if (detail.value != null) _fill(detail.value!);
+      if (detail.value == null) {
+        return Scaffold(
+          appBar: AppBar(),
+          body: const EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'Anı bulunamadı',
+            message: 'Silinmiş olabilir ya da erişim yetkiniz yok.',
+          ),
+        );
+      }
+      _fill(detail.value!);
     }
     final theme = Theme.of(context);
     final fy = baby.firstYear;

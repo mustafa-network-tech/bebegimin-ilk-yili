@@ -63,8 +63,13 @@ function routeFor(record: Record<string, any>): string | null {
     case "memories_of_the_day": return data.date ? `/calendar?date=${data.date}` : "/timeline";
   }
   const id = data.target_id;
-  if (!id) return null;
-  return ({ memories: `/memory/${id}`, milestones: `/milestone/${id}`, letters: `/letter/${id}` } as Record<string, string>)[data.target_type] ?? null;
+  const babyId = record.baby_id;
+  if (!id || !babyId) return null;
+  return ({
+    memories: `/babies/${babyId}/memories/${id}`,
+    milestones: `/babies/${babyId}/milestones/${id}`,
+    letters: `/babies/${babyId}/letters/${id}`,
+  } as Record<string, string>)[data.target_type] ?? null;
 }
 
 Deno.serve(async (req) => {
