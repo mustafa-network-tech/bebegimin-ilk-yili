@@ -11,6 +11,8 @@ import '../../../core/utils/dates.dart';
 import '../../../core/widgets/states.dart';
 import '../../babies/application/baby_providers.dart';
 import '../../babies/presentation/baby_app_bar.dart';
+import '../../family/application/family_providers.dart';
+import '../../family/domain/permission.dart';
 import '../../media/application/media_providers.dart';
 import '../../media/data/media_repository.dart';
 import '../../media/presentation/media_viewer_screen.dart';
@@ -187,7 +189,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
             ),
           ],
-          if (dayEntries.isEmpty && !(dayMedia.value?.items.isNotEmpty ?? false) && entries.hasValue)
+          if (dayEntries.isEmpty &&
+              !(dayMedia.value?.items.isNotEmpty ?? false) &&
+              entries.hasValue &&
+              ref.watch(accessProvider(baby.id)).can(AppPermission.addMemory))
             Padding(
               padding: const EdgeInsets.all(20),
               child: OutlinedButton.icon(

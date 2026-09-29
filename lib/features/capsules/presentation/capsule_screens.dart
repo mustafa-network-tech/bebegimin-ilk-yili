@@ -48,12 +48,14 @@ class CapsulesScreen extends ConsumerWidget {
         value: capsules,
         onRetry: () => ref.invalidate(capsulesProvider(baby.id)),
         data: (list) => list.isEmpty
-            ? EmptyState(
-                icon: Icons.hourglass_empty_rounded,
-                title: 'Geleceğe bir mesaj bırakın',
-                message:
-                    '${baby.firstName} 5, 10 ya da 18 yaşına geldiğinde açılacak mesajlar yazın. Açılış gününe kadar kimse — siz dahil — içeriği göremez.',
-              )
+            ? !access.can(AppPermission.writeLetter)
+                  ? const EmptyState(icon: Icons.hourglass_empty_rounded, title: 'Henüz zaman kapsülü yok')
+                  : EmptyState(
+                      icon: Icons.hourglass_empty_rounded,
+                      title: 'Geleceğe bir mesaj bırakın',
+                      message:
+                          '${baby.firstName} 5, 10 ya da 18 yaşına geldiğinde açılacak mesajlar yazın. Açılış gününe kadar kimse — siz dahil — içeriği göremez.',
+                    )
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 itemCount: list.length,
@@ -76,7 +78,7 @@ class CapsulesScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 10),
                               Expanded(child: Text(c.title, style: theme.textTheme.titleMedium)),
-                              if (c.authorId == access.userId || access.isAdmin)
+                              if (access.canDeleteCapsule(c.authorId))
                                 IconButton(
                                   tooltip: 'Sil',
                                   icon: const Icon(Icons.delete_outline_rounded),

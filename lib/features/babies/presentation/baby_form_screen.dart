@@ -14,6 +14,7 @@ import '../../family/application/family_providers.dart';
 import '../../family/domain/permission.dart';
 import '../../family/domain/relation.dart';
 import '../../media/presentation/media_picker.dart';
+import '../application/baby_lifecycle_providers.dart';
 import '../application/baby_providers.dart';
 import '../data/baby_repository.dart';
 import '../domain/baby.dart';
@@ -182,6 +183,32 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
     final baby = _baby;
     final access = baby == null ? null : ref.watch(accessProvider(baby.id));
     final today = Dates.today();
+    // Editing needs manage_baby, which the access model switches off once the
+    // archive is LOCKED: the whole profile becomes read-only.
+    final readOnly = _isEdit && !(access?.can(AppPermission.manageBaby) ?? false);
+    final locked = baby != null && ref.watch(babyArchiveLockedProvider(baby.id));
+    final String? birthDateHelp;
+    final bool canEditBirthDate;
+    if (!_isEdit) {
+      birthDateHelp = null;
+      canEditBirthDate = true;
+    } else if (readOnly) {
+      birthDateHelp = null;
+      canEditBirthDate = false;
+    } else {
+      final membership = ref.watch(myMembershipProvider(baby!.id));
+      final stats = ref.watch(babyStatsProvider(baby.id)).value;
+      final hasContent =
+          stats == null ||
+          stats.memories + stats.milestones + stats.letters + stats.photos + stats.videos + stats.capsules > 0;
+      final isParent = membership != null && membership.isAdmin && membership.relation.isParent;
+      canEditBirthDate = isParent && !hasContent;
+      birthDateHelp = canEditBirthDate
+          ? 'Doğum tarihi ilk yıl arşivinin süresini belirler; içerik eklendikten sonra değiştirilemez.'
+          : !isParent
+          ? 'Doğum tarihini yalnızca Anne veya Baba düzeltebilir.'
+          : 'İçerik eklendiği için doğum tarihi yalnızca destek ekibi tarafından düzeltilebilir.';
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Bebek profili' : 'Yeni bebek'),
@@ -195,6 +222,14 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
+            if (readOnly) ...[
+              _ReadOnlyBanner(
+                message: locked
+                    ? 'İlk yıl arşivi kilitli. Profil bilgileri artık salt okunur.'
+                    : 'Bebek profilini düzenleme yetkiniz yok.',
+              ),
+              const SizedBox(height: 16),
+            ],
             if (baby != null && (access?.can(AppPermission.manageBaby) ?? false)) ...[
               _ImagesEditor(
                 baby: baby,
@@ -205,6 +240,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
             ],
             TextFormField(
               controller: _first,
+              readOnly: readOnly,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(labelText: 'Adı *'),
               validator: (v) => Validators.required(v, field: 'Ad') ?? Validators.maxLength(v, 60),
@@ -212,6 +248,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
             const SizedBox(height: 14),
             TextFormField(
               controller: _last,
+              readOnly: readOnly,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(labelText: 'Soyadı (isteğe bağlı)'),
               validator: (v) => Validators.maxLength(v, 60),
@@ -223,13 +260,19 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
               firstDate: DateTime(today.year - 18),
               lastDate: today,
               icon: Icons.cake_outlined,
-              onChanged: (d) => setState(() => _birthDate = d),
+              helper: birthDateHelp,
+              onChanged: canEditBirthDate ? (d) => setState(() => _birthDate = d) : null,
             ),
             const SizedBox(height: 14),
-            TimeField(label: 'Doğum saati', value: _birthTime, onChanged: (t) => setState(() => _birthTime = t)),
+            TimeField(
+              label: 'Doğum saati',
+              value: _birthTime,
+              onChanged: readOnly ? null : (t) => setState(() => _birthTime = t),
+            ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _place,
+              readOnly: readOnly,
               decoration: const InputDecoration(labelText: 'Doğum yeri', prefixIcon: Icon(Icons.place_outlined)),
               validator: (v) => Validators.maxLength(v, 120),
             ),
@@ -239,6 +282,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _weight,
+                    readOnly: readOnly,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(labelText: 'Doğum kilosu', suffixText: 'gram'),
@@ -253,6 +297,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _length,
+                    readOnly: readOnly,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'Doğum boyu', suffixText: 'cm'),
                     validator: (v) {
@@ -267,6 +312,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
             const SizedBox(height: 14),
             TextFormField(
               controller: _story,
+              readOnly: readOnly,
               minLines: 3,
               maxLines: 6,
               maxLength: 4000,
@@ -306,8 +352,38 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
-            const SizedBox(height: 24),
-            FilledButton(onPressed: _busy ? null : _save, child: Text(_isEdit ? 'Kaydet' : 'Bebek profilini oluştur')),
+            if (!readOnly) ...[
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _busy ? null : _save,
+                child: Text(_isEdit ? 'Kaydet' : 'Bebek profilini oluştur'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadOnlyBanner extends StatelessWidget {
+  const _ReadOnlyBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: scheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(14)),
+        child: Row(
+          children: [
+            Icon(Icons.lock_rounded, color: scheme.primary),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
           ],
         ),
       ),

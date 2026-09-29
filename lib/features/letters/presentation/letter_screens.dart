@@ -47,11 +47,13 @@ class LettersScreen extends ConsumerWidget {
         value: letters,
         onRetry: () => ref.invalidate(lettersProvider(baby.id)),
         data: (list) => list.isEmpty
-            ? EmptyState(
-                icon: Icons.mail_outline_rounded,
-                title: 'İlk mektubu siz yazın',
-                message: '${Turkish.dative(baby.firstName)} yıllar sonra okuyacağı bir mektup bırakın.',
-              )
+            ? access.can(AppPermission.writeLetter)
+                  ? EmptyState(
+                      icon: Icons.mail_outline_rounded,
+                      title: 'İlk mektubu siz yazın',
+                      message: '${Turkish.dative(baby.firstName)} yıllar sonra okuyacağı bir mektup bırakın.',
+                    )
+                  : const EmptyState(icon: Icons.mail_outline_rounded, title: 'Henüz mektup yok')
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 itemCount: list.length,

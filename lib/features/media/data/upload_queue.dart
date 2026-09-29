@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/cache/local_cache.dart';
 import '../../../core/content/content_revision.dart';
+import '../../../core/content/lifecycle_revision.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/network/connectivity.dart';
 import '../../../core/storage/signed_urls.dart';
@@ -272,8 +273,11 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
         return false;
       }
       debugPrint('upload failed: $e');
-      // A locked archive never becomes writable again: fail without retries.
-      final attempts = AppException.isLifecycleLocked(e) ? maxAttempts : u.attempts + 1;
+      // A locked archive never becomes writable again: fail without retries
+      // and refresh the lifecycle so the UI stops offering uploads.
+      final locked = AppException.isLifecycleLocked(e);
+      if (locked) ref.read(lifecycleRevisionProvider.notifier).bump();
+      final attempts = locked ? maxAttempts : u.attempts + 1;
       _replace(
         u.copyWith(
           attempts: attempts,

@@ -117,12 +117,14 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     onRetry: () => ref.invalidate(timelineProvider(key)),
                     data: (state) {
                       if (state.entries.isEmpty) {
-                        return const SliverFillRemaining(
+                        return SliverFillRemaining(
                           hasScrollBody: false,
                           child: EmptyState(
                             icon: Icons.auto_stories_outlined,
                             title: 'Henüz bir şey yok',
-                            message: 'Bugünü ya da geçmiş bir günü anı olarak ekleyin. Tarihi siz seçersiniz.',
+                            message: access.canCreateAnything
+                                ? 'Bugünü ya da geçmiş bir günü anı olarak ekleyin. Tarihi siz seçersiniz.'
+                                : null,
                           ),
                         );
                       }

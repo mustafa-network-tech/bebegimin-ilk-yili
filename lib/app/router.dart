@@ -8,9 +8,12 @@ import '../core/supabase_providers.dart';
 import '../core/content/content_route.dart';
 import '../core/content/legacy_content_redirect_screen.dart';
 import '../core/utils/dates.dart';
+import '../features/admin/presentation/admin_screens.dart';
 import '../features/auth/presentation/auth_screens.dart';
 import '../features/babies/application/baby_providers.dart';
 import '../features/babies/presentation/baby_form_screen.dart';
+import '../features/babies/presentation/lifecycle_screen.dart';
+import '../features/babies/presentation/lifecycle_widgets.dart';
 import '../features/babies/presentation/onboarding_screens.dart';
 import '../features/book/presentation/book_editor_screen.dart';
 import '../features/book/presentation/book_generation.dart';
@@ -97,10 +100,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: '/memory/new',
-        builder: (_, s) => MemoryFormScreen(
-          initialCategory: MemoryCategory.fromKey(s.uri.queryParameters['category']),
-          initialDate: Dates.tryFromSql(s.uri.queryParameters['date']),
-          autoPick: s.uri.queryParameters['pick'],
+        builder: (_, s) => LifecycleWriteGuard(
+          child: MemoryFormScreen(
+            initialCategory: MemoryCategory.fromKey(s.uri.queryParameters['category']),
+            initialDate: Dates.tryFromSql(s.uri.queryParameters['date']),
+            autoPick: s.uri.queryParameters['pick'],
+          ),
         ),
       ),
       GoRoute(
@@ -119,7 +124,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/babies/:babyId/memories/:id/edit',
-        builder: (_, s) => MemoryFormScreen(babyId: s.pathParameters['babyId'], memoryId: s.pathParameters['id']),
+        builder: (_, s) => LifecycleWriteGuard(
+          babyId: s.pathParameters['babyId'],
+          child: MemoryFormScreen(babyId: s.pathParameters['babyId'], memoryId: s.pathParameters['id']),
+        ),
       ),
       GoRoute(path: '/album', builder: (_, _) => const AlbumScreen()),
       GoRoute(
@@ -129,7 +137,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/milestones', builder: (_, _) => const MilestonesScreen()),
       GoRoute(
         path: '/milestone/new',
-        builder: (_, s) => MilestoneFormScreen(typeId: s.uri.queryParameters['typeId']),
+        builder: (_, s) => LifecycleWriteGuard(child: MilestoneFormScreen(typeId: s.uri.queryParameters['typeId'])),
       ),
       GoRoute(
         path: '/milestone/:id',
@@ -151,10 +159,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/babies/:babyId/milestones/:id/edit',
-        builder: (_, s) => MilestoneFormScreen(babyId: s.pathParameters['babyId'], milestoneId: s.pathParameters['id']),
+        builder: (_, s) => LifecycleWriteGuard(
+          babyId: s.pathParameters['babyId'],
+          child: MilestoneFormScreen(babyId: s.pathParameters['babyId'], milestoneId: s.pathParameters['id']),
+        ),
       ),
       GoRoute(path: '/letters', builder: (_, _) => const LettersScreen()),
-      GoRoute(path: '/letter/new', builder: (_, _) => const LetterFormScreen()),
+      GoRoute(
+        path: '/letter/new',
+        builder: (_, _) => const LifecycleWriteGuard(child: LetterFormScreen()),
+      ),
       GoRoute(
         path: '/letter/:id',
         builder: (_, s) =>
@@ -171,20 +185,44 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/babies/:babyId/letters/:id/edit',
-        builder: (_, s) => LetterFormScreen(babyId: s.pathParameters['babyId'], letterId: s.pathParameters['id']),
+        builder: (_, s) => LifecycleWriteGuard(
+          babyId: s.pathParameters['babyId'],
+          child: LetterFormScreen(babyId: s.pathParameters['babyId'], letterId: s.pathParameters['id']),
+        ),
       ),
       GoRoute(path: '/capsules', builder: (_, _) => const CapsulesScreen()),
-      GoRoute(path: '/capsule/new', builder: (_, _) => const CapsuleFormScreen()),
+      GoRoute(
+        path: '/capsule/new',
+        builder: (_, _) => const LifecycleWriteGuard(child: CapsuleFormScreen()),
+      ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
-      GoRoute(path: '/book', builder: (_, _) => const BookHomeScreen()),
-      GoRoute(path: '/book/editor', builder: (_, _) => const BookEditorScreen()),
+      // Premium area: closed for ACTIVE profiles, placeholder for LOCKED ones
+      // until entitlements exist (plan 2.2 / phase 9).
+      GoRoute(
+        path: '/book',
+        builder: (_, _) => const PremiumRouteGate(child: BookHomeScreen()),
+      ),
+      GoRoute(
+        path: '/book/editor',
+        builder: (_, _) => const PremiumRouteGate(child: BookEditorScreen()),
+      ),
       GoRoute(
         path: '/book/view',
-        builder: (_, s) => BookPdfViewScreen(file: s.extra! as File),
+        builder: (_, s) => PremiumRouteGate(child: BookPdfViewScreen(file: s.extra! as File)),
       ),
       GoRoute(
         path: '/book/page/:pageId',
-        builder: (_, s) => BookPageEditorScreen(pageId: s.pathParameters['pageId']!),
+        builder: (_, s) => PremiumRouteGate(child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/lifecycle',
+        builder: (_, s) => BabyLifecycleScreen(babyId: s.pathParameters['babyId']!),
+      ),
+      // Platform Super Admin console: separate from the family shell; the
+      // database re-checks the role on every call.
+      GoRoute(
+        path: '/admin',
+        builder: (_, _) => const AdminGate(child: AdminConsoleScreen()),
       ),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
@@ -214,6 +252,7 @@ const _onboardingRoutes = {
   '/settings/profile',
   '/settings/delete-account',
   '/settings/privacy',
+  '/admin',
 };
 
 String? _redirect(Ref ref, GoRouterState state) {

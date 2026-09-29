@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/content/lifecycle_revision.dart';
 import '../core/widgets/offline_banner.dart';
 import '../features/family/application/family_providers.dart';
 import '../features/family/domain/permission.dart';
@@ -20,12 +21,20 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver {
   StreamSubscription<dynamic>? _pushSub;
+
+  /// The Istanbul day may have changed while the app was in the background:
+  /// ask the server again instead of trusting the cached lifecycle.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) ref.read(lifecycleRevisionProvider.notifier).bump();
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final push = ref.read(pushServiceProvider);
     _pushSub = push.foregroundMessages.listen((m) {
       if (!mounted) return;
@@ -54,6 +63,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pushSub?.cancel();
     ref.read(pushServiceProvider).openedRoute.removeListener(_openPushRoute);
     super.dispose();

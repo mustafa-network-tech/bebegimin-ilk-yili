@@ -111,7 +111,7 @@ List<UpcomingDay> upcomingDays(Baby baby, DateTime today, {int limit = 3}) {
     result.add(
       UpcomingDay(
         date: Dates.addDays(fy.end, 1),
-        title: 'İlk Yılım kitabı hazır olacak 📖',
+        title: 'İlk yıl tamamlanıyor 🎉',
         kind: UpcomingKind.firstYearComplete,
       ),
     );

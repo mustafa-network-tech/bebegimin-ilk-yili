@@ -95,10 +95,23 @@ class AppException implements Exception {
     'birth_date_rpc_only': 'Doğum tarihi yalnızca doğum tarihi düzeltme adımıyla değiştirilebilir.',
     'birth_date_requires_admin':
         'İçerik eklendikten sonra doğum tarihi yalnızca destek ekibi tarafından düzeltilebilir.',
+    'birth_date_reason_required': 'Doğum tarihi düzeltmesi için gerekçe yazın.',
+    'reopen_confirmation_required': 'Kilitli profili yeniden açmak için açık onay gerekiyor.',
+    'decision_note_required': 'Reddetmek için karar notu yazın.',
+    'search_too_short': 'En az 2 karakter yazın.',
+    'rate_limited': 'Çok fazla işlem yapıldı. Lütfen bir dakika sonra tekrar deneyin.',
+    'admin_console_disabled': 'Yönetim paneli geçici olarak kapalı.',
   };
 
   /// Hints that describe a permanent server-side refusal rather than bad input.
-  static const _permissionHints = {'lifecycle_locked', 'birth_date_rpc_only', 'birth_date_requires_admin'};
+  static const _permissionHints = {
+    'lifecycle_locked',
+    'birth_date_rpc_only',
+    'birth_date_requires_admin',
+    'reopen_confirmation_required',
+    'rate_limited',
+    'admin_console_disabled',
+  };
 
   /// True when the server refused a write because the baby's archive is locked.
   static bool isLifecycleLocked(Object error) => error is PostgrestException && error.hint == 'lifecycle_locked';

@@ -6,14 +6,15 @@ import '../../../app/theme.dart';
 import '../../../core/content/content_route.dart';
 import '../../../core/storage/signed_urls.dart';
 import '../../../core/utils/dates.dart';
-import '../../../core/utils/turkish.dart';
 import '../../../core/widgets/avatar.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/states.dart';
 import '../../../core/widgets/storage_image.dart';
 import '../../babies/application/baby_providers.dart';
 import '../../babies/domain/baby.dart';
+import '../../babies/application/baby_lifecycle_providers.dart';
 import '../../babies/presentation/baby_app_bar.dart';
+import '../../babies/presentation/lifecycle_widgets.dart';
 import '../../capsules/application/capsule_providers.dart';
 import '../../family/application/family_providers.dart';
 import '../../family/domain/permission.dart';
@@ -53,8 +54,9 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 100),
           children: [
             _Hero(baby: baby, today: today),
-            _FirstYearCard(baby: baby, today: today, canCreateBook: access.can(AppPermission.createBook)),
-            const _QuickActions(),
+            LifecycleCard(baby: baby),
+            if (ref.watch(babyLifecycleProvider(baby.id)).value?.isLocked ?? false) const PremiumPlaceholderCard(),
+            _QuickActions(baby: baby),
             if ((onThisDay.value?.entries.isNotEmpty ?? false)) ...[
               const SectionHeader(title: 'Bir yıl önce bugün ✨'),
               for (final e in onThisDay.value!.entries.take(2))
@@ -74,6 +76,13 @@ class HomeScreen extends ConsumerWidget {
               onRetry: () => ref.invalidate(timelineProvider(TimelineKey(baby.id))),
               data: (state) {
                 if (state.entries.isEmpty) {
+                  if (!access.canCreateAnything) {
+                    return EmptyState(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Henüz anı yok',
+                      message: '${baby.firstName} için eklenmiş bir anı bulunmuyor.',
+                    );
+                  }
                   return EmptyState(
                     icon: Icons.auto_awesome_outlined,
                     title: 'İlk anıyı ekleyin',
@@ -201,78 +210,10 @@ class _Hero extends StatelessWidget {
   }
 }
 
-class _FirstYearCard extends StatelessWidget {
-  const _FirstYearCard({required this.baby, required this.today, required this.canCreateBook});
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({required this.baby});
 
   final Baby baby;
-  final DateTime today;
-  final bool canCreateBook;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fy = baby.firstYear;
-    final complete = fy.isComplete(today);
-    final day = fy.dayNumber(today);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Card(
-        color: AppColors.apricot.withValues(alpha: 0.08),
-        child: InkWell(
-          onTap: () => context.push('/book'),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.apricot,
-                  child: Icon(Icons.menu_book_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        complete
-                            ? '${Turkish.genitive(baby.firstName)} İlk Yılım kitabı hazır olabilir'
-                            : 'İlk Yılım · ${day ?? 0}. gün',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      if (!complete) ...[
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(value: fy.progress(today), minHeight: 7),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Kitap için ${fy.daysRemaining(today)} gün kaldı · taslağı şimdiden oluşturabilirsiniz',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ] else
-                        Text(
-                          canCreateBook
-                              ? 'İlk 365 günü kitaba dönüştürün. Anı eklemeye devam edebilirsiniz.'
-                              : 'Aile kitabını görüntüleyin.',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickActions extends StatelessWidget {
-  const _QuickActions();
 
   @override
   Widget build(BuildContext context) {
@@ -280,8 +221,8 @@ class _QuickActions extends StatelessWidget {
       (Icons.photo_library_rounded, 'Albüm', '/album', AppColors.sage),
       (Icons.star_rounded, 'İlklerim', '/milestones', AppColors.honey),
       (Icons.mail_rounded, 'Mektuplar', '/letters', AppColors.lavender),
-      (Icons.hourglass_bottom_rounded, 'Kapsül', '/capsules', const Color(0xFF9C8BB0)),
-      (Icons.menu_book_rounded, 'Kitabım', '/book', AppColors.apricot),
+      (Icons.lock_clock_rounded, 'Kapsül', '/capsules', const Color(0xFF9C8BB0)),
+      (Icons.hourglass_bottom_rounded, 'İlk Yıl', lifecycleRoute(baby.id), AppColors.apricot),
       (Icons.search_rounded, 'Arama', '/search', const Color(0xFF6E8FB5)),
     ];
     return Padding(
@@ -375,7 +316,7 @@ class _Upcoming extends ConsumerWidget {
                     onTap: d.kind == UpcomingKind.capsule
                         ? () => context.push('/capsules')
                         : d.kind == UpcomingKind.firstYearComplete
-                        ? () => context.push('/book')
+                        ? () => context.push(lifecycleRoute(baby.id))
                         : null,
                   ),
               ],
@@ -396,6 +337,7 @@ class _Firsts extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final slots = ref.watch(milestoneSlotsProvider(baby.id)).value;
     if (slots == null) return const SizedBox.shrink();
+    final canAdd = ref.watch(accessProvider(baby.id)).can(AppPermission.addMilestone);
     final achieved = slots.where((s) => s.achieved).toList();
     final next = slots.where((s) => !s.achieved).take(3).toList();
     return Column(
@@ -420,11 +362,13 @@ class _Firsts extends ConsumerWidget {
                     child: Card(
                       color: s.achieved ? AppColors.honey.withValues(alpha: 0.14) : null,
                       child: InkWell(
-                        onTap: () => s.achieved
-                            ? context.push(
+                        onTap: s.achieved
+                            ? () => context.push(
                                 contentRoute(ContentRouteKind.milestone, s.milestone!.babyId, s.milestone!.id),
                               )
-                            : context.push('/milestone/new?typeId=${s.type.id}'),
+                            : canAdd
+                            ? () => context.push('/milestone/new?typeId=${s.type.id}')
+                            : null,
                         child: Padding(
                           padding: const EdgeInsets.all(10),
                           child: Column(

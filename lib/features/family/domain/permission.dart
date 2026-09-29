@@ -36,11 +36,29 @@ enum AppPermission {
   /// Permissions only an admin may hand out.
   bool get isManagement =>
       this == manageMembers || this == manageContent || this == manageBaby || this == inviteMembers;
+
+  /// Permissions that write the baby's source archive. They are switched off
+  /// once the server reports the archive as LOCKED; family management is not.
+  bool get writesArchive =>
+      this == addMemory ||
+      this == editOwnMemory ||
+      this == addPhoto ||
+      this == addVideo ||
+      this == comment ||
+      this == addMilestone ||
+      this == writeLetter ||
+      this == manageContent ||
+      this == manageBaby;
 }
 
 /// What the current user may do for one baby.
 class MemberAccess {
-  const MemberAccess({required this.isAdmin, required this.permissions, required this.userId});
+  const MemberAccess({
+    required this.isAdmin,
+    required this.permissions,
+    required this.userId,
+    this.archiveLocked = false,
+  });
 
   static const none = MemberAccess(isAdmin: false, permissions: {}, userId: '');
 
@@ -48,7 +66,17 @@ class MemberAccess {
   final Set<AppPermission> permissions;
   final String userId;
 
-  bool can(AppPermission p) => isAdmin || permissions.contains(p);
+  /// The baby's source archive is read-only (server lifecycle LOCKED or not
+  /// yet confirmed ACTIVE).
+  final bool archiveLocked;
+
+  MemberAccess withArchiveLocked(bool locked) =>
+      MemberAccess(isAdmin: isAdmin, permissions: permissions, userId: userId, archiveLocked: locked);
+
+  bool can(AppPermission p) {
+    if (archiveLocked && p.writesArchive) return false;
+    return isAdmin || permissions.contains(p);
+  }
 
   /// Same rule as the RLS UPDATE/DELETE policies on memories/milestones.
   bool canEditContent(String? authorId) =>
@@ -56,9 +84,16 @@ class MemberAccess {
 
   /// Media: the uploader or content managers.
   bool canEditMedia(String? uploaderId) =>
-      can(AppPermission.manageContent) || (uploaderId != null && uploaderId == userId);
+      can(AppPermission.manageContent) || (!archiveLocked && uploaderId != null && uploaderId == userId);
 
-  bool canEditLetter(String? authorId) => authorId != null && authorId == userId;
+  bool canEditLetter(String? authorId) => !archiveLocked && authorId != null && authorId == userId;
+
+  /// Comments: the author or content managers.
+  bool canDeleteComment(String? authorId) =>
+      can(AppPermission.manageContent) || (!archiveLocked && authorId != null && authorId == userId);
+
+  /// Time capsules: the author or admins (same rule as the RLS policy).
+  bool canDeleteCapsule(String? authorId) => !archiveLocked && ((authorId != null && authorId == userId) || isAdmin);
 
   bool canDeleteLetter(String? authorId) => canEditLetter(authorId) || can(AppPermission.manageContent);
 

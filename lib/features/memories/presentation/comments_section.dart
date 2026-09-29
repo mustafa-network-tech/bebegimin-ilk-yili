@@ -84,7 +84,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                 Builder(
                   builder: (context) {
                     final author = members.where((m) => m.userId == c.authorId).firstOrNull;
-                    final canDelete = c.authorId == access.userId || access.can(AppPermission.manageContent);
+                    final canDelete = access.canDeleteComment(c.authorId);
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: AppAvatar(name: author?.shownName ?? '?', path: author?.avatarPath, radius: 18),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../content/lifecycle_revision.dart';
 import '../errors/app_exception.dart';
 
 void showSnack(BuildContext context, String message, {bool error = false}) {
@@ -11,7 +13,14 @@ void showSnack(BuildContext context, String message, {bool error = false}) {
     ..showSnackBar(SnackBar(content: Text(message), backgroundColor: error ? scheme.error : null));
 }
 
-void showError(BuildContext context, Object error) => showSnack(context, AppException.from(error).message, error: true);
+void showError(BuildContext context, Object error) {
+  // A locked archive means the cached lifecycle is stale: refetch it so the
+  // write actions disappear instead of failing again.
+  if (AppException.isLifecycleLocked(error)) {
+    ProviderScope.containerOf(context, listen: false).read(lifecycleRevisionProvider.notifier).bump();
+  }
+  showSnack(context, AppException.from(error).message, error: true);
+}
 
 Future<bool> confirm(
   BuildContext context, {

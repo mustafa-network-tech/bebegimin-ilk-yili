@@ -21,6 +21,11 @@ abstract final class Env {
   /// development against `supabase db reset` + seed.sql.
   static const demoMode = bool.fromEnvironment('DEMO_MODE');
 
+  /// Opens the existing on-device book tools for LOCKED profiles, for
+  /// internal testing only. Until entitlements exist (phase 7-9) the premium
+  /// area is a placeholder; ACTIVE profiles never see it.
+  static const premiumPreview = bool.fromEnvironment('PREMIUM_PREVIEW');
+
   static const maxVideoMb = int.fromEnvironment('MAX_VIDEO_MB', defaultValue: 200);
 
   // Optional Firebase Cloud Messaging (push). Leave empty to disable push;

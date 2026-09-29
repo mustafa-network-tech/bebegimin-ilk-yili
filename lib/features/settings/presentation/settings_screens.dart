@@ -13,6 +13,7 @@ import '../../../core/widgets/avatar.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/states.dart';
+import '../../admin/application/admin_providers.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../babies/application/baby_providers.dart';
 import '../../media/presentation/media_picker.dart';
@@ -77,6 +78,16 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Davet koduyla katıl'),
             onTap: () => context.push('/join'),
           ),
+          if (ref.watch(adminSessionProvider).value?.isSuperAdmin ?? false) ...[
+            const SectionHeader(title: 'Platform'),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings_outlined),
+              title: const Text('Platform yönetimi'),
+              subtitle: const Text('Uzatma talepleri, doğum tarihi düzeltmeleri, denetim kaydı'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/admin'),
+            ),
+          ],
           const SectionHeader(title: 'Görünüm'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),

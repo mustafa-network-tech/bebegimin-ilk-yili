@@ -4,6 +4,7 @@
   "AUTH_REDIRECT_URL": "bebegimin://login-callback",
   "INVITE_LINK_BASE": "bebegimin://invite",
   "MAX_VIDEO_MB": "200",
+  "PREMIUM_PREVIEW": "false",
   "DEMO_MODE": "false",
   "FIREBASE_API_KEY": "",
   "FIREBASE_PROJECT_ID": "",

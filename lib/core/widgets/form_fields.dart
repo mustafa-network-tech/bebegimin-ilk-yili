@@ -17,7 +17,9 @@ class DateField extends StatelessWidget {
 
   final String label;
   final DateTime? value;
-  final ValueChanged<DateTime> onChanged;
+
+  /// `null` renders the field read-only.
+  final ValueChanged<DateTime>? onChanged;
   final DateTime firstDate;
   final DateTime lastDate;
   final String? helper;
@@ -25,21 +27,30 @@ class DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onChanged = this.onChanged;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () async {
-        final initial = value ?? lastDate;
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: initial.isBefore(firstDate) ? firstDate : (initial.isAfter(lastDate) ? lastDate : initial),
-          firstDate: firstDate,
-          lastDate: lastDate,
-          helpText: label,
-        );
-        if (picked != null) onChanged(Dates.dateOnly(picked));
-      },
+      onTap: onChanged == null
+          ? null
+          : () async {
+              final initial = value ?? lastDate;
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: initial.isBefore(firstDate) ? firstDate : (initial.isAfter(lastDate) ? lastDate : initial),
+                firstDate: firstDate,
+                lastDate: lastDate,
+                helpText: label,
+              );
+              if (picked != null) onChanged(Dates.dateOnly(picked));
+            },
       child: InputDecorator(
-        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon), helperText: helper, helperMaxLines: 2),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          helperText: helper,
+          helperMaxLines: 3,
+          enabled: onChanged != null,
+        ),
         child: Text(value == null ? 'Seçin' : Dates.longWithWeekday(value!)),
       ),
     );
@@ -51,21 +62,27 @@ class TimeField extends StatelessWidget {
 
   final String label;
   final TimeOfDay? value;
-  final ValueChanged<TimeOfDay?> onChanged;
+
+  /// `null` renders the field read-only.
+  final ValueChanged<TimeOfDay?>? onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final onChanged = this.onChanged;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () async {
-        final picked = await showTimePicker(context: context, initialTime: value ?? TimeOfDay.now());
-        if (picked != null) onChanged(picked);
-      },
+      onTap: onChanged == null
+          ? null
+          : () async {
+              final picked = await showTimePicker(context: context, initialTime: value ?? TimeOfDay.now());
+              if (picked != null) onChanged(picked);
+            },
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          enabled: onChanged != null,
           prefixIcon: const Icon(Icons.schedule_rounded),
-          suffixIcon: value == null
+          suffixIcon: value == null || onChanged == null
               ? null
               : IconButton(
                   tooltip: 'Saati kaldır',
