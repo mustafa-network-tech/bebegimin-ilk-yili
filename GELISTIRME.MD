@@ -191,7 +191,6 @@ Her plan Anne + Baba'yı içerir; parent hesapları Family Member kapasitesinden
 - `billing_period`: `monthly | annual`; `currency`: `TRY`.
 - Yıllık fiyat kuralı: `annual_price = monthly_price × 12 × 0.90`; yani 12 aylık toplam üzerinden %10 indirim. İndirimsiz yıllık toplamlar: Small 3.588 TL, Normal 4.428 TL, Large 5.628 TL.
 - Plan fiyatlarının ve kapasitelerinin tek resmî kaynağı server-side plan kataloğu / payment provider mapping'dir. Fiyat ve kapasite Flutter, RPC veya Edge Function içine dağınık hard-code edilmez; istemci katalogdan okur.
-- Önceki Anne+Baba 109 TL/ay ve Family Member 69 TL/ay/kişi bireysel abonelik modeli geçersizdir; hiçbir plan, seed, test, UI metni veya provider eşlemesinde kullanılmaz.
 
 #### 2.5.2 Family Member erişimi ve kapasite
 
@@ -229,7 +228,7 @@ Premium ürünler birbirinden bağımsız, baby-scoped, tek seferlik dijital sat
 Kurallar:
 
 - Fiyatlar veritabanında kuruş olarak `first_year_book = 34900`, `first_year_html = 44900`, `first_year_film = 54900`, para birimi `TRY` tutulur.
-- Premium ürünler için önceki 259/319/339 TL fiyatları ve taslak olarak konuşulan 299/399/499 TL fiyatları geçersizdir; hiçbir premium katalog seed'i, test, UI metni veya provider eşlemesinde premium ürün fiyatı olarak kullanılmaz. (Small Family aylık `29900` TRY abonelik fiyatı bu kuraldan etkilenmez.)
+- Bu üç fiyat bağlayıcı premium fiyat setidir; farklı eski veya taslak premium fiyatlar katalog seed'i, test, UI metni ya da provider eşlemesinde kullanılamaz. Small Family aylık abonelik fiyatı premium ürün fiyatı değildir.
 - Premium fiyatların tek resmî kaynağı server-side product catalog / price configuration kaydıdır; ödeme sağlayıcısı ürün/SKU eşlemesi (payment provider mapping) bu katalogla eşleştirilir. Fiyatlar Flutter, Edge Function, RPC veya UI metinlerine dağınık hard-code edilmez; istemci fiyatı katalogdan okur.
 - Fiyat değişikliği yeni sürümlü katalog kaydıdır; entitlement, lifecycle veya ACTIVE/LOCKED mantığını değiştirmez.
 - Fiziksel/basılı kitap bu ürünlerden biri değildir ve kataloğa sabit fiyatlı premium ürün olarak eklenmez; bkz. 2.9.1.
@@ -1079,7 +1078,7 @@ LOCKED bebek için Book/Film/HTML tek seferlik satın alma haklarını güvenli 
 - Anne alımı Baba'da görünür; ikinci ücret oluşmaz.
 - Webhook replay çift entitlement üretmez.
 - Yanlış fiyat/currency/client sonucu reddedilir.
-- Premium katalog `34900 / 44900 / 54900` TRY döner; eski 259/319/339 veya taslak 299/399/499 değerleri premium ürün fiyatı olarak hiçbir seed, test veya UI metninde yoktur.
+- Premium katalog yalnız `34900 / 44900 / 54900` TRY döner; emekliye ayrılmış veya taslak premium fiyat değerleri hiçbir seed, test, UI metni ya da provider eşlemesinde bulunmaz.
 ### Kabul kriterleri
 
 - Üç ürün ayrı, doğru fiyatlı ve baby-scoped entitlement üretir.
