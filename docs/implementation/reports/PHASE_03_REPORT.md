@@ -2,7 +2,7 @@
 
 - Durum: COMPLETE
 - Başlangıç commit'i: `c36c37e`
-- Bitiş commit'i: Commit oluşturulmadı (kullanıcıdan açık commit talebi gelmedi). Önerilen mesaj: `security: enforce lifecycle across data and storage mutations`
+- Bitiş commit'i: `fbd578e` (`security: enforce lifecycle across data and storage mutations`)
 - Eklenen migration: `supabase/migrations/20260929000100_lifecycle_mutation_lock.sql`
 - Değişen dosyalar:
   - Veritabanı: yeni migration; `supabase/tests/70_lifecycle_mutation_lock_test.sql` (yeni), `supabase/tests/02_legacy_active_fixture.sql` (yeni), `supabase/tests/run_db_tests.sh`, `supabase/tests/12_lifecycle_extensions_test.sql`, `supabase/tests/40_capsules_dates_test.sql`
