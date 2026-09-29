@@ -142,48 +142,6 @@ class LifecycleCard extends ConsumerWidget {
   }
 }
 
-/// LOCKED-only placeholder for the upcoming premium outputs. No purchase or
-/// generation is offered before entitlements exist.
-class PremiumPlaceholderCard extends StatelessWidget {
-  const PremiumPlaceholderCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.lavender.withValues(alpha: 0.2),
-                child: const Icon(Icons.auto_stories_rounded, color: AppColors.lavender),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('İlk Yıl hatıraları', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Dijital kitap, film ve çevrimdışı arşiv yakında bu tamamlanmış arşivden hazırlanabilecek.',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Wraps create/edit form routes. Deep links cannot bypass it: the form is
 /// only built once the server confirmed the archive is ACTIVE.
 class LifecycleWriteGuard extends ConsumerWidget {

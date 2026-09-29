@@ -12,6 +12,7 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/states.dart';
 import '../../babies/application/baby_providers.dart';
 import '../../babies/presentation/baby_app_bar.dart';
+import '../../subscription/presentation/family_plan_screen.dart';
 import '../application/family_providers.dart';
 import '../data/family_repository.dart';
 import '../domain/family_member.dart';
@@ -107,6 +108,11 @@ class FamilyScreen extends ConsumerWidget {
               ),
             ),
             if (canInvite) _Invitations(babyId: baby.id),
+            const SectionHeader(title: 'Aile paketi'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Card(child: FamilyPlanTile(babyId: baby.id)),
+            ),
             const SectionHeader(title: 'Bebek'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

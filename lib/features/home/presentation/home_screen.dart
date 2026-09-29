@@ -22,6 +22,7 @@ import '../../memories/application/memory_providers.dart';
 import '../../memories/data/timeline_repository.dart';
 import '../../memories/presentation/timeline_entry_card.dart';
 import '../../milestones/application/milestone_providers.dart';
+import '../../premium/presentation/premium_store_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -55,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
           children: [
             _Hero(baby: baby, today: today),
             LifecycleCard(baby: baby),
-            if (ref.watch(babyLifecycleProvider(baby.id)).value?.isLocked ?? false) const PremiumPlaceholderCard(),
+            if (ref.watch(babyLifecycleProvider(baby.id)).value?.isLocked ?? false) PremiumEntryCard(babyId: baby.id),
             _QuickActions(baby: baby),
             if ((onThisDay.value?.entries.isNotEmpty ?? false)) ...[
               const SectionHeader(title: 'Bir yıl önce bugün ✨'),

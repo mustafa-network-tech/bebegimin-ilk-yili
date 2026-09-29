@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/family/domain/invitation.dart';
 import '../features/notifications/data/push_service.dart';
 import '../features/settings/application/theme_mode.dart';
+import '../features/subscription/data/store_billing.dart';
 import 'env.dart';
 import 'router.dart';
 import 'session.dart';
@@ -30,6 +31,8 @@ class _BebegiminAppState extends ConsumerState<BebegiminApp> {
     _listenForInviteLinks();
     // Push is optional; initialises only when Firebase is configured.
     Future.microtask(() => ref.read(pushServiceProvider).start());
+    // Store purchases are finished (verified server-side) even after a restart.
+    Future.microtask(() => ref.read(storeBillingProvider).start());
   }
 
   void _listenForInviteLinks() {

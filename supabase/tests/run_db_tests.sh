@@ -80,6 +80,54 @@ else
 fi
 rm -rf -- "$RACE_DIR"
 
+# Real two-session race: one Family Member seat left on a Small plan; two
+# people accept their invitations at the same time. The per-account row
+# lock must let exactly one activation commit.
+echo "→ race family capacity"
+psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" <<'SQL'
+insert into auth.users (id, email) values
+  ('9a000000-0000-4000-8000-000000000001', 'yaris-ebeveyn@example.com'),
+  ('9a000000-0000-4000-8000-000000000011', 'yaris-uye1@example.com'),
+  ('9a000000-0000-4000-8000-000000000012', 'yaris-uye2@example.com'),
+  ('9a000000-0000-4000-8000-000000000013', 'yaris-uye3@example.com'),
+  ('9a000000-0000-4000-8000-000000000014', 'yaris-uye4@example.com');
+insert into public.family_accounts (id, display_name) values ('9a100000-0000-4000-8000-000000000001', 'Yarış ailesi');
+insert into public.babies (id, first_name, birth_date, created_by)
+values ('9a200000-0000-4000-8000-000000000001', 'Kapasite', public.business_date_istanbul() - 60, '9a000000-0000-4000-8000-000000000001');
+insert into public.family_account_babies (baby_id, family_account_id)
+values ('9a200000-0000-4000-8000-000000000001', '9a100000-0000-4000-8000-000000000001');
+insert into public.subscriptions (family_account_id, plan_id, plan_code, billing_period, status, provider, provider_subscription_id)
+select '9a100000-0000-4000-8000-000000000001', p.id, p.code, p.billing_period, 'active', 'mock', 'race-sub'
+  from public.subscription_plans p where p.code = 'small_family' and p.billing_period = 'monthly';
+insert into public.family_members (baby_id, user_id, relation, is_admin, permissions) values
+  ('9a200000-0000-4000-8000-000000000001', '9a000000-0000-4000-8000-000000000001', 'anne', true, '{}'),
+  ('9a200000-0000-4000-8000-000000000001', '9a000000-0000-4000-8000-000000000011', 'teyze', false, '{view_memories}'),
+  ('9a200000-0000-4000-8000-000000000001', '9a000000-0000-4000-8000-000000000012', 'hala', false, '{view_memories}');
+insert into public.family_invitations (baby_id, code, relation, created_by) values
+  ('9a200000-0000-4000-8000-000000000001', 'YARSAAAA33', 'dayi', '9a000000-0000-4000-8000-000000000001'),
+  ('9a200000-0000-4000-8000-000000000001', 'YARSBBBB33', 'amca', '9a000000-0000-4000-8000-000000000001');
+SQL
+RACE_DIR="$(mktemp -d)"
+set +e
+psql -v ON_ERROR_STOP=1 -q -d "$DB" -c "select tests.login('9a000000-0000-4000-8000-000000000013'); select public.accept_invitation('YARSAAAA33');" >"$RACE_DIR/one.log" 2>&1 &
+RACE_ONE=$!
+psql -v ON_ERROR_STOP=1 -q -d "$DB" -c "select tests.login('9a000000-0000-4000-8000-000000000014'); select public.accept_invitation('YARSBBBB33');" >"$RACE_DIR/two.log" 2>&1 &
+RACE_TWO=$!
+wait "$RACE_ONE"; RACE_ONE_STATUS=$?
+wait "$RACE_TWO"; RACE_TWO_STATUS=$?
+set -e
+ACTIVE="$(psql -v ON_ERROR_STOP=1 -qtA -d "$DB" -c "select count(*) from public.family_account_members where family_account_id = '9a100000-0000-4000-8000-000000000001' and role = 'family_member' and status = 'active'")"
+if { { [ "$RACE_ONE_STATUS" -eq 0 ] && [ "$RACE_TWO_STATUS" -ne 0 ]; } ||
+     { [ "$RACE_ONE_STATUS" -ne 0 ] && [ "$RACE_TWO_STATUS" -eq 0 ]; }; } && [ "$ACTIVE" = "3" ]; then
+  echo "  ok - concurrent activations never exceed the plan capacity"
+else
+  echo "✗ capacity race expected one success and 3 active members; got $RACE_ONE_STATUS / $RACE_TWO_STATUS, active $ACTIVE"
+  sed -n '/ERROR/p' "$RACE_DIR/one.log" "$RACE_DIR/two.log"
+  rm -rf -- "$RACE_DIR"
+  exit 1
+fi
+rm -rf -- "$RACE_DIR"
+
 for f in "$DIR"/[1-9]*_test.sql; do
   echo "→ test $(basename "$f")"
   psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$f" 2>&1 | sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'

@@ -34,9 +34,13 @@ import '../features/memories/presentation/memory_form_screen.dart';
 import '../features/memories/presentation/timeline_screen.dart';
 import '../features/milestones/presentation/milestone_screens.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/premium/presentation/premium_store_screen.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/settings/presentation/settings_screens.dart';
+import '../features/subscription/application/subscription_providers.dart';
+import '../features/subscription/presentation/family_plan_screen.dart';
+import '../features/subscription/presentation/paywall_screen.dart';
 import 'env.dart';
 import 'session.dart';
 import 'shell.dart';
@@ -215,6 +219,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => PremiumRouteGate(child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
       ),
       GoRoute(
+        path: '/babies/:babyId/premium',
+        builder: (_, s) => PremiumStoreScreen(babyId: s.pathParameters['babyId']!),
+      ),
+      GoRoute(
         path: '/babies/:babyId/lifecycle',
         builder: (_, s) => BabyLifecycleScreen(babyId: s.pathParameters['babyId']!),
       ),
@@ -232,6 +240,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/delete-account', builder: (_, _) => const DeleteAccountScreen()),
       GoRoute(path: '/settings/privacy', builder: (_, _) => const PrivacyScreen()),
       GoRoute(path: '/family/invite', builder: (_, _) => const InviteScreen()),
+      GoRoute(path: familyPlanRoute, builder: (_, _) => const FamilyPlanScreen()),
+      GoRoute(path: paywallRoute, builder: (_, _) => const PaywallScreen()),
       GoRoute(
         path: '/family/member/:id',
         builder: (_, s) => MemberEditScreen(memberId: s.pathParameters['id']!),
@@ -298,6 +308,13 @@ String? _redirect(Ref ref, GoRouterState state) {
     if (pending != null) return '/join?code=$pending';
     return '/home';
   }
+
+  // Inactive family subscription: the whole family goes to the payment page
+  // (the server enforces the same rule on every read and write).
+  final gate = ref.read(activeAccessGateProvider);
+  final blocked = gate != null && !gate.allowed;
+  if (blocked && !allowedWithoutSubscription(loc)) return paywallRoute;
+  if (!blocked && loc == paywallRoute && gate != null) return '/home';
   return null;
 }
 
@@ -310,5 +327,6 @@ class _RouterRefresh extends ChangeNotifier {
     ref.listen(myProfileProvider, (_, _) => notifyListeners());
     ref.listen(babiesProvider, (_, _) => notifyListeners());
     ref.listen(pendingInviteCodeProvider, (_, _) => notifyListeners());
+    ref.listen(activeAccessGateProvider, (_, _) => notifyListeners());
   }
 }

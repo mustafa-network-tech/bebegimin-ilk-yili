@@ -101,6 +101,16 @@ class AppException implements Exception {
     'search_too_short': 'En az 2 karakter yazın.',
     'rate_limited': 'Çok fazla işlem yapıldı. Lütfen bir dakika sonra tekrar deneyin.',
     'admin_console_disabled': 'Yönetim paneli geçici olarak kapalı.',
+    'family_capacity_full': 'Aile paketinin üye kapasitesi dolu. Katılım için Anne veya Baba paketi yükseltebilir ya da bir üyeyi çıkarabilir.',
+    'parent_seats_full': 'Bu aile hesabında iki ebeveyn zaten kayıtlı.',
+    'subscription_required': 'Bu işlem için aktif bir aile paketi gerekiyor.',
+    'premium_requires_locked': 'Dijital ürünler ilk yıl arşivi tamamlandıktan sonra sunulur.',
+    'storefront_closed': 'Dijital ürünler yakında satışta.',
+    'already_owned': 'Bu ürün bu bebek için zaten satın alınmış.',
+    'not_parent': 'Bu işlemi yalnızca Anne veya Baba yapabilir.',
+    'purchase_not_yours': 'Bu satın alma başka bir aile hesabına ait.',
+    'family_account_ambiguous':
+        'Birden fazla aile hesabınız var; bebeği hangi hesaba ekleyeceğinizi seçmeniz gerekiyor.',
   };
 
   /// Hints that describe a permanent server-side refusal rather than bad input.
@@ -111,6 +121,14 @@ class AppException implements Exception {
     'reopen_confirmation_required',
     'rate_limited',
     'admin_console_disabled',
+    'family_capacity_full',
+    'parent_seats_full',
+    'subscription_required',
+    'premium_requires_locked',
+    'storefront_closed',
+    'already_owned',
+    'not_parent',
+    'purchase_not_yours',
   };
 
   /// True when the server refused a write because the baby's archive is locked.

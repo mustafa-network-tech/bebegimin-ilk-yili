@@ -68,3 +68,10 @@ verify_jwt = false
 
 [functions.storage-cleanup]
 verify_jwt = false
+
+[functions.billing-webhook]
+verify_jwt = false
+
+# Called by the app with the user's JWT after a store purchase / restore.
+[functions.billing-verify-purchase]
+verify_jwt = true
