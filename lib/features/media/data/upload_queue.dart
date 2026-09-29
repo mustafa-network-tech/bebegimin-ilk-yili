@@ -272,7 +272,8 @@ class UploadQueue extends Notifier<List<PendingUpload>> {
         return false;
       }
       debugPrint('upload failed: $e');
-      final attempts = u.attempts + 1;
+      // A locked archive never becomes writable again: fail without retries.
+      final attempts = AppException.isLifecycleLocked(e) ? maxAttempts : u.attempts + 1;
       _replace(
         u.copyWith(
           attempts: attempts,

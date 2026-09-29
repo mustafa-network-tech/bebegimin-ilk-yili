@@ -3,8 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase_providers.dart';
 import '../../../core/utils/dates.dart';
-import '../../media/domain/media_item.dart';
-import '../../memories/data/memory_repository.dart';
 import '../domain/letter.dart';
 
 final letterRepositoryProvider = Provider<LetterRepository>((ref) => LetterRepository(ref.watch(supabaseProvider)));
@@ -71,10 +69,8 @@ class LetterRepository {
   Future<void> setIncludeInBook(String babyId, String id, bool v) =>
       _client.from('letters').update({'include_in_book': v}).eq('baby_id', babyId).eq('id', id);
 
-  Future<void> delete(String babyId, String id, List<MediaItem> media) async {
-    await removeFiles(_client, media);
-    await _client.from('letters').delete().eq('baby_id', babyId).eq('id', id);
-  }
+  /// Row first; attached media files are queued server-side for cleanup.
+  Future<void> delete(String babyId, String id) => _client.from('letters').delete().eq('baby_id', babyId).eq('id', id);
 
   Future<String?> resolveLegacyBabyId(String id) async {
     final row = await _client.from('letters').select('baby_id').eq('id', id).maybeSingle();

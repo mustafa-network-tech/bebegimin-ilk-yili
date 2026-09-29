@@ -57,12 +57,7 @@ class CapsuleRepository {
     return id;
   }
 
-  Future<void> delete(TimeCapsule c) async {
-    if (c.hasPhoto) {
-      try {
-        await _client.storage.from(Buckets.babyMedia).remove([c.photoPath]);
-      } catch (_) {}
-    }
-    await _client.from('time_capsules').delete().eq('id', c.id);
-  }
+  /// Deletes the row only: the database decides authorisation and lifecycle,
+  /// and queues the photo for the storage-cleanup function.
+  Future<void> delete(TimeCapsule c) => _client.from('time_capsules').delete().eq('baby_id', c.babyId).eq('id', c.id);
 }

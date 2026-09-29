@@ -5,8 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/cache/local_cache.dart';
 import '../../../core/supabase_providers.dart';
 import '../../../core/utils/dates.dart';
-import '../../media/domain/media_item.dart';
-import '../../memories/data/memory_repository.dart';
 import '../domain/milestone.dart';
 
 final milestoneRepositoryProvider = Provider<MilestoneRepository>(
@@ -99,10 +97,9 @@ class MilestoneRepository {
     return Milestone.fromJson(row);
   }
 
-  Future<void> delete(String babyId, String id, List<MediaItem> media) async {
-    await removeFiles(_client, media);
-    await _client.from('milestones').delete().eq('baby_id', babyId).eq('id', id);
-  }
+  /// Row first; attached media files are queued server-side for cleanup.
+  Future<void> delete(String babyId, String id) =>
+      _client.from('milestones').delete().eq('baby_id', babyId).eq('id', id);
 
   Future<MilestoneType> createCustomType(String babyId, String title, String? emoji) async {
     final row = await _client

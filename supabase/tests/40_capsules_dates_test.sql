@@ -28,16 +28,19 @@ select tests.expect_error($q$insert into memories (baby_id, title, memory_date) 
 insert into memories (id, baby_id, title, memory_date) values
   ('e3000000-0000-4000-8000-000000000001', tests.id('defne'), 'Hamilelik: ilk tekme', current_date - 400 - 60);
 select tests.eq(tests.count($q$select 1 from memories where id = 'e3000000-0000-4000-8000-000000000001'$q$), 1::bigint, 'pregnancy memory accepted');
--- Defne is >1 year old; a forgotten first-year memory can still be added today
+-- Defne is past her first birthday but inside the 375-day window (see
+-- 02_legacy_active_fixture.sql): a forgotten first-year memory can still be
+-- added. After the window the archive is locked (70_lifecycle_mutation_lock_test).
 insert into memories (id, baby_id, title, memory_date) values
-  ('e3000000-0000-4000-8000-000000000002', tests.id('defne'), 'İlk yılın unutulan anısı', current_date - 400 + 200);
+  ('e3000000-0000-4000-8000-000000000002', tests.id('defne'), 'İlk yılın unutulan anısı',
+   (select birth_date + 200 from babies where id = tests.id('defne')));
 select tests.eq((select memory_date - (select birth_date from babies where id = tests.id('defne')) from memories
                  where id = 'e3000000-0000-4000-8000-000000000002'), 200, 'first-year memory added after the first birthday');
--- uploads keep working after the first year
+-- uploads keep working in the final days of the active window
 insert into media (id, baby_id, kind, storage_path, mime_type, taken_on)
   values ('f3000000-0000-4000-8000-000000000001', tests.id('defne'), 'video',
           'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/f3000000-0000-4000-8000-000000000001/v.mp4', 'video/mp4', current_date);
-select tests.eq(tests.count($q$select 1 from media where id = 'f3000000-0000-4000-8000-000000000001'$q$), 1::bigint, 'video upload after the first year');
+select tests.eq(tests.count($q$select 1 from media where id = 'f3000000-0000-4000-8000-000000000001'$q$), 1::bigint, 'video upload after the first birthday, before lock');
 -- milestones: one per type per baby
 select tests.expect_error($q$insert into milestones (baby_id, milestone_type_id, achieved_on)
   select tests.id('defne'), id, current_date - 50 from milestone_types where key = 'first_steps'$q$, 'duplicate key');

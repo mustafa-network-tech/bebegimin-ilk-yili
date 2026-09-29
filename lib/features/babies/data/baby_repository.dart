@@ -123,8 +123,20 @@ class BabyRepository {
     return Baby.fromJson((row as Map).cast<String, dynamic>());
   }
 
+  /// `birth_date` drives the lifecycle, so the server only accepts changes
+  /// through the audited `correct_baby_birth_date` RPC.
   Future<Baby> update(String babyId, BabyInput input) async {
-    final row = await _client.from('babies').update(input.toRow()).eq('id', babyId).select().single();
+    final current = await _client.from('babies').select('birth_date').eq('id', babyId).single();
+    final birthDate = Dates.toSql(input.birthDate);
+    if (current['birth_date'] != birthDate) {
+      await _client.rpc('correct_baby_birth_date', params: {'p_baby_id': babyId, 'p_birth_date': birthDate});
+    }
+    final row = await _client
+        .from('babies')
+        .update(input.toRow()..remove('birth_date'))
+        .eq('id', babyId)
+        .select()
+        .single();
     return Baby.fromJson(row);
   }
 

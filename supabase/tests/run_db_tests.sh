@@ -17,6 +17,7 @@ done
 echo "→ seed (demo data)"
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$DIR/../seed.sql"
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$DIR/01_helpers.sql"
+psql -v ON_ERROR_STOP=1 -q -d "$DB" -o /dev/null -f "$DIR/02_legacy_active_fixture.sql"
 
 # Real two-session race: the unique baby_id constraint must let exactly one
 # request commit even when both authenticated calls overlap.

@@ -409,7 +409,7 @@ class MilestoneDetailScreen extends ConsumerWidget {
                 );
                 if (!ok || !context.mounted) return;
                 final done = await runWithProgress(context, () async {
-                  await ref.read(milestoneRepositoryProvider).delete(babyId, milestoneId, media);
+                  await ref.read(milestoneRepositoryProvider).delete(babyId, milestoneId);
                   return true;
                 });
                 if (done == true && context.mounted) {

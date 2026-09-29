@@ -37,6 +37,7 @@ select tests.eq(
   '+374 has one remaining day'
 );
 reset role;
+select tests.logout(); -- fixture writes run as a trusted (non-user) context
 update public.babies
    set birth_date = public.business_date_istanbul() - 375
  where id = '91000000-0000-4000-8000-000000000001';
@@ -199,6 +200,7 @@ select tests.eq(
 -- Expiration at base close never reopens the profile and is idempotent.
 select public.request_baby_extension('91000000-0000-4000-8000-000000000009', 30) as request_expiring \gset
 reset role;
+select tests.logout(); -- fixture writes run as a trusted (non-user) context
 update public.babies
    set birth_date = public.business_date_istanbul() - 375
  where id = '91000000-0000-4000-8000-000000000009';
@@ -216,6 +218,7 @@ select tests.eq(
   'expired request does not reopen the profile at base close'
 );
 reset role;
+select tests.logout(); -- fixture writes run as a trusted (non-user) context
 update public.babies
    set birth_date = public.business_date_istanbul() - 100
  where id = '91000000-0000-4000-8000-000000000009';
@@ -231,6 +234,7 @@ select tests.eq(
   'expiration is audited once'
 );
 reset role;
+select tests.logout();
 select public.run_baby_lifecycle_jobs(public.business_date_istanbul());
 set role authenticated;
 select tests.login(tests.id('anne'));

@@ -91,12 +91,26 @@ class AppException implements Exception {
     'date_in_future': 'Gelecekteki bir tarih seçilemez.',
     'date_before_birth': 'Seçilen tarih doğum tarihinden çok önce.',
     'open_date_not_future': 'Açılış tarihi gelecekte olmalı.',
+    'lifecycle_locked': 'İlk yıl arşivi tamamlandı ve kilitlendi. İçerikler artık yalnızca görüntülenebilir.',
+    'birth_date_rpc_only': 'Doğum tarihi yalnızca doğum tarihi düzeltme adımıyla değiştirilebilir.',
+    'birth_date_requires_admin':
+        'İçerik eklendikten sonra doğum tarihi yalnızca destek ekibi tarafından düzeltilebilir.',
   };
+
+  /// Hints that describe a permanent server-side refusal rather than bad input.
+  static const _permissionHints = {'lifecycle_locked', 'birth_date_rpc_only', 'birth_date_requires_admin'};
+
+  /// True when the server refused a write because the baby's archive is locked.
+  static bool isLifecycleLocked(Object error) => error is PostgrestException && error.hint == 'lifecycle_locked';
 
   static AppException _fromPostgrest(PostgrestException e) {
     final hint = e.hint;
     if (hint != null && _hintMessages.containsKey(hint)) {
-      final kind = hint == 'invitation_not_found' ? AppErrorKind.notFound : AppErrorKind.validation;
+      final kind = hint == 'invitation_not_found'
+          ? AppErrorKind.notFound
+          : _permissionHints.contains(hint)
+          ? AppErrorKind.permission
+          : AppErrorKind.validation;
       return AppException(_hintMessages[hint]!, kind: kind, cause: e);
     }
     switch (e.code) {

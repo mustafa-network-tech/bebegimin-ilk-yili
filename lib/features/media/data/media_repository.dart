@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase_providers.dart';
 import '../../../core/utils/dates.dart';
-import '../../memories/data/memory_repository.dart';
 import '../domain/media_item.dart';
 
 final mediaRepositoryProvider = Provider<MediaRepository>((ref) => MediaRepository(ref.watch(supabaseProvider)));
@@ -117,8 +116,8 @@ class MediaRepository {
     return MediaItem.fromJson(row);
   }
 
-  Future<void> delete(MediaItem media) async {
-    await removeFiles(_client, [media]);
-    await _client.from('media').delete().eq('baby_id', media.babyId).eq('id', media.id);
-  }
+  /// Row first: if the database refuses (permission or locked lifecycle) the
+  /// file stays intact. The delete trigger queues the files for the
+  /// storage-cleanup function.
+  Future<void> delete(MediaItem media) => _client.from('media').delete().eq('baby_id', media.babyId).eq('id', media.id);
 }

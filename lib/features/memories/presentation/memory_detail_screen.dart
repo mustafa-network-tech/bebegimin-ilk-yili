@@ -82,7 +82,7 @@ class MemoryDetailScreen extends ConsumerWidget {
             );
             if (!ok || !context.mounted) return;
             final done = await runWithProgress(context, () async {
-              await ref.read(memoryRepositoryProvider).delete(babyId, m.id, d.media);
+              await ref.read(memoryRepositoryProvider).delete(babyId, m.id);
               return true;
             });
             if (done == true && context.mounted) {

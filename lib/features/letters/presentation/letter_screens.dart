@@ -310,7 +310,7 @@ class LetterDetailScreen extends ConsumerWidget {
                 );
                 if (!ok || !context.mounted) return;
                 final done = await runWithProgress(context, () async {
-                  await ref.read(letterRepositoryProvider).delete(babyId, letterId, media);
+                  await ref.read(letterRepositoryProvider).delete(babyId, letterId);
                   return true;
                 });
                 if (done == true && context.mounted) {

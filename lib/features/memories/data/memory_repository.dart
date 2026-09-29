@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/storage/signed_urls.dart';
 import '../../../core/supabase_providers.dart';
-import '../../media/domain/media_item.dart';
 import '../domain/comment.dart';
 import '../domain/memory.dart';
 
@@ -41,11 +39,10 @@ class MemoryRepository {
   Future<void> setIncludeInBook(String babyId, String id, bool value) =>
       _client.from('memories').update({'include_in_book': value}).eq('baby_id', babyId).eq('id', id);
 
-  /// Removes the files first (Storage API), then the row (cascades media rows).
-  Future<void> delete(String babyId, String id, List<MediaItem> media) async {
-    await removeFiles(_client, media);
-    await _client.from('memories').delete().eq('baby_id', babyId).eq('id', id);
-  }
+  /// Deletes the row (cascading to its media rows). The database decides
+  /// authorisation and lifecycle first; files of cascaded media rows are
+  /// queued server-side for the storage-cleanup function.
+  Future<void> delete(String babyId, String id) => _client.from('memories').delete().eq('baby_id', babyId).eq('id', id);
 
   // Comments / family notes ------------------------------------------------------
   Future<List<Comment>> comments(String babyId, TargetKind kind, String targetId) async {
@@ -96,16 +93,4 @@ class MemoryRepository {
     final row = await _client.from('memories').select('baby_id').eq('id', id).maybeSingle();
     return row?['baby_id'] as String?;
   }
-}
-
-/// Best-effort removal of media files through the Storage API. Rows removed
-/// by cascades are also queued server-side for the cleanup function.
-Future<void> removeFiles(SupabaseClient client, List<MediaItem> media) async {
-  final paths = [
-    for (final m in media) ...[m.storagePath, ?m.thumbPath],
-  ];
-  if (paths.isEmpty) return;
-  try {
-    await client.storage.from(Buckets.babyMedia).remove(paths);
-  } catch (_) {}
 }
