@@ -11,9 +11,13 @@ const SECRET = Deno.env.get("STORAGE_CLEANUP_SECRET") ?? "";
 
 Deno.serve(async (req) => {
   const given = req.headers.get("x-cleanup-secret") ?? "";
-  if (!SECRET || !safeEqual(given, SECRET)) return json({ error: "unauthorized" }, 401);
+  if (!SECRET || !safeEqual(given, SECRET)) {
+    return json({ error: "unauthorized" }, 401);
+  }
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
   const { data, error } = await admin
     .from("storage_cleanup_queue")
     .select("id, bucket_id, path")
@@ -24,16 +28,46 @@ Deno.serve(async (req) => {
 
   // Never delete a file that is still referenced (e.g. re-uploaded path).
   const paths = data.map((r) => r.path);
-  const [{ data: media }, { data: books }] = await Promise.all([
-    admin.from("media").select("storage_path, thumb_path").or(`storage_path.in.(${paths.map((p) => `"${p}"`).join(",")}),thumb_path.in.(${paths.map((p) => `"${p}"`).join(",")})`),
+  const [
+    mediaResult,
+    thumbResult,
+    booksResult,
+    outputsResult,
+    outputStagingResult,
+  ] = await Promise.all([
+    admin.from("media").select("storage_path").in("storage_path", paths),
+    admin.from("media").select("thumb_path").in("thumb_path", paths),
     admin.from("book_exports").select("storage_path").in("storage_path", paths),
+    admin.from("output_artifacts").select("storage_path").is("purged_at", null)
+      .in("storage_path", paths),
+    admin.from("output_artifacts").select("staging_path").is("purged_at", null)
+      .in("staging_path", paths),
   ]);
+  if (
+    mediaResult.error || thumbResult.error || booksResult.error ||
+    outputsResult.error || outputStagingResult.error
+  ) {
+    return json({ error: "reference check failed" }, 500);
+  }
+  const media = mediaResult.data;
+  const thumbs = thumbResult.data;
+  const books = booksResult.data;
+  const outputs = outputsResult.data;
+  const outputStaging = outputStagingResult.data;
   const referenced = new Set<string>([
-    ...(media ?? []).flatMap((m) => [m.storage_path, m.thumb_path]).filter(Boolean),
+    ...(media ?? []).map((m) => m.storage_path).filter(Boolean),
+    ...(thumbs ?? []).map((m) => m.thumb_path).filter(Boolean),
     ...(books ?? []).map((b) => b.storage_path),
+    ...(outputs ?? []).map((a) => a.storage_path).filter(Boolean),
+    ...(outputStaging ?? []).map((a) => a.staging_path).filter(Boolean),
   ]);
-  const toRemove = data.filter((r) => !referenced.has(r.path)) as StorageObject[];
+  const toRemove = data.filter((r) =>
+    !referenced.has(r.path)
+  ) as StorageObject[];
   const removed = await removeObjects(admin, toRemove);
-  await admin.from("storage_cleanup_queue").delete().in("id", data.map((r) => r.id));
+  await admin.from("storage_cleanup_queue").delete().in(
+    "id",
+    data.map((r) => r.id),
+  );
   return json({ ok: true, removed });
 });

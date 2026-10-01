@@ -149,9 +149,9 @@ notifications, device_tokens (kullanıcı başına) ; activity_logs (bebek baş�
 
 **Storage güvenliği**
 
-- Bucket'lar **private**: `baby-media`, `books`, `avatars`. Public URL kullanılmaz; uygulama 1 saatlik imzalı URL alır (imzalama da SELECT politikasına tabidir).
+- Bucket'lar **private**: `baby-media`, `books`, `avatars`, `output-artifacts`. Public URL kullanılmaz. Ortak çıktı artifact'larında indirme isteği her seferinde üyelik, lifecycle, abonelik, ürün hakkı, izin ve artifact durumunu denetler; istemciye en fazla 60 saniyelik imzalama süresi verilir.
 - Yol şeması veritabanına bağlıdır: `baby-media/<baby_id>/<media_id>/<dosya>`. Okuma için `media` satırının o bebeğe ait, `ready` durumda ve kullanıcının `view_album` yetkisi olması gerekir. Yazma için önce `media` satırı (`uploading`) oluşturulur; o satırın sahibi dışında kimse o yola yükleyemez.
-- Profil/kapak: `<baby_id>/profile/…` (`manage_baby`), kapsül fotoğrafı: `<baby_id>/capsules/<id>/photo.jpg` (açılış tarihine kadar okunamaz), kitaplar: `<baby_id>/<project_id>/*.pdf`, avatarlar: `<user_id>/…`.
+- Profil/kapak: `<baby_id>/profile/…` (`manage_baby`), kapsül fotoğrafı: `<baby_id>/capsules/<id>/photo.jpg` (açılış tarihine kadar okunamaz), legacy kitaplar: `<baby_id>/<project_id>/*.pdf`, ortak çıktılar: `<baby_id>/<product>/<snapshot_id>/v<version>/<file>`, avatarlar: `<user_id>/…`.
 - Satırlar silindiğinde (cascade) dosyalar `storage_cleanup_queue`'ya düşer; `storage-cleanup` Edge Function'ı temizler.
 - **Service role key mobil uygulamada yoktur**; yalnızca Edge Function'lar (Supabase tarafından enjekte edilir) kullanır.
 
@@ -222,11 +222,13 @@ Migration'lar boş bir Supabase projesinde sırayla çalışacak şekilde yazıl
 | Fonksiyon | Görev | JWT |
 |---|---|---|
 | `privacy-actions` | Hesap silme, bebeği tüm dosyalarıyla silme | Kullanıcı JWT'si |
+| `output-download` | Yetkili artifact için sabit 60 saniyelik imzalı URL | Kullanıcı JWT'si |
 | `send-push` | `notifications` INSERT → FCM push | `x-webhook-secret` |
 | `storage-cleanup` | Kuyruktaki sahipsiz dosyaları silme | `x-cleanup-secret` |
 
 ```bash
 supabase functions deploy privacy-actions
+supabase functions deploy output-download
 supabase functions deploy send-push --no-verify-jwt
 supabase functions deploy storage-cleanup --no-verify-jwt
 
@@ -238,6 +240,16 @@ supabase secrets set FCM_SERVICE_ACCOUNT="$(cat service-account.json)"   # push 
 ### 7. Zamanlanmış işler
 
 `run_daily_jobs()` her gün: ay dönümü / doğum günü bildirimleri, "bir yıl önce bugün", ilk yıl tamamlanınca "kitabın hazır", açılan zaman kapsülleri, süresi dolan davetler, yarım kalmış yükleme kayıtlarının temizliği.
+
+`output_pipeline_maintenance()` her saat: süresi dolmuş worker lease'lerini geri alır, bayat staging/quarantine kayıtlarını kapatır ve sahipsiz `output-artifacts` nesnelerini `storage_cleanup_queue` kuyruğuna ekler. Migration, `pg_cron` açıksa işi saatin 7. dakikasında otomatik kurar. `pg_cron` sonradan açıldıysa:
+
+```sql
+select cron.schedule(
+  'bebegimin-output-pipeline-maintenance',
+  '7 * * * *',
+  'select public.output_pipeline_maintenance()'
+);
+```
 
 - *Database → Extensions* altında **pg_cron**'u açın. Migration, pg_cron mevcutsa işi otomatik zamanlar (`06:00 UTC`). Sonradan açtıysanız:
 

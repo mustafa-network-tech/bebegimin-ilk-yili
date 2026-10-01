@@ -14,6 +14,16 @@ for f in "$DIR"/../migrations/*.sql; do
   psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$f" 2>&1 | sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'
   test "${PIPESTATUS[0]}" -eq 0 || { echo "✗ $(basename "$f") failed"; exit 1; }
 done
+
+# Phase 8 was distributed as a manual development migration before its final
+# hardening pass. Reapplying it must upgrade functions/triggers in place and
+# must never fail on an existing archive_snapshots relation.
+PHASE8_MIGRATION="$DIR/../migrations/20260929000600_output_pipeline.sql"
+echo "→ migration reapply $(basename "$PHASE8_MIGRATION")"
+psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$PHASE8_MIGRATION" 2>&1 |
+  sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'
+test "${PIPESTATUS[0]}" -eq 0 || { echo "✗ Phase 8 migration reapply failed"; exit 1; }
+
 echo "→ seed (demo data)"
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$DIR/../seed.sql"
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$DIR/01_helpers.sql"
