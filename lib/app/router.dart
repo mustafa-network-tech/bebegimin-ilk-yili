@@ -16,6 +16,7 @@ import '../features/babies/presentation/lifecycle_screen.dart';
 import '../features/babies/presentation/lifecycle_widgets.dart';
 import '../features/babies/presentation/onboarding_screens.dart';
 import '../features/book/presentation/book_editor_screen.dart';
+import '../features/book/presentation/book_gate.dart';
 import '../features/book/presentation/book_generation.dart';
 import '../features/book/presentation/book_home_screen.dart';
 import '../features/book/presentation/book_page_editor_screen.dart';
@@ -200,23 +201,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const LifecycleWriteGuard(child: CapsuleFormScreen()),
       ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
-      // Premium area: closed for ACTIVE profiles, placeholder for LOCKED ones
-      // until entitlements exist (plan 2.2 / phase 9).
+      // Book: LOCKED + family subscription + purchased book (plan 2.9 /
+      // phase 9); editor routes are for parents only.
       GoRoute(
         path: '/book',
-        builder: (_, _) => const PremiumRouteGate(child: BookHomeScreen()),
+        builder: (_, _) => const BookRouteGate(child: BookHomeScreen()),
       ),
       GoRoute(
         path: '/book/editor',
-        builder: (_, _) => const PremiumRouteGate(child: BookEditorScreen()),
+        builder: (_, _) => const BookRouteGate(requireEdit: true, child: BookEditorScreen()),
       ),
       GoRoute(
         path: '/book/view',
-        builder: (_, s) => PremiumRouteGate(child: BookPdfViewScreen(file: s.extra! as File)),
+        builder: (_, s) => BookRouteGate(child: BookPdfViewScreen(file: s.extra! as File)),
       ),
       GoRoute(
         path: '/book/page/:pageId',
-        builder: (_, s) => PremiumRouteGate(child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
+        builder: (_, s) =>
+            BookRouteGate(requireEdit: true, child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
       ),
       GoRoute(
         path: '/babies/:babyId/premium',

@@ -265,40 +265,45 @@ class BookProject {
   };
 }
 
-class BookExport {
-  const BookExport({
-    required this.id,
-    required this.projectId,
+/// One official, server-verified PDF version of the book (a ready artifact).
+class BookVersion {
+  const BookVersion({
+    required this.exportId,
     required this.version,
     required this.format,
-    required this.quality,
-    required this.storagePath,
     required this.pageCount,
     required this.sizeBytes,
     required this.createdAt,
+    required this.artifactId,
+    required this.sha256,
+    required this.downloadBlock,
   });
 
-  factory BookExport.fromJson(Map<String, dynamic> j) => BookExport(
-    id: j['id'] as String,
-    projectId: j['project_id'] as String,
+  factory BookVersion.fromJson(Map<String, dynamic> j) => BookVersion(
+    exportId: j['export_id'] as String,
     version: (j['version'] as num).toInt(),
     format: BookFormat.fromKey(j['format'] as String?),
-    quality: j['quality'] as String? ?? 'print',
-    storagePath: j['storage_path'] as String,
     pageCount: (j['page_count'] as num).toInt(),
     sizeBytes: (j['size_bytes'] as num?)?.toInt(),
     createdAt: DateTime.parse(j['created_at'] as String),
+    artifactId: j['artifact_id'] as String,
+    sha256: j['sha256'] as String,
+    downloadBlock: j['download_block'] as String?,
   );
 
-  final String id;
-  final String projectId;
+  final String exportId;
   final int version;
   final BookFormat format;
-  final String quality;
-  final String storagePath;
   final int pageCount;
   final int? sizeBytes;
   final DateTime createdAt;
+  final String artifactId;
+  final String sha256;
+
+  /// Server reason why the caller cannot download right now (null = allowed).
+  final String? downloadBlock;
+
+  bool get canDownload => downloadBlock == null;
 
   String get sizeLabel {
     final b = sizeBytes;
@@ -307,7 +312,58 @@ class BookExport {
     return '${(b / 1024).round()} KB';
   }
 
-  String get fileName => 'ilk-yilim-v$version.pdf';
+  String get fileName => 'ilk-yil-kitabi-v$version.pdf';
 
   String get createdLabel => Dates.long(createdAt.toLocal());
+}
+
+/// Server-side book gate for the signed-in user (`book_access_state`).
+class BookAccess {
+  const BookAccess({required this.block, required this.rendererEnabled, required this.hasProject});
+
+  factory BookAccess.fromJson(Map<String, dynamic> j) => BookAccess(
+    block: j['access_block'] as String?,
+    rendererEnabled: j['renderer_enabled'] as bool? ?? false,
+    hasProject: j['has_project'] as bool? ?? false,
+  );
+
+  /// null = LOCKED + live family subscription + book entitlement + parent.
+  final String? block;
+  final bool rendererEnabled;
+  final bool hasProject;
+
+  bool get canEdit => block == null;
+
+  /// LOCKED and purchased, but the caller is a Family Member: versions only.
+  bool get isFamilyMemberView => block == 'not_parent';
+
+  bool get canView => canEdit || isFamilyMemberView;
+}
+
+/// A render job leased to this device (`book_render_start`).
+class BookRenderLease {
+  const BookRenderLease({required this.jobId, required this.status, required this.attempt, required this.reused});
+
+  factory BookRenderLease.fromJson(Map<String, dynamic> j) => BookRenderLease(
+    jobId: j['job_id'] as String,
+    status: j['job_status'] as String,
+    attempt: (j['attempt'] as num).toInt(),
+    reused: j['reused'] as bool? ?? false,
+  );
+
+  final String jobId;
+  final String status;
+  final int attempt;
+  final bool reused;
+}
+
+/// The artifact row created before the upload (`book_artifact_begin`).
+class BookArtifactSlot {
+  const BookArtifactSlot({required this.artifactId, required this.stagingPath});
+
+  factory BookArtifactSlot.fromJson(Map<String, dynamic> j) =>
+      BookArtifactSlot(artifactId: j['artifact_id'] as String, stagingPath: j['staging_path'] as String);
+
+  final String artifactId;
+  final String stagingPath;
 }

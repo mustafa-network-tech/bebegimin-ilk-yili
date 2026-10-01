@@ -9,18 +9,16 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../babies/domain/baby.dart';
 import '../data/book_generator.dart';
-import '../data/book_repository.dart';
+import '../data/book_publisher.dart';
 import '../domain/book_models.dart';
 
-/// Runs generation behind a progress dialog. Heavy work (image downscaling
-/// on native threads, PDF layout on a background isolate) keeps the UI
-/// responsive.
-Future<(File, int)?> generateWithProgress(
+/// Runs [task] behind a non-dismissible progress dialog. Heavy work (image
+/// downscaling on native threads, PDF layout on a background isolate) keeps
+/// the UI responsive. Errors are shown as a snackbar; returns null then.
+Future<T?> runBookTask<T>(
   BuildContext context,
-  WidgetRef ref,
-  BookProject project,
-  Baby baby,
-  BookQuality quality,
+  String title,
+  Future<T> Function(void Function(BookProgress) onProgress) task,
 ) async {
   final progress = ValueNotifier<BookProgress>(const BookProgress('Hazırlanıyor', 0, 0));
   final navigator = Navigator.of(context, rootNavigator: true);
@@ -30,7 +28,7 @@ Future<(File, int)?> generateWithProgress(
     builder: (_) => PopScope(
       canPop: false,
       child: AlertDialog(
-        title: Text(quality == BookQuality.print ? 'Baskı kalitesinde kitap' : 'Önizleme hazırlanıyor'),
+        title: Text(title),
         content: ValueListenableBuilder<BookProgress>(
           valueListenable: progress,
           builder: (_, p, _) => Column(
@@ -52,9 +50,7 @@ Future<(File, int)?> generateWithProgress(
     ),
   );
   try {
-    final result = await ref
-        .read(bookGeneratorProvider)
-        .generate(project, baby, quality, onProgress: (p) => progress.value = p);
+    final result = await task((p) => progress.value = p);
     navigator.pop();
     return result;
   } catch (e) {
@@ -68,25 +64,31 @@ Future<(File, int)?> generateWithProgress(
   }
 }
 
-Future<void> publishBook(BuildContext context, WidgetRef ref, BookProject project, Baby baby) async {
-  final res = await generateWithProgress(context, ref, project, baby, BookQuality.print);
-  if (res == null || !context.mounted) return;
-  final (file, pages) = res;
-  try {
-    final export = await ref
-        .read(bookRepositoryProvider)
-        .publish(project, file, pageCount: pages, quality: BookQuality.print);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Kitap hazır: sürüm ${export.version}, $pages sayfa 📖')));
-  } catch (e) {
-    if (!context.mounted) return;
-    // The local PDF is still usable even if the upload failed (offline).
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('PDF cihazınıza kaydedildi ancak aileyle paylaşılamadı: ${AppException.from(e).message}')),
-    );
-  }
-  if (context.mounted) context.push('/book/view', extra: file);
+/// Draft preview from the live archive (never an official artifact).
+Future<(File, int)?> generateWithProgress(
+  BuildContext context,
+  WidgetRef ref,
+  BookProject project,
+  Baby baby,
+  BookQuality quality,
+) => runBookTask(
+  context,
+  quality == BookQuality.print ? 'Baskı kalitesinde kitap' : 'Önizleme hazırlanıyor',
+  (onProgress) => ref.read(bookGeneratorProvider).generate(project, baby, quality, onProgress: onProgress),
+);
+
+/// Official print-ready PDF: rendered from the sealed snapshot and the frozen
+/// configuration, verified and published by the server.
+Future<void> publishBook(BuildContext context, WidgetRef ref, Baby baby) async {
+  final result = await runBookTask(
+    context,
+    'Resmî kitap hazırlanıyor',
+    (onProgress) => ref.read(bookPublisherProvider).publish(baby.id, onProgress: onProgress),
+  );
+  if (result == null || !context.mounted) return;
+  ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text('Kitap hazır: sürüm ${result.version}, ${result.pageCount} sayfa 📖')));
+  context.push('/book/view', extra: result.file);
 }
 
 /// In-app PDF viewer with print / share / save actions.

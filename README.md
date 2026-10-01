@@ -123,6 +123,7 @@ Migration'lar: `supabase/migrations/`
 | `…0500_notifications_activity.sql` | `notifications`, `device_tokens`, `activity_logs`, içerik tetikleyicileri, `run_daily_jobs` (+ pg_cron zamanlaması) |
 | `…0600_views_rpc.sql` | `timeline_entries` görünümü (`security_invoker`), `baby_stats`, gizlilik RPC'leri (yalnızca service role) |
 | `…0700_storage.sql` | Private bucket'lar ve `storage.objects` politikaları |
+| `20261001000100_book_artifacts.sql` | Faz 9: kitap kapısı (`book_access_block`), `book_render_manifests`, istemci render protokolü (`book_render_start` … `book_artifact_publish`), legacy karantina ve `admin_legacy_book_report` |
 
 **İlişki modeli (özet)**
 
@@ -162,10 +163,12 @@ notifications, device_tokens (kullanıcı başına) ; activity_logs (bebek baş�
 1. **Dönem:** `FirstYearPeriod` – doğum günü 1. gün, 365. gün = doğum + 364 gün. Hamilelik anıları (doğumdan ≤310 gün önce) "Hoş geldin", ilk doğum günü "Bir Yaşındayım" bölümüne gider. Artık yılda 1. yaş gününe kadar olan gün kaybolmaz.
 2. **Varsayılan plan (`BookComposer`):** Kapak → Hoş geldin → Doğum bilgilerim → 1.–12. Ayım → İlklerim → Ailemden Bana → Bir Yaşındayım → Arka kapak. İçerik, **anının tarihine göre** (eklenme tarihine göre değil) bölümlere dağıtılır; bu yüzden çocuk 2 yaşındayken eklenen ilk-yıl anısı da kitaba girer. `include_in_book=false` içerikler, tamamlanmamış yüklemeler ve küçük resmi olmayan videolar dışarıda kalır. Kalabalık aylarda en iyi 12 fotoğraf (favoriler, anıya bağlı olanlar önce) görünür, diğerleri **gizli** eklenir.
 3. **Editör:** kitap başlığı/alt başlığı, ölçü, kapak fotoğrafı, arka kapak yazısı; bölüm sırasını sürükle-bırak, bölümü gizle, bölüm notu (aylık özet), içerik ekle/çıkar/sırala, fotoğraf açıklaması, özel sayfa.
-4. **Kitabı güncelle:** `sync` yalnızca projede hiç bulunmamış yeni ilk-yıl içeriklerini ekler; kullanıcının gizleme/sıralama kararları korunur. Her PDF `register_book_export` ile yeni sürüm olarak kaydedilir (sürüm numarası sunucuda atomik artar).
+4. **Kitabı güncelle:** `sync` yalnızca projede hiç bulunmamış yeni ilk-yıl içeriklerini ekler; kullanıcının gizleme/sıralama kararları korunur.
+   - **Erişim (Faz 9):** kitap yalnız `LOCKED` bebekte, aile aboneliği etkinken ve `first_year_book` satın alınmışsa Anne/Baba tarafından düzenlenir; ACTIVE profilde hiçbir kitap verisi görünmez. Kural sunucuda (`book_access_block`) RLS, RPC ve Storage'da uygulanır.
+   - **Resmî PDF:** cihaz, mühürlü arşiv snapshot'ından ve render başında dondurulan yapılandırmadan (manifest) baskı kalitesinde PDF üretir; checksum'larla doğrulanmış girdi dışında veri kullanmaz. Dosya yalnız kendi staging yoluna yüklenir; `book-artifact-finalize` dosyayı sunucuda yeniden hash'leyip doğrular, kalıcı yola taşır ve sürümü yayınlar. Ayrıntı: [docs/operations/book-artifacts-setup.md](docs/operations/book-artifacts-setup.md).
 5. **PDF (`BookPdfBuilder`):** sayfa = kesim ölçüsü + her kenarda 3 mm taşma payı (bleed), `/TrimBox` ve `/BleedBox` tanımlı; güvenli kenar boşluğu; Nunito + Lora gömülü (Türkçe karakterler); iç sayfalarda sayfa numarası; çift sayfa sayısı (gerekirse "Notlar" sayfası); emoji PDF'te kutu yerine temizlenir.
 6. **Performans:** fotoğraflar tek tek indirilip native tarafta küçültülür (baskı: kısa kenar 2000 px, önizleme: 1000 px) ve disk önbelleğine yazılır; PDF dizgisi `Isolate.run` ile arka planda yapılır; ilerleme çubuğu gösterilir.
-7. **Çıktı:** uygulama içi önizleme (`printing` / `PdfPreview`), yazdırma, sistem paylaşım menüsü ("Dosyalara kaydet" dahil); yayınlanan sürümler aile tarafından (`view_album`) indirilebilir.
+7. **Çıktı:** uygulama içi önizleme (`printing` / `PdfPreview`), yazdırma, sistem paylaşım menüsü ("Dosyalara kaydet" dahil). Resmî sürümler sürümlü, checksum'lı artifact'lardır; aile (`view_album`) abonelik etkinken `output-download` ile yeniden indirebilir. Fiziksel baskı siparişi bu ürüne dahil değildir.
 
 ---
 
@@ -223,12 +226,14 @@ Migration'lar boş bir Supabase projesinde sırayla çalışacak şekilde yazıl
 |---|---|---|
 | `privacy-actions` | Hesap silme, bebeği tüm dosyalarıyla silme | Kullanıcı JWT'si |
 | `output-download` | Yetkili artifact için sabit 60 saniyelik imzalı URL | Kullanıcı JWT'si |
+| `book-artifact-finalize` | Yüklenen kitap PDF'ini sunucuda hash'leyip doğrular, taşır ve yayınlar | Kullanıcı JWT'si |
 | `send-push` | `notifications` INSERT → FCM push | `x-webhook-secret` |
 | `storage-cleanup` | Kuyruktaki sahipsiz dosyaları silme | `x-cleanup-secret` |
 
 ```bash
 supabase functions deploy privacy-actions
 supabase functions deploy output-download
+supabase functions deploy book-artifact-finalize
 supabase functions deploy send-push --no-verify-jwt
 supabase functions deploy storage-cleanup --no-verify-jwt
 
@@ -336,13 +341,16 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `test/family/*` | Granüler yetkiler (RLS ile aynı kurallar), rol ön ayarları, davet kodu/bağlantı/durum |
 | `test/book/book_composer_test.dart` | Kitap içerik seçimi, tarih aralığı, 1 yaş sonrası eklenen ilk-yıl anısı, fotoğraf sınırı, kapak, güncelleme (sync) |
 | `test/book/book_pdf_test.dart` | 3 formatta gerçek PDF üretimi, çift sayfa, TrimBox/BleedBox, gömülü fontlar |
+| `test/book/book_snapshot_test.dart` | Snapshot + manifest'ten render'ın canlı arşivle birebir aynı olması, düzenleme ayarları, manipülasyon reddi, 3 formatta resmî PDF |
+| `test/book/book_gate_test.dart` | Kitap rotası kapısı (ACTIVE, satın alınmamış, abonelik yok, ebeveyn, Family Member) |
 | `test/widget/*` | Uygulama açılışı, zaman tüneli kartı, yetki editörü, durum ekranları |
 | `supabase/tests/10_isolation_test.sql` | Farklı ailelerin veri/Storage izolasyonu, IDOR denemeleri, anon erişimi |
 | `supabase/tests/20_permissions_test.sql` | Yetkiler, yazar sahteciliği, yetki yükseltme, son yönetici |
 | `supabase/tests/30_invitations_test.sql` | Davet önizleme/kabul/iptal/süre/e-posta, kardeş ailesinden ekleme |
 | `supabase/tests/40_capsules_dates_test.sql` | Mühürlü kapsül, tarih kuralları, 1 yaş sonrası geçmiş tarihli anı ve yükleme |
-| `supabase/tests/50_storage_books_test.sql` | Storage yol politikaları, kitap sürümleme |
+| `supabase/tests/50_storage_books_test.sql` | Storage yol politikaları, ACTIVE profilde tüm kitap yollarının reddi |
 | `supabase/tests/60_account_notifications_test.sql` | Bildirimler, tercih, günlük iş, hesap/bebek silme |
+| `supabase/tests/99_book_artifacts_test.sql` | Faz 9 kitap kapısı, manifest, lease, staging yükleme politikası, doğrulama/yayın, sürümler, legacy karantina ve rapor |
 
 Bir PDF örneği üretmek için: `SAMPLE_DIR=/tmp/ornek flutter test test/book/render_sample.dart` (klasörde `img0.jpg … img5.jpg` bulunmalı).
 

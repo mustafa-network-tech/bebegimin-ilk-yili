@@ -1,14 +1,17 @@
-import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/errors/app_exception.dart';
 import '../../../core/storage/signed_urls.dart';
 import '../../../core/supabase_providers.dart';
 import '../domain/book_composer.dart';
 import '../domain/book_models.dart';
+import '../domain/book_snapshot.dart';
 
 final bookRepositoryProvider = Provider<BookRepository>((ref) => BookRepository(ref.watch(supabaseProvider)));
 
@@ -187,47 +190,77 @@ class BookRepository {
 
   Future<void> deleteItem(String itemId) => _client.from('book_items').delete().eq('id', itemId);
 
-  // Exports -------------------------------------------------------------------------
-  Future<List<BookExport>> exports(String projectId) async {
-    final rows = await _client
-        .from('book_exports')
-        .select()
-        .eq('project_id', projectId)
-        .order('version', ascending: false);
-    return rows.map(BookExport.fromJson).toList();
+  // Official book (Phase 9) ------------------------------------------------------
+  /// Server-side gate: lifecycle, family subscription, entitlement and role.
+  Future<BookAccess> access(String babyId) async {
+    final rows = await _client.rpc('book_access_state', params: {'p_baby_id': babyId}) as List;
+    return BookAccess.fromJson((rows.single as Map).cast<String, dynamic>());
   }
 
-  /// Uploads a generated PDF to the private `books` bucket and registers a
-  /// new version (atomic version bump on the server).
-  Future<BookExport> publish(
-    BookProject project,
-    File pdf, {
-    required int pageCount,
-    required BookQuality quality,
-  }) async {
-    final path = '${project.babyId}/${project.id}/ilk-yilim-${DateTime.now().millisecondsSinceEpoch}.pdf';
-    await _client.storage
-        .from(Buckets.books)
-        .upload(path, pdf, fileOptions: const FileOptions(contentType: 'application/pdf'));
-    final row = await _client.rpc(
-      'register_book_export',
-      params: {
-        'p_project_id': project.id,
-        'p_storage_path': path,
-        'p_page_count': pageCount,
-        'p_size_bytes': await pdf.length(),
-        'p_quality': quality.key,
-      },
+  /// Official (server-verified) versions with the caller's download state.
+  Future<List<BookVersion>> versions(String babyId) async {
+    final rows = await _client.rpc('book_versions', params: {'p_baby_id': babyId}) as List;
+    return [for (final r in rows) BookVersion.fromJson((r as Map).cast<String, dynamic>())];
+  }
+
+  /// Seals the snapshot, freezes the current configuration and leases the
+  /// render job to this device. The same [idempotencyKey] resumes the job.
+  Future<BookRenderLease> startRender(String babyId, String idempotencyKey) async {
+    final rows = await _client.rpc(
+      'book_render_start',
+      params: {'p_baby_id': babyId, 'p_idempotency_key': idempotencyKey},
+    ) as List;
+    return BookRenderLease.fromJson((rows.single as Map).cast<String, dynamic>());
+  }
+
+  Future<BookRenderPayload> payload(String jobId) async {
+    final rows = await _client.rpc('book_render_payload', params: {'p_job_id': jobId}) as List;
+    return BookRenderPayload.fromJson((rows.single as Map).cast<String, dynamic>());
+  }
+
+  Future<void> heartbeat(String jobId) => _client.rpc('book_render_heartbeat', params: {'p_job_id': jobId});
+
+  /// Creates the artifact row (declared checksum and size) before the upload.
+  Future<BookArtifactSlot> beginArtifact(String jobId, String sha256, int sizeBytes) async {
+    final rows = await _client.rpc(
+      'book_artifact_begin',
+      params: {'p_job_id': jobId, 'p_sha256': sha256, 'p_size_bytes': sizeBytes},
+    ) as List;
+    return BookArtifactSlot.fromJson((rows.single as Map).cast<String, dynamic>());
+  }
+
+  /// The only path this device may write: the staging object of its lease.
+  Future<void> uploadStaging(String stagingPath, Uint8List bytes) => _client.storage
+      .from(Buckets.outputArtifacts)
+      .uploadBinary(stagingPath, bytes, fileOptions: const FileOptions(contentType: 'application/pdf'));
+
+  /// The server re-reads and hashes the upload, then publishes the version.
+  Future<int> finalize(String artifactId, int pageCount) async {
+    final res = await _client.functions.invoke(
+      'book-artifact-finalize',
+      body: {'artifact_id': artifactId, 'page_count': pageCount},
     );
-    return BookExport.fromJson((row as Map).cast<String, dynamic>());
+    final data = (res.data as Map).cast<String, dynamic>();
+    return (data['version'] as num).toInt();
   }
 
-  Future<Uint8List> download(BookExport export) => _client.storage.from(Buckets.books).download(export.storagePath);
+  /// Reports a failed render / upload so the attempt is retried later.
+  Future<void> fail(String jobId, String code) =>
+      _client.rpc('book_render_fail', params: {'p_job_id': jobId, 'p_error_code': code});
 
-  Future<void> deleteExport(BookExport export) async {
-    try {
-      await _client.storage.from(Buckets.books).remove([export.storagePath]);
-    } catch (_) {}
-    await _client.from('book_exports').delete().eq('id', export.id);
+  /// Downloads a version through a fresh 60-second grant and checks the
+  /// bytes against the artifact checksum.
+  Future<Uint8List> download(BookVersion version) async {
+    final res = await _client.functions.invoke('output-download', body: {'artifact_id': version.artifactId});
+    final grant = (res.data as Map).cast<String, dynamic>();
+    final response = await http.get(Uri.parse(grant['url'] as String));
+    if (response.statusCode != 200) {
+      throw AppException('Kitap indirilemedi (${response.statusCode}).', kind: AppErrorKind.server);
+    }
+    final bytes = response.bodyBytes;
+    if (sha256.convert(bytes).toString() != version.sha256) {
+      throw const AppException('İndirilen dosya doğrulanamadı. Lütfen tekrar deneyin.', kind: AppErrorKind.server);
+    }
+    return bytes;
   }
 }

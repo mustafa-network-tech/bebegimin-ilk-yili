@@ -109,6 +109,13 @@ class AppException implements Exception {
     'already_owned': 'Bu ürün bu bebek için zaten satın alınmış.',
     'not_parent': 'Bu işlemi yalnızca Anne veya Baba yapabilir.',
     'purchase_not_yours': 'Bu satın alma başka bir aile hesabına ait.',
+    'entitlement_required': 'Bu dijital ürün bu bebek için henüz satın alınmadı.',
+    'book_renderer_disabled': 'Kitap oluşturma geçici olarak durduruldu. Lütfen daha sonra tekrar deneyin.',
+    'book_render_in_progress': 'Kitap şu anda başka bir cihazda hazırlanıyor. Birkaç dakika sonra tekrar deneyin.',
+    'book_project_missing': 'Önce kitap taslağını oluşturun.',
+    'lease_lost': 'Kitap hazırlama süresi doldu. Lütfen tekrar deneyin.',
+    'book_export_requires_artifact':
+        'Uygulamanızı güncelleyin: kitaplar artık sunucuda doğrulanan resmî dosya olarak oluşturuluyor.',
     'family_account_ambiguous':
         'Birden fazla aile hesabınız var; bebeği hangi hesaba ekleyeceğinizi seçmeniz gerekiyor.',
   };
@@ -129,6 +136,9 @@ class AppException implements Exception {
     'already_owned',
     'not_parent',
     'purchase_not_yours',
+    'entitlement_required',
+    'book_renderer_disabled',
+    'book_export_requires_artifact',
   };
 
   /// True when the server refused a write because the baby's archive is locked.

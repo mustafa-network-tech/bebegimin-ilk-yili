@@ -8,6 +8,7 @@ import '../supabase_providers.dart';
 abstract final class Buckets {
   static const babyMedia = 'baby-media';
   static const books = 'books';
+  static const outputArtifacts = 'output-artifacts';
   static const avatars = 'avatars';
 }
 

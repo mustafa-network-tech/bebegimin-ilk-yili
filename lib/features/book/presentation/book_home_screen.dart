@@ -10,13 +10,12 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/states.dart';
 import '../../babies/application/baby_providers.dart';
 import '../../babies/domain/baby.dart';
-import '../../family/application/family_providers.dart';
-import '../../family/domain/permission.dart';
 import '../application/book_providers.dart';
 import '../data/book_generator.dart';
 import '../data/book_repository.dart';
 import '../domain/book_composer.dart';
 import '../domain/book_models.dart';
+import 'book_gate.dart';
 import 'book_generation.dart';
 
 class BookHomeScreen extends ConsumerStatefulWidget {
@@ -53,12 +52,13 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
   Widget build(BuildContext context) {
     final baby = ref.watch(activeBabyProvider);
     if (baby == null) return const Scaffold(body: LoadingView());
-    final access = ref.watch(accessProvider(baby.id));
-    final project = ref.watch(bookProjectProvider(baby.id));
+    // The route gate guarantees an access value that allows viewing.
+    final access = ref.watch(bookAccessProvider(baby.id)).value;
+    final canCreate = access?.canEdit ?? false;
+    final project = canCreate ? ref.watch(bookProjectProvider(baby.id)) : const AsyncData<BookProject?>(null);
     final today = Dates.today();
     final fy = baby.firstYear;
     final theme = Theme.of(context);
-    final canCreate = access.can(AppPermission.createBook);
 
     return Scaffold(
       appBar: AppBar(title: const Text('İlk Yılım kitabı')),
@@ -119,14 +119,10 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
                   style: theme.textTheme.bodySmall,
                 ),
               ] else
-                const EmptyState(
-                  icon: Icons.menu_book_outlined,
-                  title: 'Kitap henüz oluşturulmadı',
-                  message: 'Aile yöneticisi kitabı oluşturduğunda burada görünecek.',
-                ),
+                _Versions(babyId: baby.id, emptyText: 'Anne veya Baba kitabı hazırladığında burada görünecek.'),
             ] else ...[
-              if (canCreate) _ProjectCard(baby: baby, project: p),
-              _Exports(project: p, canDelete: access.isAdmin),
+              _ProjectCard(baby: baby, project: p, rendererEnabled: access?.rendererEnabled ?? false),
+              _Versions(babyId: baby.id, emptyText: 'Henüz resmî PDF oluşturulmadı.'),
             ],
           ],
         ),
@@ -160,10 +156,11 @@ class _FormatPicker extends StatelessWidget {
 }
 
 class _ProjectCard extends ConsumerWidget {
-  const _ProjectCard({required this.baby, required this.project});
+  const _ProjectCard({required this.baby, required this.project, required this.rendererEnabled});
 
   final Baby baby;
   final BookProject project;
+  final bool rendererEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -242,11 +239,13 @@ class _ProjectCard extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () async {
-                    await publishBook(context, ref, project, baby);
-                    ref.invalidate(bookProjectProvider(baby.id));
-                    ref.invalidate(bookExportsProvider(project.id));
-                  },
+                  onPressed: rendererEnabled
+                      ? () async {
+                          await publishBook(context, ref, baby);
+                          ref.invalidate(bookProjectProvider(baby.id));
+                          ref.invalidate(bookVersionsProvider(baby.id));
+                        }
+                      : null,
                   icon: const Icon(Icons.picture_as_pdf_rounded),
                   label: Text(
                     project.hasBeenGenerated
@@ -254,6 +253,14 @@ class _ProjectCard extends ConsumerWidget {
                         : 'Baskıya hazır PDF oluştur',
                   ),
                 ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                rendererEnabled
+                    ? 'Resmî PDF, mühürlenmiş arşivden ve şu anki düzenlemelerinizden hazırlanır; sunucu doğruladıktan '
+                          'sonra ailenizle paylaşılır.'
+                    : 'Kitap oluşturma geçici olarak durduruldu. Düzenlemeleriniz korunuyor.',
+                style: theme.textTheme.bodySmall,
               ),
             ],
           ),
@@ -263,60 +270,49 @@ class _ProjectCard extends ConsumerWidget {
   }
 }
 
-class _Exports extends ConsumerWidget {
-  const _Exports({required this.project, required this.canDelete});
+class _Versions extends ConsumerWidget {
+  const _Versions({required this.babyId, required this.emptyText});
 
-  final BookProject project;
-  final bool canDelete;
+  final String babyId;
+  final String emptyText;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exports = ref.watch(bookExportsProvider(project.id));
+    final versions = ref.watch(bookVersionsProvider(babyId));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Oluşturulan sürümler', padding: EdgeInsets.fromLTRB(4, 24, 4, 8)),
-        AsyncValueView<List<BookExport>>(
-          value: exports,
-          onRetry: () => ref.invalidate(bookExportsProvider(project.id)),
+        const SectionHeader(title: 'Resmî sürümler', padding: EdgeInsets.fromLTRB(4, 24, 4, 8)),
+        AsyncValueView<List<BookVersion>>(
+          value: versions,
+          onRetry: () => ref.invalidate(bookVersionsProvider(babyId)),
           data: (list) => list.isEmpty
-              ? const Padding(padding: EdgeInsets.all(8), child: Text('Henüz PDF oluşturulmadı.'))
+              ? Padding(padding: const EdgeInsets.all(8), child: Text(emptyText))
               : Card(
                   child: Column(
                     children: [
-                      for (final e in list)
+                      for (final v in list)
                         ListTile(
                           leading: const CircleAvatar(child: Icon(Icons.picture_as_pdf_outlined)),
-                          title: Text('Sürüm ${e.version} · ${e.pageCount} sayfa'),
-                          subtitle: Text('${e.createdLabel} · ${e.format.sizeLabel} · ${e.sizeLabel}'),
+                          title: Text('Sürüm ${v.version} · ${v.pageCount} sayfa'),
+                          subtitle: Text(
+                            v.canDownload
+                                ? '${v.createdLabel} · ${v.format.sizeLabel} · ${v.sizeLabel}'
+                                : bookDownloadBlockText(v.downloadBlock),
+                          ),
+                          trailing: Icon(v.canDownload ? Icons.download_rounded : Icons.lock_outline_rounded),
                           onTap: () async {
+                            if (!v.canDownload) {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(content: Text(bookDownloadBlockText(v.downloadBlock))));
+                              return;
+                            }
                             final file = await runWithProgress(context, () async {
-                              final bytes = await ref.read(bookRepositoryProvider).download(e);
-                              return ref.read(bookGeneratorProvider).saveExportLocally(e, bytes);
+                              final bytes = await ref.read(bookRepositoryProvider).download(v);
+                              return ref.read(bookGeneratorProvider).saveLocally(v.fileName, bytes);
                             }, message: 'İndiriliyor…');
                             if (file != null && context.mounted) context.push('/book/view', extra: file);
                           },
-                          trailing: canDelete
-                              ? IconButton(
-                                  tooltip: 'Sil',
-                                  icon: const Icon(Icons.delete_outline_rounded),
-                                  onPressed: () async {
-                                    final ok = await confirm(
-                                      context,
-                                      title: 'Sürüm ${e.version} silinsin mi?',
-                                      message: 'PDF dosyası kalıcı olarak silinir.',
-                                      confirmLabel: 'Sil',
-                                      destructive: true,
-                                    );
-                                    if (!ok || !context.mounted) return;
-                                    await runWithProgress(
-                                      context,
-                                      () => ref.read(bookRepositoryProvider).deleteExport(e),
-                                    );
-                                    ref.invalidate(bookExportsProvider(project.id));
-                                  },
-                                )
-                              : null,
                         ),
                     ],
                   ),

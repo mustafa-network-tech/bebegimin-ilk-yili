@@ -31,39 +31,27 @@ select tests.eq(public.can_read_avatar_object('22222222-2222-4222-8222-222222222
 select tests.login(tests.id('baska'));
 select tests.eq(public.can_read_avatar_object('44444444-4444-4444-8444-444444444444/me.jpg'), true, 'own avatar');
 
--- books
+-- books: every path is closed while the archive is ACTIVE (Phase 9).
+-- The official, entitled flow is covered by 99_book_artifacts_test.sql.
 select tests.login(tests.id('anne'));
-insert into book_projects (id, baby_id, title) values ('a3000000-0000-4000-8000-000000000001', tests.id('defne'), 'Defne''nin İlk Yılı');
-insert into book_pages (id, project_id, baby_id, page_type, month_index, title, sort_order)
-  values ('a3100000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000001', tests.id('defne'), 'cover', null, 'Kapak', 0),
-         ('a3100000-0000-4000-8000-000000000002', 'a3000000-0000-4000-8000-000000000001', tests.id('defne'), 'month', 1, '1. Ayım', 1);
-select tests.expect_error($q$insert into book_pages (project_id, baby_id, page_type, month_index, title, sort_order)
-  values ('a3000000-0000-4000-8000-000000000001', tests.id('defne'), 'month', 1, 'Tekrar', 2)$q$, 'duplicate key');
-select tests.expect_error($q$insert into book_pages (project_id, baby_id, page_type, title, sort_order)
-  values ('a3000000-0000-4000-8000-000000000001', tests.id('can'), 'custom', 'IDOR', 3)$q$, 'row-level security');
-insert into book_items (page_id, baby_id, item_type, media_id)
-  values ('a3100000-0000-4000-8000-000000000002', tests.id('defne'), 'media', 'f0000000-0000-4000-8000-000000000001');
-select tests.expect_error($q$insert into book_items (page_id, baby_id, item_type, media_id)
-  values ('a3100000-0000-4000-8000-000000000002', tests.id('defne'), 'media', 'f0000000-0000-4000-8000-000000000005')$q$, 'foreign key');
-select tests.eq(public.can_write_book_object('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v1.pdf'), true, 'book creator may upload pdf');
-select tests.eq((select version from public.register_book_export('a3000000-0000-4000-8000-000000000001',
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v1.pdf', 40, 1000000)), 1, 'first export is version 1');
-select tests.eq((select version from public.register_book_export('a3000000-0000-4000-8000-000000000001',
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v2.pdf', 42, 1100000)), 2, '"Kitabı güncelle" creates version 2');
-update book_projects set current_version = 99 where id = 'a3000000-0000-4000-8000-000000000001';
-select tests.eq((select current_version from book_projects where id = 'a3000000-0000-4000-8000-000000000001'), 2, 'version cannot be forged');
+select tests.expect_error($q$insert into book_projects (id, baby_id, title)
+  values ('a3000000-0000-4000-8000-000000000001', tests.id('defne'), 'Defne''nin İlk Yılı')$q$, 'row-level security');
+select tests.eq(tests.count('select 1 from book_projects'), 0::bigint, 'ACTIVE: no book project is visible');
+select tests.eq(tests.count('select 1 from book_pages'), 0::bigint, 'ACTIVE: no book page is visible');
+select tests.expect_error($q$insert into storage.objects (bucket_id, name)
+  values ('books', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v1.pdf')$q$, 'row-level security');
+select tests.expect_error($q$select public.register_book_export('a3000000-0000-4000-8000-000000000001',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v1.pdf', 40, 1000000)$q$, 'book_export_requires_artifact');
+select tests.expect_error($q$select 1 from book_exports$q$, 'permission denied');
 select tests.expect_error($q$insert into book_exports (project_id, baby_id, version, format, storage_path, page_count)
   values ('a3000000-0000-4000-8000-000000000001', tests.id('defne'), 7, 'a4_portrait', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/x.pdf', 1)$q$, 'permission denied');
+select tests.eq((select access_block from public.book_access_state(tests.id('defne'))), 'premium_requires_locked',
+                'ACTIVE: book state says premium_requires_locked');
+select tests.expect_error($q$select * from public.book_render_start(tests.id('defne'), 'active-book-0001')$q$, 'premium_requires_locked');
+select tests.eq(tests.count($q$select 1 from public.book_versions(tests.id('defne'))$q$), 0::bigint, 'ACTIVE: no book version is listed');
 
-select tests.login(tests.id('teyze'));   -- view_album but not create_book
-select tests.eq(tests.count('select 1 from book_exports'), 2::bigint, 'family can list generated books');
-select tests.eq(tests.count('select 1 from book_pages'), 0::bigint, 'editor pages hidden without create_book');
-select tests.eq(public.can_read_book_object('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v2.pdf'), true, 'family can download the book');
-select tests.eq(public.can_write_book_object('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v3.pdf'), false, 'no create_book => no upload');
-select tests.expect_error($q$select public.register_book_export('a3000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a3000000-0000-4000-8000-000000000001/v3.pdf', 1, 1)$q$, 'not found');
-
-select tests.login(tests.id('anne'));
-select tests.eq(tests.count($q$select 1 from notifications where type = 'book_generated'$q$) >= 1, false, 'book creator herself is not notified');
-select tests.login(tests.id('baba'));
-select tests.eq(tests.count($q$select 1 from notifications where type = 'book_generated'$q$), 2::bigint, 'family is notified for each book version');
+select tests.login(tests.id('teyze'));
+select tests.eq((select access_block from public.book_access_state(tests.id('defne'))), 'premium_requires_locked',
+                'ACTIVE: family members hear the lifecycle reason first');
+select tests.expect_error($q$insert into book_projects (baby_id) values (tests.id('defne'))$q$, 'row-level security');
 reset role;

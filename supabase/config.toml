@@ -75,3 +75,11 @@ verify_jwt = false
 # Called by the app with the user's JWT after a store purchase / restore.
 [functions.billing-verify-purchase]
 verify_jwt = true
+
+# Called by the app with the user's JWT; signs a 60-second artifact URL.
+[functions.output-download]
+verify_jwt = true
+
+# Called by a parent's app with the user's JWT after uploading a book PDF.
+[functions.book-artifact-finalize]
+verify_jwt = true
