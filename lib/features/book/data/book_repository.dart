@@ -1,12 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../core/errors/app_exception.dart';
+import '../../../core/storage/artifact_download.dart';
 import '../../../core/storage/signed_urls.dart';
 import '../../../core/supabase_providers.dart';
 import '../domain/book_composer.dart';
@@ -248,19 +246,7 @@ class BookRepository {
   Future<void> fail(String jobId, String code) =>
       _client.rpc('book_render_fail', params: {'p_job_id': jobId, 'p_error_code': code});
 
-  /// Downloads a version through a fresh 60-second grant and checks the
-  /// bytes against the artifact checksum.
-  Future<Uint8List> download(BookVersion version) async {
-    final res = await _client.functions.invoke('output-download', body: {'artifact_id': version.artifactId});
-    final grant = (res.data as Map).cast<String, dynamic>();
-    final response = await http.get(Uri.parse(grant['url'] as String));
-    if (response.statusCode != 200) {
-      throw AppException('Kitap indirilemedi (${response.statusCode}).', kind: AppErrorKind.server);
-    }
-    final bytes = response.bodyBytes;
-    if (sha256.convert(bytes).toString() != version.sha256) {
-      throw const AppException('İndirilen dosya doğrulanamadı. Lütfen tekrar deneyin.', kind: AppErrorKind.server);
-    }
-    return bytes;
-  }
+  /// Downloads a version and checks the bytes against the artifact checksum.
+  Future<Uint8List> download(BookVersion version) =>
+      downloadVerifiedArtifact(_client, version.artifactId, version.sha256);
 }

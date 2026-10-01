@@ -13,6 +13,7 @@ Bir bebeğin doğumundan itibaren anılarını, fotoğraflarını, videolarını
 3. [Kullanılan teknolojiler](#kullanılan-teknolojiler)
 4. [Supabase şeması ve güvenlik](#supabase-şeması-ve-güvenlik)
 5. [İlk Yılım kitabı / PDF](#i̇lk-yılım-kitabı--pdf)
+   - [İlk Yıl Filmi / MP4](#i̇lk-yıl-filmi--mp4)
 6. [Kurulum](#kurulum)
    - [Flutter](#1-flutter)
    - [Supabase projesi](#2-supabase-projesi)
@@ -124,6 +125,7 @@ Migration'lar: `supabase/migrations/`
 | `…0600_views_rpc.sql` | `timeline_entries` görünümü (`security_invoker`), `baby_stats`, gizlilik RPC'leri (yalnızca service role) |
 | `…0700_storage.sql` | Private bucket'lar ve `storage.objects` politikaları |
 | `20261001000100_book_artifacts.sql` | Faz 9: kitap kapısı (`book_access_block`), `book_render_manifests`, istemci render protokolü (`book_render_start` … `book_artifact_publish`), legacy karantina ve `admin_legacy_book_report` |
+| `20261001000200_film_artifacts.sql` | Faz 10: film kapısı, sahne planı ve süre bütçesi (`film_compose`), `film_render_manifests`, ilerleme ve film metaverisi, worker RPC'leri |
 
 **İlişki modeli (özet)**
 
@@ -169,6 +171,18 @@ notifications, device_tokens (kullanıcı başına) ; activity_logs (bebek baş�
 5. **PDF (`BookPdfBuilder`):** sayfa = kesim ölçüsü + her kenarda 3 mm taşma payı (bleed), `/TrimBox` ve `/BleedBox` tanımlı; güvenli kenar boşluğu; Nunito + Lora gömülü (Türkçe karakterler); iç sayfalarda sayfa numarası; çift sayfa sayısı (gerekirse "Notlar" sayfası); emoji PDF'te kutu yerine temizlenir.
 6. **Performans:** fotoğraflar tek tek indirilip native tarafta küçültülür (baskı: kısa kenar 2000 px, önizleme: 1000 px) ve disk önbelleğine yazılır; PDF dizgisi `Isolate.run` ile arka planda yapılır; ilerleme çubuğu gösterilir.
 7. **Çıktı:** uygulama içi önizleme (`printing` / `PdfPreview`), yazdırma, sistem paylaşım menüsü ("Dosyalara kaydet" dahil). Resmî sürümler sürümlü, checksum'lı artifact'lardır; aile (`view_album`) abonelik etkinken `output-download` ile yeniden indirebilir. Fiziksel baskı siparişi bu ürüne dahil değildir.
+
+---
+
+## İlk Yıl Filmi / MP4
+
+1. **Erişim:** kitapla aynı kapı. Film yalnız `LOCKED` bebekte, aile aboneliği etkinken ve `first_year_film` satın alınmışsa Anne/Baba tarafından hazırlanır. Family Member hazır filmi izler/indirir.
+2. **Sahne planı sunucuda:** başlık → zamana göre bölümler (Seni beklerken, Doğduğun gün, 1.–12. Ay, Bir yaşında) → anı, ilk, fotoğraf ve video sahneleri → Ailemden sana → kapanış. Sahneler ve süreler SQL'de (`film_compose`) snapshot + ayarlardan deterministik hesaplanır; uygulama aynı tahmini (`film_plan`) gösterir.
+3. **Süre bütçesi:** 600 sn üst sınırdır, hedef değildir. Az içerik kısa film demektir. Temel süreler sığmazsa sahneler orantılı kısalır. En kısa sürelerle bile sığmazsa render reddedilir (`film_too_long`), film kesilmez; uygulama önerilen seçimi (`film_suggest_settings`) sunar.
+4. **Üretim:** final MP4 cihazda değil, ayrı film worker'ında (Deno + ffmpeg, `workers/film`) üretilir: 1920×1080, H.264/AAC, 30 fps; dikey/yatay medya bulanık arka planla ortalanır; müzik yoktur, video sesi normalize edilir. Render sonrası süre (≤ 600 sn), çözünürlük ve codec doğrulanıp metaveri saklanır.
+5. **Hatalar:** bozuk/desteklenmeyen medya tekrar denenmez; uygulama sorunlu medyayı çıkarmayı önerir. Geçici hatalar backoff ile tekrar denenir; retry aynı dondurulmuş manifest'i kullanır.
+
+Ayrıntı: [docs/operations/film-worker-setup.md](docs/operations/film-worker-setup.md), [ADR 0004](docs/implementation/ADR/0004-film-render-infrastructure.md).
 
 ---
 
@@ -241,6 +255,8 @@ supabase functions deploy storage-cleanup --no-verify-jwt
 supabase secrets set PUSH_WEBHOOK_SECRET=... STORAGE_CLEANUP_SECRET=...
 supabase secrets set FCM_SERVICE_ACCOUNT="$(cat service-account.json)"   # push kullanılacaksa
 ```
+
+**Film worker** Supabase dışında, ayrı bir konteynerde çalışır (`workers/film/Dockerfile`, service role anahtarı yalnız orada). Kurulum: [docs/operations/film-worker-setup.md](docs/operations/film-worker-setup.md).
 
 ### 7. Zamanlanmış işler
 
@@ -342,6 +358,8 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `test/book/book_composer_test.dart` | Kitap içerik seçimi, tarih aralığı, 1 yaş sonrası eklenen ilk-yıl anısı, fotoğraf sınırı, kapak, güncelleme (sync) |
 | `test/book/book_pdf_test.dart` | 3 formatta gerçek PDF üretimi, çift sayfa, TrimBox/BleedBox, gömülü fontlar |
 | `test/book/book_snapshot_test.dart` | Snapshot + manifest'ten render'ın canlı arşivle birebir aynı olması, düzenleme ayarları, manipülasyon reddi, 3 formatta resmî PDF |
+| `test/film/film_screen_test.dart` | Film kapısı, sunucu süre tahmini, 10 dakika aşımında render engeli ve önerilen seçim, ilerleme, bozuk medya, hazır film |
+| `workers/film/tests/*` | Manifest doğrulama, frame planı, metin, ffmpeg argümanları, probe sınıflandırma ve ffmpeg ile gerçek film üretimi |
 | `test/book/book_gate_test.dart` | Kitap rotası kapısı (ACTIVE, satın alınmamış, abonelik yok, ebeveyn, Family Member) |
 | `test/widget/*` | Uygulama açılışı, zaman tüneli kartı, yetki editörü, durum ekranları |
 | `supabase/tests/10_isolation_test.sql` | Farklı ailelerin veri/Storage izolasyonu, IDOR denemeleri, anon erişimi |
@@ -350,6 +368,7 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `supabase/tests/40_capsules_dates_test.sql` | Mühürlü kapsül, tarih kuralları, 1 yaş sonrası geçmiş tarihli anı ve yükleme |
 | `supabase/tests/50_storage_books_test.sql` | Storage yol politikaları, ACTIVE profilde tüm kitap yollarının reddi |
 | `supabase/tests/60_account_notifications_test.sql` | Bildirimler, tercih, günlük iş, hesap/bebek silme |
+| `supabase/tests/99f_film_artifacts_test.sql` | Faz 10 film kapısı, ayar doğrulama, süre bütçesi (az içerik / sıkıştırma / ret / öneri), manifest, worker API, süre ve profil doğrulaması |
 | `supabase/tests/99_book_artifacts_test.sql` | Faz 9 kitap kapısı, manifest, lease, staging yükleme politikası, doğrulama/yayın, sürümler, legacy karantina ve rapor |
 
 Bir PDF örneği üretmek için: `SAMPLE_DIR=/tmp/ornek flutter test test/book/render_sample.dart` (klasörde `img0.jpg … img5.jpg` bulunmalı).

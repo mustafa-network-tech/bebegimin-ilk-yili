@@ -50,6 +50,26 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - run: ./supabase/tests/run_db_tests.sh
 
+  film-worker:
+    name: Film worker (Deno + ffmpeg render test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/film
+    env:
+      FFMPEG_PATH: ffmpeg
+      FFPROBE_PATH: ffprobe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: deno fmt --check src tests
+      - run: deno lint src tests
+      - run: deno check src/main.ts
+      - run: deno task test
+
   android:
     name: Android build (APK)
     runs-on: ubuntu-latest

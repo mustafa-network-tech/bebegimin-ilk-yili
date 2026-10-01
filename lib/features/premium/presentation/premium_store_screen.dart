@@ -205,7 +205,19 @@ class _ProductCard extends StatelessWidget {
               if (storePrice != null) Text('Mağaza fiyatı: $storePrice', style: theme.textTheme.bodySmall),
             ],
             const SizedBox(height: 10),
-            if (owned)
+            if (owned && _openRoute(product) != null)
+              Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('Satın alındı')),
+                  FilledButton.tonal(
+                    onPressed: () => context.push(_openRoute(product)!),
+                    child: Text(product == PremiumProduct.book ? 'Kitabı aç' : 'Filmi aç'),
+                  ),
+                ],
+              )
+            else if (owned)
               Semantics(
                 label: '${product.title} satın alındı, hazırlanıyor',
                 excludeSemantics: true,
@@ -232,6 +244,13 @@ class _ProductCard extends StatelessWidget {
     );
   }
 }
+
+/// Where an owned product is prepared and downloaded (HTML: phase 11).
+String? _openRoute(PremiumProduct product) => switch (product) {
+  PremiumProduct.book => '/book',
+  PremiumProduct.film => '/film',
+  PremiumProduct.html => null,
+};
 
 /// Home entry for a LOCKED archive: opens the premium storefront.
 class PremiumEntryCard extends StatelessWidget {

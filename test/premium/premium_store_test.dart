@@ -150,8 +150,8 @@ void main() {
     expect(find.text(formatMinor(44900)), findsOneWidget);
     expect(find.text(formatMinor(54900)), findsOneWidget);
     expect(find.textContaining('Fiziksel / basılı kitap bu ürüne dahil değildir'), findsOneWidget);
-    // Owned product points to its preparation state instead of "Satın al".
-    expect(find.textContaining('Satın alındı · Hazırlanıyor'), findsOneWidget);
+    // An owned product opens its own screen instead of "Satın al".
+    expect(find.text('Kitabı aç'), findsOneWidget);
     expect(find.text('Satın al'), findsNWidgets(2));
   });
 
@@ -189,6 +189,6 @@ void main() {
     expect(find.text('Dijital ürünleri Anne veya Baba satın alabilir.'), findsOneWidget);
     expect(find.textContaining('₺'), findsNothing);
     expect(find.text('Satın al'), findsNothing);
-    expect(find.textContaining('Satın alındı · Hazırlanıyor'), findsOneWidget);
+    expect(find.text('Kitabı aç'), findsOneWidget);
   });
 }

@@ -116,6 +116,10 @@ class AppException implements Exception {
     'lease_lost': 'Kitap hazırlama süresi doldu. Lütfen tekrar deneyin.',
     'book_export_requires_artifact':
         'Uygulamanızı güncelleyin: kitaplar artık sunucuda doğrulanan resmî dosya olarak oluşturuluyor.',
+    'film_too_long': 'Film 10 dakikayı aşıyor. Seçimi azaltın veya önerilen seçimi uygulayın.',
+    'film_empty': 'Filme eklenecek içerik yok. Seçimi genişletin.',
+    'film_renderer_disabled': 'Film hazırlama geçici olarak durduruldu. Lütfen daha sonra tekrar deneyin.',
+    'film_render_in_progress': 'Film şu anda hazırlanıyor. Bitince tekrar deneyebilirsiniz.',
     'family_account_ambiguous':
         'Birden fazla aile hesabınız var; bebeği hangi hesaba ekleyeceğinizi seçmeniz gerekiyor.',
   };
@@ -139,6 +143,7 @@ class AppException implements Exception {
     'entitlement_required',
     'book_renderer_disabled',
     'book_export_requires_artifact',
+    'film_renderer_disabled',
   };
 
   /// True when the server refused a write because the baby's archive is locked.

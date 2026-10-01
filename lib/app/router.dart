@@ -20,6 +20,7 @@ import '../features/book/presentation/book_gate.dart';
 import '../features/book/presentation/book_generation.dart';
 import '../features/book/presentation/book_home_screen.dart';
 import '../features/book/presentation/book_page_editor_screen.dart';
+import '../features/film/presentation/film_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/capsules/presentation/capsule_screens.dart';
 import '../features/family/presentation/family_screen.dart';
@@ -219,6 +220,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/book/page/:pageId',
         builder: (_, s) =>
             BookRouteGate(requireEdit: true, child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
+      ),
+      // Film: same premium gate; produced on the server (phase 10).
+      GoRoute(
+        path: filmRoute,
+        builder: (_, _) => const FilmRouteGate(child: FilmScreen()),
+      ),
+      GoRoute(
+        path: filmViewRoute,
+        builder: (_, s) => FilmRouteGate(child: FilmPlayerScreen(file: s.extra! as File)),
       ),
       GoRoute(
         path: '/babies/:babyId/premium',
