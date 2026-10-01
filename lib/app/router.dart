@@ -15,12 +15,14 @@ import '../features/babies/presentation/baby_form_screen.dart';
 import '../features/babies/presentation/lifecycle_screen.dart';
 import '../features/babies/presentation/lifecycle_widgets.dart';
 import '../features/babies/presentation/onboarding_screens.dart';
+import '../features/archive/presentation/archive_screen.dart';
 import '../features/book/presentation/book_editor_screen.dart';
 import '../features/book/presentation/book_gate.dart';
 import '../features/book/presentation/book_generation.dart';
 import '../features/book/presentation/book_home_screen.dart';
 import '../features/book/presentation/book_page_editor_screen.dart';
 import '../features/film/presentation/film_screen.dart';
+import '../features/premium/presentation/download_permissions_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/capsules/presentation/capsule_screens.dart';
 import '../features/family/presentation/family_screen.dart';
@@ -221,6 +223,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) =>
             BookRouteGate(requireEdit: true, child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
       ),
+      // Offline HTML archive: same premium gate; built on the server (phase 11).
+      GoRoute(
+        path: archiveRoute,
+        builder: (_, _) => const ArchiveRouteGate(child: ArchiveScreen()),
+      ),
       // Film: same premium gate; produced on the server (phase 10).
       GoRoute(
         path: filmRoute,
@@ -229,6 +236,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: filmViewRoute,
         builder: (_, s) => FilmRouteGate(child: FilmPlayerScreen(file: s.extra! as File)),
+      ),
+      GoRoute(
+        path: '/babies/:babyId/download-permissions',
+        builder: (_, s) => DownloadPermissionsScreen(babyId: s.pathParameters['babyId']!),
       ),
       GoRoute(
         path: '/babies/:babyId/premium',

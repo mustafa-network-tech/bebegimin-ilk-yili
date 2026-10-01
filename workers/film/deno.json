@@ -1,9 +1,0 @@
-{
-  "compilerOptions": { "strict": true },
-  "imports": { "@supabase/supabase-js": "npm:@supabase/supabase-js@2" },
-  "tasks": {
-    "start": "deno run --allow-net --allow-env --allow-read --allow-write --allow-run src/main.ts",
-    "test": "deno test --allow-read --allow-write --allow-run --allow-env tests/"
-  },
-  "fmt": { "lineWidth": 120 }
-}

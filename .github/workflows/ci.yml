@@ -50,15 +50,18 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - run: ./supabase/tests/run_db_tests.sh
 
-  film-worker:
-    name: Film worker (Deno + ffmpeg render test)
+  output-worker:
+    name: Output worker (Deno + ffmpeg + headless browser tests)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: workers/film
+        working-directory: workers/output
     env:
       FFMPEG_PATH: ffmpeg
       FFPROBE_PATH: ffprobe
+      # Preinstalled on GitHub's Ubuntu runners; the offline archive is opened
+      # in it with the network disabled.
+      CHROME_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2

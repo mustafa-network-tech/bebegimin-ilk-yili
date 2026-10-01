@@ -114,7 +114,7 @@ class FilmScreen extends ConsumerWidget {
                 const EmptyState(
                   icon: Icons.movie_outlined,
                   title: 'Film henüz hazır değil',
-                  message: 'Anne veya Baba filmi hazırladığında burada izleyip indirebilirsiniz.',
+                  message: 'Anne veya Baba filmi hazırlayıp sizinle paylaştığında burada izleyip indirebilirsiniz.',
                 ),
             ],
           ),
@@ -185,6 +185,8 @@ String _downloadBlockText(String? block) => switch (block) {
   'subscription_required' => 'İndirmek için aile paketinin etkin olması gerekiyor.',
   'entitlement_required' => 'Film satın alımı etkin değil.',
   'premium_requires_locked' => 'Arşiv yeniden açıkken film indirilemez.',
+  'capacity_exceeded' => 'Aile paketinin üye sınırı aşıldığı için aile üyeleri şu anda indiremiyor.',
+  'member_downloads_disabled' => 'Aile üyesi indirmeleri geçici olarak kapalı.',
   _ => 'Film şu anda indirilemiyor.',
 };
 

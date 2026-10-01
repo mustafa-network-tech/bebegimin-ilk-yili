@@ -25,3 +25,8 @@ final premiumStorePricesProvider = FutureProvider.autoDispose<Map<String, String
     return const {};
   }
 });
+
+/// Download sharing rows of one baby (parents).
+final downloadPermissionsProvider = FutureProvider.autoDispose.family<List<DownloadPermission>, String>(
+  (ref, babyId) => ref.watch(premiumRepositoryProvider).downloadPermissions(babyId),
+);

@@ -9,20 +9,22 @@ DB="${TEST_DB:-bebegimin_test}"
 
 psql -v ON_ERROR_STOP=1 -q -d postgres -c "drop database if exists $DB" -c "create database $DB"
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$DIR/00_supabase_shim.sql"
+# Phase 8 was distributed as a manual development migration before its final
+# hardening pass. Reapplying it right after itself must upgrade functions /
+# triggers in place and never fail on an existing archive_snapshots relation.
+# (It is reapplied before the later migrations, which replace some of its
+# functions, exactly as it happens on a development database.)
+PHASE8_MIGRATION="20260929000600_output_pipeline.sql"
 for f in "$DIR"/../migrations/*.sql; do
   echo "→ migration $(basename "$f")"
   psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$f" 2>&1 | sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'
   test "${PIPESTATUS[0]}" -eq 0 || { echo "✗ $(basename "$f") failed"; exit 1; }
+  if [ "$(basename "$f")" = "$PHASE8_MIGRATION" ]; then
+    echo "→ migration reapply $PHASE8_MIGRATION"
+    psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$f" 2>&1 | sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'
+    test "${PIPESTATUS[0]}" -eq 0 || { echo "✗ Phase 8 migration reapply failed"; exit 1; }
+  fi
 done
-
-# Phase 8 was distributed as a manual development migration before its final
-# hardening pass. Reapplying it must upgrade functions/triggers in place and
-# must never fail on an existing archive_snapshots relation.
-PHASE8_MIGRATION="$DIR/../migrations/20260929000600_output_pipeline.sql"
-echo "→ migration reapply $(basename "$PHASE8_MIGRATION")"
-psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$PHASE8_MIGRATION" 2>&1 |
-  sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'
-test "${PIPESTATUS[0]}" -eq 0 || { echo "✗ Phase 8 migration reapply failed"; exit 1; }
 
 echo "→ seed (demo data)"
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$DIR/../seed.sql"

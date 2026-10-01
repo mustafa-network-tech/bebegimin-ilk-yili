@@ -152,6 +152,8 @@ void main() {
     expect(find.textContaining('Fiziksel / basılı kitap bu ürüne dahil değildir'), findsOneWidget);
     // An owned product opens its own screen instead of "Satın al".
     expect(find.text('Kitabı aç'), findsOneWidget);
+    // Parents of an owning family can share downloads with Family Members.
+    expect(find.text('Aile üyeleriyle paylaş'), findsOneWidget);
     expect(find.text('Satın al'), findsNWidgets(2));
   });
 
@@ -190,5 +192,6 @@ void main() {
     expect(find.textContaining('₺'), findsNothing);
     expect(find.text('Satın al'), findsNothing);
     expect(find.text('Kitabı aç'), findsOneWidget);
+    expect(find.text('Aile üyeleriyle paylaş'), findsNothing);
   });
 }

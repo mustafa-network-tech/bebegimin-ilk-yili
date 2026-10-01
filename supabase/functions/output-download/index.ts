@@ -1,8 +1,10 @@
 // Authorizes an output artifact with the caller's JWT and returns a fixed,
-// short-lived Storage URL. Authenticated clients have no direct SELECT policy
+// short-lived (60 s) Storage URL. The URL is a bearer link: it is never
+// logged, and revocations take effect for every new request. Authenticated clients have no direct SELECT policy
 // on the output-artifacts bucket, so they cannot choose a longer lifetime.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { refusal } from "../_shared/download.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -11,6 +13,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EXPIRES_IN = 60;
 
 type DownloadGrant = {
+  allowed: boolean;
+  reason: string | null;
   bucket_id: string;
   storage_path: string;
   file_name: string;
@@ -59,24 +63,25 @@ Deno.serve(async (req) => {
     return noStore({ error: "Oturum doğrulanamadı." }, 401);
   }
 
-  const { data, error } = await userClient.rpc("request_output_download", {
+  // Every request re-runs the full check (membership, lifecycle,
+  // subscription, capacity, parent grant, entitlement, artifact state);
+  // grants and refusals are audited and grants are rate limited.
+  const { data, error } = await userClient.rpc("authorize_artifact_download", {
     p_artifact_id: artifactId,
   });
   if (error) {
-    const status = error.code === "P0002"
-      ? 404
-      : error.code === "42501"
-      ? 403
-      : 409;
-    return noStore({
-      error: status === 404 ? "Dosya bulunamadı." : "Dosya indirilemiyor.",
-    }, status);
+    console.error("output-download authorization failed");
+    return noStore({ error: "Dosya indirilemiyor." }, 500);
   }
-
   const grant = (Array.isArray(data) ? data[0] : data) as DownloadGrant | null;
+  if (!grant?.allowed) {
+    const r = refusal(grant?.reason);
+    const res = noStore({ error: r.error, reason: r.reason }, r.status);
+    if (r.status === 429) res.headers.set("Retry-After", "600");
+    return res;
+  }
   if (
-    !grant || grant.bucket_id !== "output-artifacts" ||
-    grant.expires_in !== EXPIRES_IN
+    grant.bucket_id !== "output-artifacts" || grant.expires_in !== EXPIRES_IN
   ) {
     return noStore({ error: "Dosya indirilemiyor." }, 409);
   }

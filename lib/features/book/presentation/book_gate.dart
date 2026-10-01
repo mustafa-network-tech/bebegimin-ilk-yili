@@ -106,5 +106,7 @@ String bookDownloadBlockText(String? block) => switch (block) {
   'entitlement_required' => 'Bu kitabın satın alımı etkin değil.',
   'premium_requires_locked' => 'Arşiv yeniden açıkken kitap indirilemez.',
   'artifact_not_ready' => 'Bu sürüm henüz hazır değil.',
+  'capacity_exceeded' => 'Aile paketinin üye sınırı aşıldığı için aile üyeleri şu anda indiremiyor.',
+  'member_downloads_disabled' => 'Aile üyesi indirmeleri geçici olarak kapalı.',
   _ => 'Bu sürüm şu anda indirilemiyor.',
 };

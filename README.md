@@ -14,6 +14,8 @@ Bir bebeğin doğumundan itibaren anılarını, fotoğraflarını, videolarını
 4. [Supabase şeması ve güvenlik](#supabase-şeması-ve-güvenlik)
 5. [İlk Yılım kitabı / PDF](#i̇lk-yılım-kitabı--pdf)
    - [İlk Yıl Filmi / MP4](#i̇lk-yıl-filmi--mp4)
+   - [Offline HTML arşivi / ZIP](#offline-html-arşivi--zip)
+   - [İndirme ve aile üyesiyle paylaşım](#i̇ndirme-ve-aile-üyesiyle-paylaşım)
 6. [Kurulum](#kurulum)
    - [Flutter](#1-flutter)
    - [Supabase projesi](#2-supabase-projesi)
@@ -126,6 +128,8 @@ Migration'lar: `supabase/migrations/`
 | `…0700_storage.sql` | Private bucket'lar ve `storage.objects` politikaları |
 | `20261001000100_book_artifacts.sql` | Faz 9: kitap kapısı (`book_access_block`), `book_render_manifests`, istemci render protokolü (`book_render_start` … `book_artifact_publish`), legacy karantina ve `admin_legacy_book_report` |
 | `20261001000200_film_artifacts.sql` | Faz 10: film kapısı, sahne planı ve süre bütçesi (`film_compose`), `film_render_manifests`, ilerleme ve film metaverisi, worker RPC'leri |
+| `20261001000300_html_archive.sql` | Faz 11: arşiv kapısı, istek (aynı snapshot tekrar üretilmez), `output_job_progress`, `html_artifact_metadata`, worker RPC'leri |
+| `20261001000400_member_artifact_downloads.sql` | Faz 12: `artifact_download_permissions`, altı koşullu indirme kontrolü, `authorize_artifact_download` (denetim + hız sınırı), ebeveyn paylaşım RPC'leri, üyeler için maskelenmiş durum |
 
 **İlişki modeli (özet)**
 
@@ -179,10 +183,26 @@ notifications, device_tokens (kullanıcı başına) ; activity_logs (bebek baş�
 1. **Erişim:** kitapla aynı kapı. Film yalnız `LOCKED` bebekte, aile aboneliği etkinken ve `first_year_film` satın alınmışsa Anne/Baba tarafından hazırlanır. Family Member hazır filmi izler/indirir.
 2. **Sahne planı sunucuda:** başlık → zamana göre bölümler (Seni beklerken, Doğduğun gün, 1.–12. Ay, Bir yaşında) → anı, ilk, fotoğraf ve video sahneleri → Ailemden sana → kapanış. Sahneler ve süreler SQL'de (`film_compose`) snapshot + ayarlardan deterministik hesaplanır; uygulama aynı tahmini (`film_plan`) gösterir.
 3. **Süre bütçesi:** 600 sn üst sınırdır, hedef değildir. Az içerik kısa film demektir. Temel süreler sığmazsa sahneler orantılı kısalır. En kısa sürelerle bile sığmazsa render reddedilir (`film_too_long`), film kesilmez; uygulama önerilen seçimi (`film_suggest_settings`) sunar.
-4. **Üretim:** final MP4 cihazda değil, ayrı film worker'ında (Deno + ffmpeg, `workers/film`) üretilir: 1920×1080, H.264/AAC, 30 fps; dikey/yatay medya bulanık arka planla ortalanır; müzik yoktur, video sesi normalize edilir. Render sonrası süre (≤ 600 sn), çözünürlük ve codec doğrulanıp metaveri saklanır.
+4. **Üretim:** final MP4 cihazda değil, ayrı film worker'ında (Deno + ffmpeg, `workers/output`) üretilir: 1920×1080, H.264/AAC, 30 fps; dikey/yatay medya bulanık arka planla ortalanır; müzik yoktur, video sesi normalize edilir. Render sonrası süre (≤ 600 sn), çözünürlük ve codec doğrulanıp metaveri saklanır.
 5. **Hatalar:** bozuk/desteklenmeyen medya tekrar denenmez; uygulama sorunlu medyayı çıkarmayı önerir. Geçici hatalar backoff ile tekrar denenir; retry aynı dondurulmuş manifest'i kullanır.
 
-Ayrıntı: [docs/operations/film-worker-setup.md](docs/operations/film-worker-setup.md), [ADR 0004](docs/implementation/ADR/0004-film-render-infrastructure.md).
+Ayrıntı: [docs/operations/output-worker-setup.md](docs/operations/output-worker-setup.md), [ADR 0004](docs/implementation/ADR/0004-film-render-infrastructure.md).
+
+## Offline HTML arşivi / ZIP
+
+1. **Erişim:** kitap ve filmle aynı kapı (`first_year_html`). Ayar yoktur: arşiv, mühürlü snapshot'ın tamamıdır (anılar, fotoğraflar, videolar, ilkler, mektuplar, yorumlar, aile).
+2. **Üretim:** aynı çıktı worker'ı (`workers/output`) sayfaları sunucuda statik HTML olarak üretir. `file://` altında `fetch` gerektirmez; JavaScript yalnız görsel büyütme içindir. Fotoğraflar küçültülür, videolar H.264/AAC'ye çevrilir, tüm metaveri silinir.
+3. **Güvenlik:** her sayfada sıkı CSP; tüm kullanıcı metni escape edilir; dosya adları sabit (`media/<uuid>…`) ve izin listesiyle doğrulanır; çalıştırılabilir dosya yoktur; uzak kaynak, form veya düzenleme arayüzü yoktur.
+4. **Paket:** deterministik ZIP (tek kök klasör), `manifest.json` (her dosyanın SHA-256'sı), `surum.txt`, `benioku.txt` (açılış yönergesi). Worker ZIP'i manifest'e karşı yeniden doğrular. Aynı snapshot ikinci kez üretilmez; yeniden indirme aynı SHA-256'yı verir.
+5. **Destek:** masaüstü Chrome / Edge / Firefox / Safari tam; iOS ve Android en iyi çaba (bkz. ADR 0005).
+
+Ayrıntı: [ADR 0005](docs/implementation/ADR/0005-offline-html-archive.md), [docs/operations/output-worker-setup.md](docs/operations/output-worker-setup.md).
+
+## İndirme ve aile üyesiyle paylaşım
+
+- Kitap, film ve arşiv için **aynı** yeniden indirme kuralı geçerlidir. Anne ve Baba, aile paketi etkinken satın alınmış hazır dosyayı istediği zaman indirir. Abonelik yenilenince yeni satın alma gerekmez.
+- Family Member yalnız bir ebeveynin o bebeğin **o ürününü** onunla paylaştığı dosyayı, aile paketi etkin ve plan kapasitesi aşılmamışken indirebilir (Mağaza → "Aile üyeleriyle paylaş"). Albüm izni indirme hakkı vermez.
+- Her istek tüm koşulları yeniden denetler, 60 saniyelik bağlantı üretir, denetim kaydı tutar ve hız sınırı uygular. Paylaşım kaldırma, üyelikten çıkma, iade ve abonelik pasifliği sonrası davranış: [docs/operations/artifact-download-policy.md](docs/operations/artifact-download-policy.md).
 
 ---
 
@@ -239,7 +259,7 @@ Migration'lar boş bir Supabase projesinde sırayla çalışacak şekilde yazıl
 | Fonksiyon | Görev | JWT |
 |---|---|---|
 | `privacy-actions` | Hesap silme, bebeği tüm dosyalarıyla silme | Kullanıcı JWT'si |
-| `output-download` | Yetkili artifact için sabit 60 saniyelik imzalı URL | Kullanıcı JWT'si |
+| `output-download` | Her istekte tüm indirme koşullarını denetler (denetim kaydı, hız sınırı), sabit 60 saniyelik imzalı URL döndürür | Kullanıcı JWT'si |
 | `book-artifact-finalize` | Yüklenen kitap PDF'ini sunucuda hash'leyip doğrular, taşır ve yayınlar | Kullanıcı JWT'si |
 | `send-push` | `notifications` INSERT → FCM push | `x-webhook-secret` |
 | `storage-cleanup` | Kuyruktaki sahipsiz dosyaları silme | `x-cleanup-secret` |
@@ -256,7 +276,7 @@ supabase secrets set PUSH_WEBHOOK_SECRET=... STORAGE_CLEANUP_SECRET=...
 supabase secrets set FCM_SERVICE_ACCOUNT="$(cat service-account.json)"   # push kullanılacaksa
 ```
 
-**Film worker** Supabase dışında, ayrı bir konteynerde çalışır (`workers/film/Dockerfile`, service role anahtarı yalnız orada). Kurulum: [docs/operations/film-worker-setup.md](docs/operations/film-worker-setup.md).
+**Çıktı worker'ı** (film + offline arşiv) Supabase dışında, ayrı bir konteynerde çalışır (`workers/output/Dockerfile`, service role anahtarı yalnız orada). Kurulum: [docs/operations/output-worker-setup.md](docs/operations/output-worker-setup.md).
 
 ### 7. Zamanlanmış işler
 
@@ -359,7 +379,9 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `test/book/book_pdf_test.dart` | 3 formatta gerçek PDF üretimi, çift sayfa, TrimBox/BleedBox, gömülü fontlar |
 | `test/book/book_snapshot_test.dart` | Snapshot + manifest'ten render'ın canlı arşivle birebir aynı olması, düzenleme ayarları, manipülasyon reddi, 3 formatta resmî PDF |
 | `test/film/film_screen_test.dart` | Film kapısı, sunucu süre tahmini, 10 dakika aşımında render engeli ve önerilen seçim, ilerleme, bozuk medya, hazır film |
-| `workers/film/tests/*` | Manifest doğrulama, frame planı, metin, ffmpeg argümanları, probe sınıflandırma ve ffmpeg ile gerçek film üretimi |
+| `workers/output/tests/*` | Film: manifest, frame planı, metin, ffmpeg argümanları, probe ve gerçek film üretimi. Arşiv: ZIP, yol güvenliği, XSS escape, bölümler, gerçek arşiv üretimi ve headless Chrome'da ağ kapalı açılış testi |
+| `test/premium/download_permissions_test.dart` | Ebeveynin üye × ürün bazında paylaşım ekranı |
+| `test/archive/archive_screen_test.dart` | Arşiv kapısı, istek, ilerleme, hazır arşiv, Family Member görünümü |
 | `test/book/book_gate_test.dart` | Kitap rotası kapısı (ACTIVE, satın alınmamış, abonelik yok, ebeveyn, Family Member) |
 | `test/widget/*` | Uygulama açılışı, zaman tüneli kartı, yetki editörü, durum ekranları |
 | `supabase/tests/10_isolation_test.sql` | Farklı ailelerin veri/Storage izolasyonu, IDOR denemeleri, anon erişimi |
@@ -369,6 +391,8 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `supabase/tests/50_storage_books_test.sql` | Storage yol politikaları, ACTIVE profilde tüm kitap yollarının reddi |
 | `supabase/tests/60_account_notifications_test.sql` | Bildirimler, tercih, günlük iş, hesap/bebek silme |
 | `supabase/tests/99f_film_artifacts_test.sql` | Faz 10 film kapısı, ayar doğrulama, süre bütçesi (az içerik / sıkıştırma / ret / öneri), manifest, worker API, süre ve profil doğrulaması |
+| `supabase/tests/99h_html_archive_test.sql` | Faz 11 arşiv kapısı, idempotent istek, aynı snapshot'ın tekrar üretilmemesi, worker API, yayın metaverisi, yeniden indirme |
+| `supabase/tests/99m_member_downloads_test.sql` | Faz 12: ebeveyn / üye indirme kuralı, ürün bazlı paylaşım, abonelik pasif/aktif, kapasite, üyelik sonu, iade, IDOR, üye üretim uçları, denetim, hız sınırı, kill switch |
 | `supabase/tests/99_book_artifacts_test.sql` | Faz 9 kitap kapısı, manifest, lease, staging yükleme politikası, doğrulama/yayın, sürümler, legacy karantina ve rapor |
 
 Bir PDF örneği üretmek için: `SAMPLE_DIR=/tmp/ornek flutter test test/book/render_sample.dart` (klasörde `img0.jpg … img5.jpg` bulunmalı).

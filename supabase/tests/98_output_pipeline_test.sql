@@ -321,10 +321,13 @@ insert into storage.objects (bucket_id, name, metadata)
 values ('output-artifacts', format('%s/first_year_book/%s/v9/book.pdf', :'defne', :'ece_snap'), '{"size": 100}');
 
 -- Downloads ---------------------------------------------------------------------------------------------------------
+-- Phase 12: a Family Member downloads only what a parent shared with them.
 set role authenticated;
+select tests.login('9d000000-0000-4000-8000-000000000001');
+select public.set_artifact_download_permission(:'defne', '9d000000-0000-4000-8000-000000000011', 'first_year_book', true);
 select tests.login('9d000000-0000-4000-8000-000000000011');
 select tests.eq((select storage_path || ':' || expires_in from public.request_output_download(:'art2')), :'art2_path' || ':60',
-                'family member with album permission gets a short-lived download');
+                'family member the parent shared the book with gets a short-lived download');
 select tests.eq((select count(*) from storage.objects where bucket_id = 'output-artifacts'), 0::bigint,
                 'authenticated clients cannot list the artifact bucket directly');
 select tests.expect_error(format('select public.can_read_output_object(%L)', :'art2_path'), 'permission denied');
@@ -332,7 +335,7 @@ select tests.eq((select download_block from public.baby_output_status(:'defne') 
                 'status shows the download as available');
 select tests.login('9d000000-0000-4000-8000-000000000012');
 select tests.expect_error(format('select * from public.request_output_download(%L)', :'art2'), 'permission_denied');
-select tests.eq((select count(*) from storage.objects where bucket_id = 'output-artifacts'), 0::bigint, 'no album permission, no file');
+select tests.eq((select count(*) from storage.objects where bucket_id = 'output-artifacts'), 0::bigint, 'not shared, no file');
 select tests.login('9d000000-0000-4000-8000-000000000021');
 select tests.expect_error(format('select * from public.request_output_download(%L)', :'art2'), 'not found');
 select tests.eq((select count(*) from storage.objects where bucket_id = 'output-artifacts'), 0::bigint, 'outsider sees no file');

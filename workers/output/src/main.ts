@@ -1,7 +1,7 @@
-// Film worker entry point (ADR 0004). One job at a time; stops after the
-// current job on SIGTERM / SIGINT.
+// Output worker entry point (film: ADR 0004, offline archive: ADR 0005).
+// One job at a time; stops after the current job on SIGTERM / SIGINT.
 import { createClient } from "@supabase/supabase-js";
-import { claimOne, processJob, type WorkerConfig } from "./worker.ts";
+import { claimOne, processJob, PRODUCTS, type WorkerConfig } from "./worker.ts";
 
 function env(name: string, fallback?: string): string {
   const value = Deno.env.get(name) ?? fallback;
@@ -9,8 +9,14 @@ function env(name: string, fallback?: string): string {
   return value;
 }
 
+const products = env("WORKER_PRODUCTS", PRODUCTS.join(",")).split(",").map((p) => p.trim()).filter(Boolean);
+for (const p of products) {
+  if (!(PRODUCTS as readonly string[]).includes(p)) throw new Error(`unsupported product ${p}`);
+}
+
 const cfg: WorkerConfig = {
-  workerId: env("WORKER_ID", `film-${crypto.randomUUID().slice(0, 8)}`),
+  workerId: env("WORKER_ID", `output-${crypto.randomUUID().slice(0, 8)}`),
+  products,
   ffmpeg: env("FFMPEG_PATH", "ffmpeg"),
   ffprobe: env("FFPROBE_PATH", "ffprobe"),
   fontDir: env("FONT_DIR", "/app/fonts"),
@@ -35,7 +41,7 @@ for (const signal of ["SIGTERM", "SIGINT"] as const) {
   }
 }
 
-console.log(`film worker ${cfg.workerId} started`);
+console.log(`output worker ${cfg.workerId} started for ${products.join(", ")}`);
 while (!stopping) {
   try {
     const claim = await claimOne(client, cfg);
@@ -54,4 +60,4 @@ while (!stopping) {
     await new Promise((r) => setTimeout(r, pollMs));
   }
 }
-console.log("film worker stopped");
+console.log("output worker stopped");

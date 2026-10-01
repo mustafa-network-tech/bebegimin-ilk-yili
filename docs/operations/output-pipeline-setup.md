@@ -7,7 +7,7 @@ Bu belge Faz 8'de eklenen Book (PDF), Offline HTML (ZIP) ve Film (MP4) ortak ür
 - Worker yalnız sunucu ortamındaki `service_role` ile çalışır; anahtar mobil uygulamaya girmez.
 - İstemci iş durumu için `request_output_job` ve `baby_output_status` RPC'lerini çağırır. İndirme için `output-download` Edge Function'ını kullanır; `request_output_download` bu fonksiyonun kullanıcı JWT'siyle çağırdığı yetkilendirme/audit RPC'sidir.
 - Snapshot/job isteği için bebeğin `LOCKED`, çağıranın aktif ebeveyn, aile aboneliğinin erişim verir ve ilgili bebek/ürün hakkının aktif olması gerekir.
-- İndirme her istekte aktif aile üyeliği, `LOCKED` lifecycle, abonelik, ürün hakkı, `view_album`/admin izni ve `ready` artifact satırını yeniden denetler.
+- İndirme her istekte aktif aile üyeliği, `LOCKED` lifecycle, abonelik, ürün hakkı ve `ready` artifact satırını yeniden denetler. Faz 12'den itibaren Family Member için ayrıca plan kapasitesi ve ebeveynin ürün bazlı paylaşımı gerekir (`view_album` kullanılmaz); bkz. [artifact-download-policy.md](artifact-download-policy.md).
 - Storage klasör adı tek başına yetki vermez. `output_artifacts` satırı olmayan, staging'de kalan veya quarantine edilen nesne okunamaz. Authenticated rolün bucket üzerinde doğrudan SELECT politikası yoktur; böylece istemci imzalı URL ömrünü kendisi seçemez.
 
 Edge Function'ı JWT doğrulaması açık biçimde deploy edin:

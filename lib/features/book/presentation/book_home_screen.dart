@@ -119,7 +119,10 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
                   style: theme.textTheme.bodySmall,
                 ),
               ] else
-                _Versions(babyId: baby.id, emptyText: 'Anne veya Baba kitabı hazırladığında burada görünecek.'),
+                _Versions(
+                  babyId: baby.id,
+                  emptyText: 'Anne veya Baba kitabı hazırlayıp sizinle paylaştığında burada görünecek.',
+                ),
             ] else ...[
               _ProjectCard(baby: baby, project: p, rendererEnabled: access?.rendererEnabled ?? false),
               _Versions(babyId: baby.id, emptyText: 'Henüz resmî PDF oluşturulmadı.'),

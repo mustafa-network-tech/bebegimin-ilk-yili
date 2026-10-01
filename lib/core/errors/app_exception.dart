@@ -120,6 +120,9 @@ class AppException implements Exception {
     'film_empty': 'Filme eklenecek içerik yok. Seçimi genişletin.',
     'film_renderer_disabled': 'Film hazırlama geçici olarak durduruldu. Lütfen daha sonra tekrar deneyin.',
     'film_render_in_progress': 'Film şu anda hazırlanıyor. Bitince tekrar deneyebilirsiniz.',
+    'html_renderer_disabled': 'Arşiv hazırlama geçici olarak durduruldu. Lütfen daha sonra tekrar deneyin.',
+    'html_render_in_progress': 'Arşiv şu anda hazırlanıyor. Bitince tekrar deneyebilirsiniz.',
+    'member_not_found': 'Bu kişi bu bebeğin aile üyesi değil.',
     'family_account_ambiguous':
         'Birden fazla aile hesabınız var; bebeği hangi hesaba ekleyeceğinizi seçmeniz gerekiyor.',
   };
@@ -144,6 +147,7 @@ class AppException implements Exception {
     'book_renderer_disabled',
     'book_export_requires_artifact',
     'film_renderer_disabled',
+    'html_renderer_disabled',
   };
 
   /// True when the server refused a write because the baby's archive is locked.

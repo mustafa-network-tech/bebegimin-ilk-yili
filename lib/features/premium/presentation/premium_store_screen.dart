@@ -17,6 +17,7 @@ import '../../subscription/presentation/family_plan_screen.dart';
 import '../application/premium_providers.dart';
 import '../data/premium_repository.dart';
 import '../domain/premium_models.dart';
+import 'download_permissions_screen.dart';
 
 String premiumStoreRoute(String babyId) => '/babies/$babyId/premium';
 
@@ -147,6 +148,16 @@ class _PremiumStoreScreenState extends ConsumerState<PremiumStoreScreen> {
           onBuy: offer.canBuy ? () => _buy(offer) : null,
           onOpenPlan: () => context.push(familyPlanRoute),
         ),
+      if (view.offers.any((o) => o.owned))
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.share_rounded),
+            title: const Text('Aile üyeleriyle paylaş'),
+            subtitle: const Text('Hangi aile üyesinin hangi dosyayı indirebileceğini seçin.'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push(downloadPermissionsRoute(widget.babyId)),
+          ),
+        ),
     ];
   }
 
@@ -205,31 +216,21 @@ class _ProductCard extends StatelessWidget {
               if (storePrice != null) Text('Mağaza fiyatı: $storePrice', style: theme.textTheme.bodySmall),
             ],
             const SizedBox(height: 10),
-            if (owned && _openRoute(product) != null)
+            if (owned)
               Row(
                 children: [
                   Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   const Expanded(child: Text('Satın alındı')),
                   FilledButton.tonal(
-                    onPressed: () => context.push(_openRoute(product)!),
-                    child: Text(product == PremiumProduct.book ? 'Kitabı aç' : 'Filmi aç'),
+                    onPressed: () => context.push(_openRoute(product)),
+                    child: Text(switch (product) {
+                      PremiumProduct.book => 'Kitabı aç',
+                      PremiumProduct.film => 'Filmi aç',
+                      PremiumProduct.html => 'Arşivi aç',
+                    }),
                   ),
                 ],
-              )
-            else if (owned)
-              Semantics(
-                label: '${product.title} satın alındı, hazırlanıyor',
-                excludeSemantics: true,
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Satın alındı · Hazırlanıyor. Dosya hazır olduğunda burada indirilebilecek.'),
-                    ),
-                  ],
-                ),
               )
             else if (block == PurchaseBlock.subscriptionRequired) ...[
               Text('Satın alma için aktif bir aile paketi gerekir.', style: TextStyle(color: theme.colorScheme.error)),
@@ -245,11 +246,11 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-/// Where an owned product is prepared and downloaded (HTML: phase 11).
-String? _openRoute(PremiumProduct product) => switch (product) {
+/// Where an owned product is prepared and downloaded.
+String _openRoute(PremiumProduct product) => switch (product) {
   PremiumProduct.book => '/book',
   PremiumProduct.film => '/film',
-  PremiumProduct.html => null,
+  PremiumProduct.html => '/archive',
 };
 
 /// Home entry for a LOCKED archive: opens the premium storefront.
