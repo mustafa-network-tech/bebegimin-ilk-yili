@@ -25,6 +25,11 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      # Secrets never belong in the repository or the app (phase 13 audit).
+      - name: Secret and service-role scan
+        run: |
+          ! grep -rIni "service_role" lib/
+          ! git grep -IlE "eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC )?PRIVATE KEY-----|sk_live_" -- . ':!*.lock' ':!.github/workflows/ci.yml'
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test

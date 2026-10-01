@@ -25,9 +25,17 @@ select tests.eq(tests.count($q$select 1 from notifications where body = 'Sessiz 
 select tests.eq(public.has_baby_permission(tests.id('defne'), 'create_book'), true, 'admin implicitly has every permission');
 reset role;
 
--- daily job is idempotent
+-- daily job is idempotent. Phase 13: the "archive complete" reminder fires
+-- on the day the archive locks (375 days + approved extension), not on day 365.
 select public.run_daily_jobs((select birth_date + 365 from babies where id = tests.id('defne')));
-select public.run_daily_jobs((select birth_date + 365 from babies where id = tests.id('defne')));
+select tests.eq((select count(*) from notifications where type = 'book_ready' and baby_id = tests.id('defne')), 0::bigint,
+                'no book reminder while the archive is still ACTIVE (day 365)');
+select public.run_daily_jobs((select b.birth_date + 375 + coalesce((select e.requested_days::integer from baby_extension_requests e
+                                                                     where e.baby_id = b.id and e.status = 'approved'), 0)
+                                from babies b where b.id = tests.id('defne')));
+select public.run_daily_jobs((select b.birth_date + 375 + coalesce((select e.requested_days::integer from baby_extension_requests e
+                                                                     where e.baby_id = b.id and e.status = 'approved'), 0)
+                                from babies b where b.id = tests.id('defne')));
 select tests.eq((select count(*) from notifications where type = 'book_ready' and user_id = tests.id('baba')), 1::bigint, 'daily job dedupes');
 select tests.eq((select count(*) from notifications where type = 'book_ready' and user_id = tests.id('teyze')), 0::bigint, 'book reminder only for book creators');
 select tests.eq(public.tr_suffix('Defne', 'genitive'), 'Defne''nin', 'genitive Defne');

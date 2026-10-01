@@ -130,6 +130,7 @@ Migration'lar: `supabase/migrations/`
 | `20261001000200_film_artifacts.sql` | Faz 10: film kapısı, sahne planı ve süre bütçesi (`film_compose`), `film_render_manifests`, ilerleme ve film metaverisi, worker RPC'leri |
 | `20261001000300_html_archive.sql` | Faz 11: arşiv kapısı, istek (aynı snapshot tekrar üretilmez), `output_job_progress`, `html_artifact_metadata`, worker RPC'leri |
 | `20261001000400_member_artifact_downloads.sql` | Faz 12: `artifact_download_permissions`, altı koşullu indirme kontrolü, `authorize_artifact_download` (denetim + hız sınırı), ebeveyn paylaşım RPC'leri, üyeler için maskelenmiş durum |
+| `20261001000500_release_hardening.sql` | Faz 13: legacy kesim (405 gün) ve Super Admin kararı, rollout raporu, release sağlık kontrolleri, günlük çıktı kotası, minimum istemci sürümü, KVKK silmesinin satın alınmış bebeklerde de çalışması, yetki sertleştirmesi |
 
 **İlişki modeli (özet)**
 
@@ -380,6 +381,7 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `test/book/book_snapshot_test.dart` | Snapshot + manifest'ten render'ın canlı arşivle birebir aynı olması, düzenleme ayarları, manipülasyon reddi, 3 formatta resmî PDF |
 | `test/film/film_screen_test.dart` | Film kapısı, sunucu süre tahmini, 10 dakika aşımında render engeli ve önerilen seçim, ilerleme, bozuk medya, hazır film |
 | `workers/output/tests/*` | Film: manifest, frame planı, metin, ffmpeg argümanları, probe ve gerçek film üretimi. Arşiv: ZIP, yol güvenliği, XSS escape, bölümler, gerçek arşiv üretimi ve headless Chrome'da ağ kapalı açılış testi |
+| `test/app_config/upgrade_gate_test.dart` | Minimum istemci sürümü kapısı |
 | `test/premium/download_permissions_test.dart` | Ebeveynin üye × ürün bazında paylaşım ekranı |
 | `test/archive/archive_screen_test.dart` | Arşiv kapısı, istek, ilerleme, hazır arşiv, Family Member görünümü |
 | `test/book/book_gate_test.dart` | Kitap rotası kapısı (ACTIVE, satın alınmamış, abonelik yok, ebeveyn, Family Member) |
@@ -393,6 +395,8 @@ PGHOST=localhost PGUSER=postgres ./supabase/tests/run_db_tests.sh
 | `supabase/tests/99f_film_artifacts_test.sql` | Faz 10 film kapısı, ayar doğrulama, süre bütçesi (az içerik / sıkıştırma / ret / öneri), manifest, worker API, süre ve profil doğrulaması |
 | `supabase/tests/99h_html_archive_test.sql` | Faz 11 arşiv kapısı, idempotent istek, aynı snapshot'ın tekrar üretilmemesi, worker API, yayın metaverisi, yeniden indirme |
 | `supabase/tests/99m_member_downloads_test.sql` | Faz 12: ebeveyn / üye indirme kuralı, ürün bazlı paylaşım, abonelik pasif/aktif, kapasite, üyelik sonu, iade, IDOR, üye üretim uçları, denetim, hız sınırı, kill switch |
+| `supabase/tests/99r_release_hardening_test.sql` | Faz 13: legacy kesim ve karar, rollout raporu, sağlık kontrolleri, kota, istemci sürümü, satın alınmış bebeğin KVKK silmesi |
+| `supabase/tests/99z_security_audit_test.sql` | Katalog genelinde güvenlik denetimi: RLS, anon yetkileri, SECURITY DEFINER search_path, istemci yazma yüzeyi, servis tabloları, bucket ve Storage politikaları |
 | `supabase/tests/99_book_artifacts_test.sql` | Faz 9 kitap kapısı, manifest, lease, staging yükleme politikası, doğrulama/yayın, sürümler, legacy karantina ve rapor |
 
 Bir PDF örneği üretmek için: `SAMPLE_DIR=/tmp/ornek flutter test test/book/render_sample.dart` (klasörde `img0.jpg … img5.jpg` bulunmalı).
@@ -403,10 +407,14 @@ GitHub Actions (`.github/workflows/ci.yml`): analyze + testler, PostgreSQL üzer
 
 ```bash
 # Android
-flutter build appbundle --release --dart-define-from-file=env/prod.json
+flutter build appbundle --release --dart-define-from-file=env/prod.json --dart-define=APP_BUILD=<build>
 # iOS
-flutter build ipa --release --dart-define-from-file=env/prod.json
+flutter build ipa --release --dart-define-from-file=env/prod.json --dart-define=APP_BUILD=<build>
 ```
+
+`APP_BUILD`, pubspec `version` değerindeki `+N` build numarasıdır. Sunucudaki `platform_settings.client_min_build` bu sayının üstüne çıkarılırsa eski sürümler güvenli bir "Güncelleme gerekiyor" ekranı gösterir.
+
+**Üretim açılışı:** kademeli rollout, metrikler, alarmlar, kill switch / yedek tatbikatları ve go-live kapıları için bkz. [docs/operations/release-runbook.md](docs/operations/release-runbook.md). Veri modeli: [docs/architecture/erd.md](docs/architecture/erd.md); istemci RPC sözleşmeleri: [docs/api/client-rpc-contracts.md](docs/api/client-rpc-contracts.md); destek metinleri: [docs/support/support-texts.md](docs/support/support-texts.md).
 
 Kontrol listesi:
 

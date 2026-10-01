@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/app_config/app_config.dart';
 import '../features/family/domain/invitation.dart';
 import '../features/notifications/data/push_service.dart';
 import '../features/settings/application/theme_mode.dart';
@@ -68,6 +69,7 @@ class _BebegiminAppState extends ConsumerState<BebegiminApp> {
       darkTheme: AppTheme.dark(),
       themeMode: ref.watch(themeModeProvider),
       routerConfig: router,
+      builder: (context, child) => UpgradeGate(child: child ?? const SizedBox.shrink()),
       locale: const Locale('tr', 'TR'),
       supportedLocales: const [Locale('tr', 'TR'), Locale('en')],
       localizationsDelegates: const [

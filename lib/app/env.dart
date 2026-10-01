@@ -28,6 +28,11 @@ abstract final class Env {
 
   static const maxVideoMb = int.fromEnvironment('MAX_VIDEO_MB', defaultValue: 200);
 
+  /// Build number of this binary (the "+N" of pubspec `version`). Release
+  /// builds pass it with --dart-define=APP_BUILD=N; the server's
+  /// `client_min_build` setting can then force an upgrade (phase 13).
+  static const appBuild = int.fromEnvironment('APP_BUILD', defaultValue: 1);
+
   // Optional Firebase Cloud Messaging (push). Leave empty to disable push;
   // in-app notifications keep working.
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');

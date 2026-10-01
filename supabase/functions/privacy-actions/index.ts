@@ -13,7 +13,9 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization") ?? "";
@@ -31,7 +33,9 @@ Deno.serve(async (req) => {
     return json({ error: "Geçersiz istek." }, 400);
   }
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
 
   try {
     if (body.action === "delete_account") {
@@ -40,7 +44,10 @@ Deno.serve(async (req) => {
         p_delete_content: body.delete_content === true,
       });
       if (error) throw error;
-      const removed = await removeObjects(admin, (data ?? []) as StorageObject[]);
+      const removed = await removeObjects(
+        admin,
+        (data ?? []) as StorageObject[],
+      );
       const { error: delError } = await admin.auth.admin.deleteUser(user.id);
       if (delError) throw delError;
       return json({ ok: true, removed_files: removed });
@@ -49,18 +56,29 @@ Deno.serve(async (req) => {
     if (body.action === "delete_baby") {
       const babyId = String(body.baby_id ?? "");
       if (!UUID.test(babyId)) return json({ error: "Geçersiz bebek." }, 400);
-      const { data, error } = await admin.rpc("delete_baby_for_user", { p_user: user.id, p_baby_id: babyId });
+      const { data, error } = await admin.rpc("delete_baby_for_user", {
+        p_user: user.id,
+        p_baby_id: babyId,
+      });
       if (error) {
         const forbidden = error.code === "42501";
-        return json({ error: forbidden ? "Bu işlem için yönetici olmalısınız." : error.message }, forbidden ? 403 : 400);
+        return json({
+          error: forbidden
+            ? "Bu işlem için yönetici olmalısınız."
+            : error.message,
+        }, forbidden ? 403 : 400);
       }
-      const removed = await removeObjects(admin, (data ?? []) as StorageObject[]);
+      const removed = await removeObjects(
+        admin,
+        (data ?? []) as StorageObject[],
+      );
       return json({ ok: true, removed_files: removed });
     }
 
     return json({ error: "Bilinmeyen işlem." }, 400);
   } catch (e) {
-    console.error("privacy-actions failed", e);
+    // Error details can contain storage paths or ids: log the type only.
+    console.error("privacy-actions failed", (e as Error)?.name ?? "unknown");
     return json({ error: "İşlem tamamlanamadı. Lütfen tekrar deneyin." }, 500);
   }
 });
