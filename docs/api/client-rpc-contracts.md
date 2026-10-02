@@ -66,7 +66,9 @@ Ortak hint'ler: `premium_requires_locked`, `subscription_required`, `entitlement
 
 ## Super Admin (konsol kapısından geçer: rol + `admin_console` bayrağı + hız sınırı)
 
-`admin_session`, `admin_extension_queue`, `admin_decide_extension`, `admin_baby_lookup`, `admin_preview_birth_date_correction`, `admin_correct_birth_date`, `admin_audit_log`, `admin_output_metrics`, `admin_download_audit`, `admin_legacy_book_report`, `admin_legacy_rollout_report`, `admin_release_health`, `admin_set_legacy_grandfather`, `admin_parent_authority_report` (yöneticisi ebeveyn olmayan eski kayıtlar, yöneticisiz Anne/Baba, ebeveyn yöneticisi olmayan bebekler).
+`admin_session`, `admin_extension_queue`, `admin_decide_extension`, `admin_baby_lookup`, `admin_preview_birth_date_correction`, `admin_correct_birth_date`, `admin_audit_log`, `admin_output_metrics`, `admin_download_audit`, `admin_legacy_book_report`, `admin_legacy_rollout_report`, `admin_release_health`, `admin_set_legacy_grandfather`, `admin_parent_authority_report` (yöneticisi ebeveyn olmayan eski kayıtlar, yöneticisiz Anne/Baba, ebeveyn yöneticisi olmayan bebekler), `admin_media_date_report` (çekim tarihi doğum − 310 günden önce veya gelecekte olan eski medya).
+
+Medya çekim tarihi (`media.taken_on`) anı, ilk ve mektuplarla aynı kurala uyar: doğum − 310 gün ile bugün + 1 gün arası. Aksi halde `date_before_birth` / `date_in_future` döner (`20261002000500_media_date_guard.sql`).
 
 ## Sözleşme kuralları
 

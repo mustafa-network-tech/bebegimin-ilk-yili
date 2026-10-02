@@ -28,8 +28,10 @@ update public.platform_flags set enabled = false, note = 'rollout: kapalı başl
 1. Migration'ları sırayla uygulayın (`supabase db push`). Tarihsel migration'lar değiştirilmez.
 2. Super Admin olarak salt okuma raporlarını alın ve kaydedin:
    ```sql
-   select public.admin_legacy_rollout_report();   -- LOCKED olan bebekler, 405 sonrası içerik, legacy kitap, orphan dosya, eşleşmeyen bebek
+   select public.admin_legacy_rollout_report();   -- LOCKED olan bebekler, kapanış tarihi sonrası içerik (karar P-1), legacy kitap, orphan dosya, eşleşmeyen bebek
    select * from public.admin_legacy_book_report(); -- karantinadaki eski kitap proje / export'ları
+   select public.admin_parent_authority_report(); -- ebeveyn olmayan yönetici kalan bebekler, yöneticisiz Anne/Baba (karar P-5)
+   select public.admin_media_date_report();       -- çekim tarihi geçersiz eski medya (doğum - 310 gün öncesi / gelecek); yalnız raporlanır
    select * from public.admin_release_health();     -- tüm kontroller "ok" olmalı
    ```
 3. **Mutabakat:** `babies_total`, staging'deki bebek sayısıyla birebir tutmalı. `unmapped_babies` ve `users_parent_in_several_accounts` listeleri **otomatik birleştirilmez**. Her biri destek ekibiyle tek tek çözülür veya onaylı istisna listesine yazılır.
