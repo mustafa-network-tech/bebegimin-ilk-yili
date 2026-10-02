@@ -33,7 +33,7 @@ erDiagram
   OUTPUT_ARTIFACTS ||--o| FILM_ARTIFACT_METADATA : "probe"
   OUTPUT_ARTIFACTS ||--o| HTML_ARTIFACT_METADATA : "manifest"
   OUTPUT_ARTIFACTS ||--o{ OUTPUT_ARTIFACT_DOWNLOADS : "denetim"
-  FAMILY_ACCOUNTS ||--o{ ARTIFACT_DOWNLOAD_PERMISSIONS : "ebeveyn paylaşımı (servis)"
+  FAMILY_ACCOUNTS ||--o{ ARTIFACT_DOWNLOAD_PERMISSIONS : "tarihsel paylaşım kaydı (P-12 ile yeni paylaşım yok)"
   BABIES ||--o{ LEGACY_GRANDFATHER_DECISIONS : "Super Admin kararı (servis)"
 ```
 

@@ -102,8 +102,11 @@ Sonuçları tarih ve operatör adıyla bu belgenin sonuna ekleyin.
 ## 8. Gizlilik
 
 - Hesap ve bebek silme `privacy-actions` Edge Function'ı ile, normal kullanıcı yetkisinden ayrı, servis yolu üzerinden yapılır. Kaynak medya, legacy kitap dosyaları ve profil dosyaları silinir.
-- Çıktı artifact'ları, siparişler ve ödeme olayları yasal saklama gereği `on delete restrict` ile korunur. Bebek silme talebinde bu kayıtlar için ayrı bir **saklama / anonimleştirme kararı** alınmalıdır (hukuk onayı gerekir; bkz. bilinen riskler).
-- KVKK veri dışa aktarımı: Offline HTML arşivi kullanıcıya verinin taşınabilir kopyasını sağlar; ayrıca destek ekibi Super Admin araçlarıyla aile verisini dışa aktarabilir.
+- Bebek silindiğinde (Faz 13, `babies_erase_outputs`) kişisel çıktılar silinir: mühürlü snapshot'lar, manifest'ler, çıktı dosyaları ve meta verileri, bu dosyaların indirme denetim kayıtları. Dosyalar `storage-cleanup` kuyruğuna alınır.
+- Mali kayıtlar (siparişler, satın alma hakları) yasal saklama için bebek bağı kaldırılarak tutulur. Saklama süresi ve anonimleştirme düzeyi hukuk onayı gerektirir.
+- Bebeği yalnız Anne veya Baba silebilir. Tek ebeveyn, bebeklerini silmeden hesabını silemez (kararlar P-3 / P-10).
+- Genel bir veri dışa aktarımı yoktur (karar P-7). Bebeğin verisi yalnız Dijital Kitap, Film ve offline HTML ürünleri olarak alınır ve bunları yalnız Anne / Baba indirir (P-12).
+- Bir KVKK erişim talebi gelirse destek ekibi hukukça onaylanmış süreci izler. Bu süreç yayından önce yazılmalıdır (bkz. `CLAUDE-REPORT.MD` §8.2).
 
 ## 9. Kotalar ve maliyet
 

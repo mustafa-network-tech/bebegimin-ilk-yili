@@ -191,6 +191,11 @@ Kanıtlar `90_family_accounts_subscriptions_test.sql` (73 doğrulama) ve çalı�
 
 ## Ürün kararları sonrası ek (2026-09-29)
 
+> **Not (2026-10-02):** Bu raporun üst bölümleri ilk halidir ve tarihsel kayıt olarak değiştirilmedi. Şu ifadeler geçersizdir:
+> - "Gerçek sağlayıcı yok / sağlayıcı seçilmedi": bu ekle App Store / Google Play seçildi.
+> - "Arşiv erişimi abonelikten bağımsız": bu ekle ödeme sayfasına yönlendirme getirildi, ardından 2026-10-02 karar P-2 ile **salt okunur arşiv** oldu (`20261002000400_subscription_read_only.sql`).
+> - Aşağıdaki 2. madde ("uygulamayı kullanamaz ve ödeme sayfasına yönlendirilir") de P-2 ile geçersizdir.
+
 Kullanıcı iki karar verdi:
 
 1. Ödeme sağlayıcısı: App Store / Google Play uygulama içi abonelik.

@@ -129,3 +129,24 @@ Yeni davranışlar ileri migration ve ayarlarla geri alınabilir: kota (`output_
 
 - Önerilen commit: `release: complete first-year lifecycle and premium outputs` (go-live kapıları kanıtlandığında). Bu çalışma için ara commit: `feat(phase-13): legacy policy, release health, erasure fix and hardening`.
 - Release tag önerisi (kapılar kapanınca): `first-year-lifecycle-v1`.
+
+## İnceleme sonrası düzeltmeler (2026-10-02)
+
+`CLAUDE-REPORT.MD` incelemesi ve ürün sahibinin P-1…P-13 kararları (GELISTIRME.MD "Karar kaydı") doğrultusunda yapıldı. Her biri ayrı bir commit'tir.
+
+| Migration / değişiklik | Konu |
+|---|---|
+| `20261002000100_parent_only_extension_requests.sql` | Uzatma talebini yalnız ebeveyn açar (P-6) |
+| `20261002000200_parent_authority.sql` | Yönetici yalnız anne/baba; ebeveyn korunur; tek ebeveyn önce bebekleri siler (P-3/P-5/P-8/P-9/P-10) |
+| `20261002000300_output_cutoff.sql` | Resmî çıktı efektif kapanışta kesilir; kitap aynı sınırı kullanır (P-1) |
+| `20261002000400_subscription_read_only.sql` | Abonelik bitince arşiv salt okunur (P-2) |
+| `book-artifact-finalize` + istemci tekrar denemesi | Kitap yayını tekrar çağrılabilir |
+| `20261002000500_media_date_guard.sql` | Medya çekim tarihi kuralı + rapor |
+| Rotalar `/babies/:babyId/...` | Kitap/Film/Arşiv/üye bebek kapsamlı; formlar bebeği sabitler |
+| `20261002000600_parent_only_downloads.sql` | Çıktıları yalnız Anne/Baba indirir (P-12/P-13) |
+| `20261002000700_output_person_names.sql` | "Esra Teyzesi" biçimi üç üründe (P-11) |
+| CI / Dockerfile | Edge job; Deno 2.9.7 sabit; worker imajı `deno.lock` ile |
+| `20261002000800_release_health_demo_accounts.sql` | Demo hesap sağlık kontrolü |
+
+- **Doğrulama (yerel, geçici PostgreSQL 16.10 / Deno 2.9.7):** `run_db_tests.sh` 1078 doğrulama, `flutter test` 175, `flutter analyze` ve `dart format` temiz, Edge `deno check` 7/7 ve `deno test` 16/16, worker birim testleri 12/12.
+- **Doğrulanmayan:** Worker entegrasyon testleri (ffmpeg / Chrome), Docker imaj derlemesi, gerçek Storage kesintisiyle kitap yayını, mağaza sandbox. Bunlar CI veya ortamda doğrulanacak.

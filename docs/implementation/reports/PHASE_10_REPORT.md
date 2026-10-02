@@ -8,6 +8,8 @@
 - **Yeni worker:** `workers/film` (Deno + ffmpeg, Docker)
 - **Operasyon belgesi:** `docs/operations/film-worker-setup.md`
 
+> **Not (2026-10-02):** Bu rapordaki `workers/film` ve `film-worker-setup.md`, Faz 11'de `workers/output` ve `docs/operations/output-worker-setup.md` olarak genelleştirildi. Rapor tarihsel kayıt olarak değiştirilmedi.
+
 ## Kullanıcı kararları
 
 - Film altyapısı: kendi worker konteynerimiz (Deno + ffmpeg). Medya üçüncü tarafa gönderilmez.

@@ -15,7 +15,10 @@ Master plan §2.10 ve Faz 10:
 
 ### 1. Ayrı worker konteyneri (Deno + ffmpeg)
 
-- Film, `workers/film` altındaki Deno uygulamasıyla üretilir. Docker imajı `ffmpeg` / `ffprobe` ve uygulamanın kitap fontlarını (Nunito) içerir.
+- Film, `workers/output` altındaki Deno uygulamasıyla üretilir. Docker imajı `ffmpeg` / `ffprobe` ve uygulamanın kitap fontlarını (Nunito) içerir.
+  - Worker Faz 10'da `workers/film` olarak eklendi, Faz 11'de film ve offline HTML'i birlikte üreten `workers/output` olarak genelleştirildi (ADR 0005).
+  - Kurulum: `docs/operations/output-worker-setup.md`.
+  - İmaj CI ile aynı Deno sürümünü kullanır ve `deno.lock` ile derlenir (2026-10-02).
 - Worker herhangi bir konteyner platformunda (Fly.io, Cloud Run, Railway, VPS) çalışabilir. Supabase'e `service_role` anahtarıyla bağlanır; anahtar yalnız worker ortamındadır.
 - İş alma, lease, heartbeat, retry / poison, artifact staging → doğrulama → taşıma → yayın adımları Faz 8 RPC'leridir (`output_claim_jobs` … `output_artifact_publish`). Film'e özgü adımlar `film_job_manifest`, `film_job_progress_update`, `film_job_media_error` ve `film_artifact_publish` RPC'leridir.
 - Fotoğraflar ve videolar üçüncü taraf bir servise gönderilmez.
