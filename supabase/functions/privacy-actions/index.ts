@@ -71,10 +71,18 @@ Deno.serve(async (req) => {
       });
       if (error) {
         const forbidden = error.code === "42501";
+        // Database messages can name tables, ids or constraints: log the
+        // code only and answer with a fixed text.
+        if (!forbidden) {
+          console.error(
+            "privacy-actions delete_baby failed",
+            error.code ?? "unknown",
+          );
+        }
         return json({
           error: forbidden
             ? "Bebeği yalnızca Anne veya Baba silebilir."
-            : error.message,
+            : "Bebek profili silinemedi. Lütfen tekrar deneyin.",
         }, forbidden ? 403 : 400);
       }
       const removed = await removeObjects(
