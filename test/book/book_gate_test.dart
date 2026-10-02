@@ -76,9 +76,13 @@ void main() {
     expect(find.text('EDITOR'), findsOneWidget);
   });
 
-  testWidgets('family member sees the book home but not the editor', (tester) async {
+  testWidgets('a Family Member opens neither the book home nor the editor (decision P-12)', (tester) async {
     await tester.pumpWidget(_app(BookRouteGate(babyId: defne.id, child: const Text('BOOK')), 'not_parent'));
-    expect(find.text('BOOK'), findsOneWidget);
+    expect(find.text('BOOK'), findsNothing);
+    expect(
+      find.text('Kitap, film ve çevrimdışı arşivi yalnızca Anne veya Baba açabilir ve indirebilir.'),
+      findsOneWidget,
+    );
     await tester.pumpWidget(
       _app(BookRouteGate(babyId: defne.id, requireEdit: true, child: const Text('EDITOR')), 'not_parent'),
     );
@@ -91,7 +95,7 @@ void main() {
     const member = BookAccess(block: 'not_parent', rendererEnabled: true, hasProject: false);
     const locked = BookAccess(block: 'premium_requires_locked', rendererEnabled: true, hasProject: false);
     expect([parent.canEdit, parent.canView], [true, true]);
-    expect([member.canEdit, member.canView], [false, true]);
+    expect([member.canEdit, member.canView], [false, false], reason: 'decision P-12: parents only');
     expect([locked.canEdit, locked.canView], [false, false]);
     expect(bookDownloadBlockText('subscription_required'), contains('aile paketi'));
     final v = BookVersion.fromJson({

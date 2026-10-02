@@ -59,10 +59,10 @@ Ortak hint'ler: `premium_requires_locked`, `subscription_required`, `entitlement
 |---|---|
 | `output-download` (Edge, `{"artifact_id"}`) | `authorize_artifact_download` ile tüm koşulları denetler. 200: `url` (60 sn), `file_name`, `mime_type`, `size_bytes`, `sha256`. Ret: 403 / 404 / 409 / 429 ve `reason` |
 | `authorize_artifact_download(artifact_id)` | `allowed`, `reason` (ret de denetlenir), izinliyse dosya bilgisi |
-| `artifact_download_permission_list(baby_id)` | Ebeveyn: üye × ürün paylaşım durumu |
-| `set_artifact_download_permission(baby_id, member, product, allowed)` | Ebeveyn: paylaş / kaldır (`member_not_found`, `not_parent`) |
+| `artifact_download_permission_list(baby_id)` | Tarihsel: üye × ürün paylaşım kayıtları (karar P-12 sonrası yeni paylaşım yok) |
+| `set_artifact_download_permission(baby_id, member, product, allowed)` | `allowed = true` → `member_downloads_disabled` (karar P-12); `false` yalnız iptal eder |
 
-İndirme ret nedenleri: `not_found`, `membership_inactive`, `premium_requires_locked`, `subscription_required`, `entitlement_required`, `member_downloads_disabled`, `capacity_exceeded`, `permission_denied`, `artifact_not_ready`, `rate_limited`.
+İndirme ret nedenleri: `not_found`, `not_parent` (karar P-12: yalnız Anne/Baba indirir), `membership_inactive`, `premium_requires_locked`, `subscription_required`, `entitlement_required`, `member_downloads_disabled`, `capacity_exceeded`, `permission_denied`, `artifact_not_ready`, `rate_limited`.
 
 ## Super Admin (konsol kapısından geçer: rol + `admin_console` bayrağı + hız sınırı)
 

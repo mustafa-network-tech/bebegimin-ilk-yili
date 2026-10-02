@@ -16,7 +16,7 @@ Destek ekibinin sık sorulara kullanabileceği hazır yanıtlar. Ton: sıcak, k�
 
 ## Teyze / dede neden indiremiyor?
 
-> Anne ve Baba, satın alınan dosyaları aile üyeleriyle ürün ürün paylaşabilir: Mağaza → "Aile üyeleriyle paylaş". Paylaşılan kişi, aile paketi etkinken o dosyayı indirebilir. Aile paketinizin üye sınırı aşılmışsa aile üyeleri geçici olarak indiremez; Anne ve Baba her zaman indirebilir.
+> Dijital Kitap, İlk Yıl Filmi ve çevrimdışı arşivi yalnızca Anne ve Baba indirebilir; bebeğin yasal temsilcileri onlardır. Uygulama bu dosyaları başka kimseye göndermez. Anne veya Baba indirdiği dosyayı dilerse yakınlarıyla kendisi paylaşabilir.
 
 ## Film neden 10 dakikadan kısa?
 

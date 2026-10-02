@@ -23,7 +23,6 @@ import '../features/book/presentation/book_generation.dart';
 import '../features/book/presentation/book_home_screen.dart';
 import '../features/book/presentation/book_page_editor_screen.dart';
 import '../features/film/presentation/film_screen.dart';
-import '../features/premium/presentation/download_permissions_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/capsules/presentation/capsule_screens.dart';
 import '../features/family/presentation/family_screen.dart';
@@ -294,7 +293,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // old links land on the baby's store page.
       GoRoute(
         path: '/babies/:babyId/download-permissions',
-        builder: (_, s) => DownloadPermissionsScreen(babyId: s.pathParameters['babyId']!),
+        redirect: (_, s) => premiumStoreRoute(s.pathParameters['babyId']!),
       ),
       GoRoute(
         path: '/babies/:babyId/premium',

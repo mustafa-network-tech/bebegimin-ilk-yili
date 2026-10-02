@@ -13,10 +13,8 @@ class FilmAccess {
 
   bool get canEdit => block == null;
 
-  /// Purchased, but the caller is a Family Member: the ready film only.
-  bool get isFamilyMemberView => block == 'not_parent';
-
-  bool get canView => canEdit || isFamilyMemberView;
+  /// Decision P-12: only Anne / Baba open and download the outputs.
+  bool get canView => canEdit;
 }
 
 /// Film project choices (`film_update_settings`).

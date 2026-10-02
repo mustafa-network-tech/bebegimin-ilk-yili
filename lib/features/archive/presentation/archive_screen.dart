@@ -76,6 +76,12 @@ class ArchiveRouteGate extends ConsumerWidget {
               'Arşiviniz korunuyor. Aile paketi aboneliği yeniden etkin olduğunda hazırlayabilir ve indirebilirsiniz.',
           action: FilledButton(onPressed: () => context.push(familyPlanRoute), child: const Text('Aile paketi')),
         ),
+        'not_parent' => EmptyState(
+          icon: Icons.lock_outline_rounded,
+          title: 'Yalnızca Anne ve Baba',
+          message: 'Kitap, film ve çevrimdışı arşivi yalnızca Anne veya Baba açabilir ve indirebilir.',
+          action: FilledButton(onPressed: back, child: const Text('Geri dön')),
+        ),
         _ => EmptyState(
           icon: Icons.folder_off_outlined,
           title: 'Arşiv bulunamadı',

@@ -106,12 +106,16 @@ select tests.eq((select bool_and(allowed and expires_in = 60)
                    from unnest(array[:'book', :'film', :'html']::uuid[]) x, public.authorize_artifact_download(x)), true,
                 'parent (Baba) downloads Book, Film and HTML alike');
 
--- Family Member: nothing until a parent shares ------------------------------------------------------------------
+-- Family Member: never downloads (decision P-12, 2026-10-02) -----------------------------------------------------
 select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'permission_denied', 'view_album no longer opens downloads');
-select tests.eq(tests.count(format('select 1 from public.book_versions(%L)', :'ela')), 0::bigint, 'member sees no book version yet');
-select tests.eq((select artifact_id is null from public.film_state(:'ela')), true, 'member sees no film yet');
-select tests.eq((select artifact_id is null from public.html_state(:'ela')), true, 'member sees no archive yet');
+select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'not_parent', 'a Family Member is refused the book');
+select tests.eq((select bool_and(not allowed and reason = 'not_parent')
+                   from unnest(array[:'book', :'film', :'html']::uuid[]) x, public.authorize_artifact_download(x)), true,
+                'and the film and the archive');
+select tests.eq(tests.count(format('select 1 from public.book_versions(%L)', :'ela')), 0::bigint, 'member sees no book version');
+select tests.eq((select artifact_id is null from public.film_state(:'ela')), true, 'member sees no film');
+select tests.eq((select artifact_id is null from public.html_state(:'ela')), true, 'member sees no archive');
+select tests.expect_error(format('select * from public.request_output_download(%L)', :'book'), 'not_parent');
 -- Production / purchase endpoints are closed to members.
 select tests.expect_error(format($q$select public.set_artifact_download_permission(%L, %L, 'first_year_book', true)$q$, :'ela',
                                  'a1000000-0000-4000-8000-000000000011'), 'not_parent');
@@ -123,91 +127,53 @@ select tests.expect_error(format('select * from public.html_request_render(%L, %
 select tests.expect_error(format('select * from public.request_output_job(%L, %L, %L)', :'ela', 'first_year_book', 'dl-teyze-0004'), 'not_parent');
 select tests.expect_error(format('select * from public.request_premium_purchase(%L, %L, %L)', :'ela', 'first_year_book', 'app_store'), 'not_parent');
 select tests.expect_error(format('select * from public.request_premium_purchase(%L, %L, %L)', :'mert', 'first_year_film', 'app_store'), 'not found');
-
--- Parent shares the book only -----------------------------------------------------------------------------------
-select tests.login('a1000000-0000-4000-8000-000000000001');
-select tests.expect_error(format($q$select public.set_artifact_download_permission(%L, %L, 'first_year_book', true)$q$, :'ela',
-                                 'a1000000-0000-4000-8000-000000000002'), 'member_not_found');
-select tests.expect_error(format($q$select public.set_artifact_download_permission(%L, %L, 'first_year_book', true)$q$, :'ela',
-                                 'a1000000-0000-4000-8000-000000000021'), 'member_not_found');
-select tests.expect_error(format($q$select public.set_artifact_download_permission(%L, %L, 'poster', true)$q$, :'ela',
-                                 'a1000000-0000-4000-8000-000000000011'), 'invalid download permission');
-select tests.eq(public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_book', true), true,
-                'parent shares the book with Teyze');
-select tests.eq(public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_book', true), true,
-                'sharing twice is idempotent');
-select tests.eq((select string_agg(product_code || '=' || granted || '/' || product_owned, ',' order by product_code)
-                   from public.artifact_download_permission_list(:'ela') where member_user_id = 'a1000000-0000-4000-8000-000000000011'),
-                'first_year_book=true/true,first_year_film=false/true,first_year_html=false/true', 'permission list per product');
-select tests.eq((select count(distinct member_user_id) from public.artifact_download_permission_list(:'ela')), 4::bigint,
-                'only Family Members are listed (parents need no grant)');
-reset role;
-select tests.logout();
-select tests.eq((select count(*) from public.artifact_download_permissions where baby_id = :'ela' and revoked_at is null), 1::bigint,
-                'one active grant');
-
-set role authenticated;
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select allowed from public.authorize_artifact_download(:'book')), true, 'shared book downloads');
-select tests.eq((select reason from public.authorize_artifact_download(:'film')), 'permission_denied', 'book grant does not open the film');
-select tests.eq((select reason from public.authorize_artifact_download(:'html')), 'permission_denied', 'book grant does not open the archive');
-select tests.eq((select reason from public.authorize_artifact_download(:'mert_book')), 'not_found', 'Ela''s grant is not Mert''s book (IDOR)');
-select tests.eq(tests.count(format('select 1 from public.book_versions(%L)', :'ela')), 0::bigint, 'legacy-free: no official book export row');
+select tests.eq((select reason from public.authorize_artifact_download(:'mert_book')), 'not_found', 'another baby''s artifact (IDOR)');
 select tests.login('a1000000-0000-4000-8000-000000000012');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'permission_denied', 'Hala was not given the book');
+select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'not_parent', 'Hala is refused too');
 select tests.login('a1000000-0000-4000-8000-000000000021');
 select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'not_found', 'another family account cannot use the artifact id');
 select tests.expect_error(format('select * from public.request_output_download(%L)', :'book'), 'not found');
 
--- Revoke: no new URL; re-share keeps the history ---------------------------------------------------------------
-select tests.login('a1000000-0000-4000-8000-000000000002');
-select tests.eq(public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_book', false), false,
-                'the other parent (Baba) revokes');
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'permission_denied', 'after revoke no new URL');
-select tests.expect_error(format('select * from public.request_output_download(%L)', :'book'), 'permission_denied');
+-- Parents cannot share any more; revoking stays possible ------------------------------------------------------------
 select tests.login('a1000000-0000-4000-8000-000000000001');
-select public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_book', true);
-select public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_film', true);
-select public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_html', true);
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select bool_and(allowed) from unnest(array[:'book', :'film', :'html']::uuid[]) x, public.authorize_artifact_download(x)), true,
-                'shared products download for the member');
-select tests.eq((select coalesce(download_block, 'ok') from public.film_state(:'ela')), 'ok', 'film visible once shared');
-select tests.eq((select job_id is null and job_status is null from public.film_state(:'ela')), true, 'members never see production jobs');
+select tests.expect_error(format($q$select public.set_artifact_download_permission(%L, %L, 'first_year_book', true)$q$, :'ela',
+                                 'a1000000-0000-4000-8000-000000000011'), 'member_downloads_disabled');
+select tests.eq(public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000011', 'first_year_book', false), false,
+                'revoking stays possible (idempotent clean-up)');
 reset role;
 select tests.logout();
-select tests.eq((select count(*) from public.artifact_download_permissions
-                  where member_user_id = 'a1000000-0000-4000-8000-000000000011' and product_code = 'first_year_book'), 2::bigint,
-                'revoked grants are kept as history');
-select tests.expect_error($q$update public.artifact_download_permissions set revoked_at = null where revoked_at is not null$q$, 'append-only');
+select tests.eq((select count(*) from public.artifact_download_permissions where baby_id = :'ela' and revoked_at is null), 0::bigint,
+                'no active grant');
+select tests.eq((select enabled from public.platform_flags where key = 'member_downloads'), false, 'member downloads are retired');
+-- A grant row that predates the decision (or is written by mistake) opens nothing.
+insert into public.artifact_download_permissions (family_account_id, baby_id, product_code, member_user_id, granted_by)
+values (:'acct', :'ela', 'first_year_book', 'a1000000-0000-4000-8000-000000000011', 'a1000000-0000-4000-8000-000000000001');
+set role authenticated;
+select tests.login('a1000000-0000-4000-8000-000000000011');
+select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'not_parent', 'a stray grant never opens a download');
+reset role;
+select tests.logout();
 
 -- Subscription lapse and renewal: kept, closed, reopened without a new purchase -------------------------------------
 update public.subscriptions set status = 'expired', current_period_end = now() - interval '1 day' where family_account_id = :'acct';
 set role authenticated;
 select tests.login('a1000000-0000-4000-8000-000000000001');
 select tests.eq((select reason from public.authorize_artifact_download(:'film')), 'subscription_required', 'parent: subscription lapsed');
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'film')), 'subscription_required', 'member: subscription lapsed');
 reset role;
 select tests.logout();
 update public.subscriptions set status = 'active', current_period_end = now() + interval '1 month' where family_account_id = :'acct';
 set role authenticated;
 select tests.login('a1000000-0000-4000-8000-000000000001');
 select tests.eq((select allowed from public.authorize_artifact_download(:'film')), true, 'renewed: same artifact again, no new purchase');
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select allowed from public.authorize_artifact_download(:'film')), true, 'renewed: member access returns too');
 reset role;
 select tests.logout();
 
--- Capacity: a downgrade below the active member count closes member downloads only ------------------------------------
+-- A downgrade below the active member count never affects the parents --------------------------------------------------
 update public.subscriptions s set plan_id = p.id, plan_code = p.code
   from public.subscription_plans p
  where s.family_account_id = :'acct' and p.code = 'small_family' and p.billing_period = 'monthly';
 set role authenticated;
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'capacity_exceeded', '4 members on a 3-member plan: members wait');
-select tests.login('a1000000-0000-4000-8000-000000000001');
+select tests.login('a1000000-0000-4000-8000-000000000002');
 select tests.eq((select allowed from public.authorize_artifact_download(:'book')), true, 'parents are not counted against capacity');
 reset role;
 select tests.logout();
@@ -215,62 +181,31 @@ update public.subscriptions s set plan_id = p.id, plan_code = p.code
   from public.subscription_plans p
  where s.family_account_id = :'acct' and p.code = 'normal_family' and p.billing_period = 'monthly';
 
--- Kill switch: members off, parents unaffected ----------------------------------------------------------------------
-update public.platform_flags set enabled = false where key = 'member_downloads';
-set role authenticated;
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'member_downloads_disabled', 'member downloads switched off');
-select tests.login('a1000000-0000-4000-8000-000000000002');
-select tests.eq((select allowed from public.authorize_artifact_download(:'book')), true, 'parent downloads still work');
-reset role;
-select tests.logout();
-update public.platform_flags set enabled = true where key = 'member_downloads';
-
 -- Refund / chargeback: the entitlement ends, every download closes ------------------------------------------------------
 update public.product_entitlements set status = 'revoked', revoked_at = now()
  where family_account_id = :'acct' and baby_id = :'ela' and product_code = 'first_year_html';
 set role authenticated;
 select tests.login('a1000000-0000-4000-8000-000000000001');
 select tests.eq((select reason from public.authorize_artifact_download(:'html')), 'entitlement_required', 'refunded archive: parent refused');
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'html')), 'entitlement_required', 'refunded archive: member refused');
 select tests.eq((select allowed from public.authorize_artifact_download(:'book')), true, 'other products unaffected');
 reset role;
 select tests.logout();
 
--- Leaving the family: grants end and do not come back on return ---------------------------------------------------------
+-- Leaving the family still ends any leftover grant ---------------------------------------------------------------------
 update public.family_account_members set status = 'removed', removed_at = now()
  where family_account_id = :'acct' and user_id = 'a1000000-0000-4000-8000-000000000011';
 select tests.eq((select count(*) from public.artifact_download_permissions
                   where member_user_id = 'a1000000-0000-4000-8000-000000000011' and revoked_at is null), 0::bigint,
                 'membership end revokes every grant');
-select tests.eq((select count(*) from public.artifact_download_permissions
-                  where member_user_id = 'a1000000-0000-4000-8000-000000000011' and revoke_reason = 'membership_ended'), 3::bigint,
-                'revocations say why');
-set role authenticated;
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'membership_inactive', 'removed member refused');
-reset role;
-select tests.logout();
 update public.family_account_members set status = 'active', removed_at = null
  where family_account_id = :'acct' and user_id = 'a1000000-0000-4000-8000-000000000011';
-set role authenticated;
-select tests.login('a1000000-0000-4000-8000-000000000011');
-select tests.eq((select reason from public.authorize_artifact_download(:'book')), 'permission_denied', 'returning member must be shared again');
--- Leaving one baby ends that baby's grants only.
-select tests.login('a1000000-0000-4000-8000-000000000001');
-select public.set_artifact_download_permission(:'ela', 'a1000000-0000-4000-8000-000000000012', 'first_year_book', true);
-reset role;
-select tests.logout();
-delete from public.family_members where baby_id = :'ela' and user_id = 'a1000000-0000-4000-8000-000000000012';
-select tests.eq((select revoke_reason from public.artifact_download_permissions
-                  where member_user_id = 'a1000000-0000-4000-8000-000000000012' and baby_id = :'ela'), 'membership_ended',
-                'leaving the baby revokes its grants');
 
 -- Audit and rate limits ------------------------------------------------------------------------------------------------------
-select tests.eq((select count(*) from public.output_artifact_downloads where artifact_id = :'book' and role = 'family_member') > 0, true,
-                'member grants are audited with their role');
-select tests.eq((select count(*) from public.output_download_denials where artifact_id = :'book' and reason = 'permission_denied') > 0, true,
+select tests.eq((select count(*) from public.output_artifact_downloads where artifact_id = :'book' and role = 'parent') > 0, true,
+                'downloads are audited with the role');
+select tests.eq((select count(*) from public.output_artifact_downloads where artifact_id = :'book' and role = 'family_member'), 0::bigint,
+                'no Family Member download was ever granted');
+select tests.eq((select count(*) from public.output_download_denials where artifact_id = :'book' and reason = 'not_parent') > 0, true,
                 'refusals are audited with their reason');
 set role authenticated;
 select tests.login('a1000000-0000-4000-8000-000000000001');

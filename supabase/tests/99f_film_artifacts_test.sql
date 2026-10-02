@@ -217,11 +217,15 @@ select tests.eq((select job_status || ':' || progress_percent || ':' || duration
                    from public.film_state(:'nil')), 'succeeded:100:32040:ok', 'state shows the ready film');
 select tests.eq((select storage_path from public.request_output_download(:'art')), :'art_path'::text, 'parent downloads the MP4');
 select tests.login('9f000000-0000-4000-8000-000000000011');
-select tests.eq((select artifact_id is null and job_id is null from public.film_state(:'nil')), true, 'not shared: the film is hidden from the family member');
+select tests.eq((select artifact_id is null and job_id is null from public.film_state(:'nil')), true, 'the film is hidden from a Family Member');
+-- Decision P-12 (2026-10-02): nothing can be shared with Family Members.
 select tests.login('9f000000-0000-4000-8000-000000000001');
-select public.set_artifact_download_permission(:'nil', '9f000000-0000-4000-8000-000000000011', 'first_year_film', true);
+select tests.expect_error(
+  format('select public.set_artifact_download_permission(%L, %L, %L, true)', :'nil', '9f000000-0000-4000-8000-000000000011',
+         'first_year_film'),
+  'member_downloads_disabled');
 select tests.login('9f000000-0000-4000-8000-000000000011');
-select tests.eq((select coalesce(download_block, 'ok') from public.film_state(:'nil')), 'ok', 'shared by a parent: the family member may download');
+select tests.expect_error(format('select * from public.request_output_download(%L)', :'art'), 'not_parent');
 select tests.login('9f000000-0000-4000-8000-000000000021');
 select tests.expect_error(format('select * from public.film_state(%L)', :'nil'), 'not found');
 reset role;

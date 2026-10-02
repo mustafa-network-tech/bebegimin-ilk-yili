@@ -114,35 +114,3 @@ class PremiumOrder {
   final PremiumProduct product;
   final int priceMinor;
 }
-
-/// One Family Member × product row of the parent's download sharing screen
-/// (`artifact_download_permission_list`).
-class DownloadPermission {
-  const DownloadPermission({
-    required this.memberUserId,
-    required this.displayName,
-    required this.relation,
-    required this.relationLabel,
-    required this.product,
-    required this.granted,
-    required this.productOwned,
-  });
-
-  factory DownloadPermission.fromJson(Map<String, dynamic> j) => DownloadPermission(
-    memberUserId: j['member_user_id'] as String,
-    displayName: (j['display_name'] as String?) ?? '',
-    relation: j['relation'] as String?,
-    relationLabel: j['relation_label'] as String?,
-    product: PremiumProduct.fromCode(j['product_code'] as String)!,
-    granted: j['granted'] as bool? ?? false,
-    productOwned: j['product_owned'] as bool? ?? false,
-  );
-
-  final String memberUserId;
-  final String displayName;
-  final String? relation;
-  final String? relationLabel;
-  final PremiumProduct product;
-  final bool granted;
-  final bool productOwned;
-}

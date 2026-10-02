@@ -20,7 +20,6 @@ import '../domain/premium_models.dart';
 import '../../archive/presentation/archive_screen.dart';
 import '../../book/presentation/book_gate.dart';
 import '../../film/presentation/film_screen.dart';
-import 'download_permissions_screen.dart';
 
 String premiumStoreRoute(String babyId) => '/babies/$babyId/premium';
 
@@ -151,16 +150,6 @@ class _PremiumStoreScreenState extends ConsumerState<PremiumStoreScreen> {
           busy: _buying != null,
           onBuy: offer.canBuy ? () => _buy(offer) : null,
           onOpenPlan: () => context.push(familyPlanRoute),
-        ),
-      if (view.offers.any((o) => o.owned))
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.share_rounded),
-            title: const Text('Aile üyeleriyle paylaş'),
-            subtitle: const Text('Hangi aile üyesinin hangi dosyayı indirebileceğini seçin.'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.push(downloadPermissionsRoute(widget.babyId)),
-          ),
         ),
     ];
   }

@@ -145,9 +145,13 @@ void main() {
     expect(find.text('Güncel kopyayı kontrol et'), findsOneWidget);
   });
 
-  testWidgets('family member: ready archive only, no build button', (tester) async {
+  testWidgets('a Family Member never opens the archive (decision P-12)', (tester) async {
     await _pump(tester, _FakeArchiveRepo(accessValue: const ArchiveAccess(block: 'not_parent', rendererEnabled: true)));
-    expect(find.text('Arşiv henüz hazır değil'), findsOneWidget);
+    expect(find.text('Yalnızca Anne ve Baba'), findsOneWidget);
+    expect(
+      find.text('Kitap, film ve çevrimdışı arşivi yalnızca Anne veya Baba açabilir ve indirebilir.'),
+      findsOneWidget,
+    );
     expect(find.text('Arşivi hazırla'), findsNothing);
   });
 

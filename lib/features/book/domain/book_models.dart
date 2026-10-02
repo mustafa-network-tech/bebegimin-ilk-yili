@@ -334,10 +334,8 @@ class BookAccess {
 
   bool get canEdit => block == null;
 
-  /// LOCKED and purchased, but the caller is a Family Member: versions only.
-  bool get isFamilyMemberView => block == 'not_parent';
-
-  bool get canView => canEdit || isFamilyMemberView;
+  /// Decision P-12: only Anne / Baba open and download the outputs.
+  bool get canView => canEdit;
 }
 
 /// A render job leased to this device (`book_render_start`).

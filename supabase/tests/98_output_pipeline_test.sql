@@ -321,20 +321,27 @@ insert into storage.objects (bucket_id, name, metadata)
 values ('output-artifacts', format('%s/first_year_book/%s/v9/book.pdf', :'defne', :'ece_snap'), '{"size": 100}');
 
 -- Downloads ---------------------------------------------------------------------------------------------------------
--- Phase 12: a Family Member downloads only what a parent shared with them.
+-- Decision P-12 (2026-10-02): only Anne / Baba download; Family Members never
+-- do and nothing can be shared with them any more.
 set role authenticated;
 select tests.login('9d000000-0000-4000-8000-000000000001');
-select public.set_artifact_download_permission(:'defne', '9d000000-0000-4000-8000-000000000011', 'first_year_book', true);
-select tests.login('9d000000-0000-4000-8000-000000000011');
+select tests.expect_error(
+  format('select public.set_artifact_download_permission(%L, %L, %L, true)', :'defne', '9d000000-0000-4000-8000-000000000011',
+         'first_year_book'),
+  'member_downloads_disabled');
 select tests.eq((select storage_path || ':' || expires_in from public.request_output_download(:'art2')), :'art2_path' || ':60',
-                'family member the parent shared the book with gets a short-lived download');
+                'the parent gets a short-lived download');
+select tests.eq((select download_block from public.baby_output_status(:'defne') where product_code = 'first_year_book'), null::text,
+                'status shows the download as available to the parent');
+select tests.login('9d000000-0000-4000-8000-000000000011');
+select tests.expect_error(format('select * from public.request_output_download(%L)', :'art2'), 'not_parent');
 select tests.eq((select count(*) from storage.objects where bucket_id = 'output-artifacts'), 0::bigint,
                 'authenticated clients cannot list the artifact bucket directly');
 select tests.expect_error(format('select public.can_read_output_object(%L)', :'art2_path'), 'permission denied');
-select tests.eq((select download_block from public.baby_output_status(:'defne') where product_code = 'first_year_book'), null::text,
-                'status shows the download as available');
+select tests.eq((select download_block from public.baby_output_status(:'defne') where product_code = 'first_year_book'),
+                'not_parent', 'status tells a Family Member that downloads are for parents');
 select tests.login('9d000000-0000-4000-8000-000000000012');
-select tests.expect_error(format('select * from public.request_output_download(%L)', :'art2'), 'permission_denied');
+select tests.expect_error(format('select * from public.request_output_download(%L)', :'art2'), 'not_parent');
 select tests.eq((select count(*) from storage.objects where bucket_id = 'output-artifacts'), 0::bigint, 'not shared, no file');
 select tests.login('9d000000-0000-4000-8000-000000000021');
 select tests.expect_error(format('select * from public.request_output_download(%L)', :'art2'), 'not found');

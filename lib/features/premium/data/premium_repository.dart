@@ -46,27 +46,4 @@ class PremiumRepository {
     final rows = await _client.rpc('premium_store_products', params: {'p_provider': provider}) as List;
     return {for (final r in rows.cast<Map>()) r['product_code'] as String: r['provider_product_id'] as String};
   }
-
-  /// Family Members of the baby × products with the current sharing state
-  /// (parents only).
-  Future<List<DownloadPermission>> downloadPermissions(String babyId) async {
-    final rows = await _client.rpc('artifact_download_permission_list', params: {'p_baby_id': babyId}) as List;
-    return [for (final r in rows) DownloadPermission.fromJson((r as Map).cast<String, dynamic>())];
-  }
-
-  /// Shares (or stops sharing) one product's final file with a Family Member.
-  Future<void> setDownloadPermission({
-    required String babyId,
-    required String memberUserId,
-    required PremiumProduct product,
-    required bool allowed,
-  }) => _client.rpc(
-    'set_artifact_download_permission',
-    params: {
-      'p_baby_id': babyId,
-      'p_member_user_id': memberUserId,
-      'p_product_code': product.code,
-      'p_allowed': allowed,
-    },
-  );
 }

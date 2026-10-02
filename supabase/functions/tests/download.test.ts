@@ -5,6 +5,9 @@ import { refusal } from "../_shared/download.ts";
 
 test("download refusals map to safe HTTP answers", () => {
   assert.equal(refusal("not_found").status, 404);
+  // Decision P-12: Family Members are refused, never told "not shared".
+  assert.equal(refusal("not_parent").status, 403);
+  assert.match(refusal("not_parent").error, /yalnızca Anne veya Baba/);
   assert.equal(refusal("permission_denied").status, 403);
   assert.equal(refusal("member_downloads_disabled").status, 403);
   assert.equal(refusal("rate_limited").status, 429);

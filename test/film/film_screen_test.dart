@@ -133,9 +133,9 @@ void main() {
     expect(find.text('Filmi hazırla'), findsNothing);
   });
 
-  testWidgets('family member: no planner, only the ready film', (tester) async {
+  testWidgets('a Family Member never opens the film (decision P-12)', (tester) async {
     await _pump(tester, _FakeFilmRepo(accessValue: const FilmAccess(block: 'not_parent', rendererEnabled: true)));
-    expect(find.text('Film henüz hazır değil'), findsOneWidget);
+    expect(find.text('Yalnızca Anne ve Baba'), findsOneWidget);
     expect(find.text('Filmi hazırla'), findsNothing);
     expect(find.text('Videolar'), findsNothing);
   });

@@ -199,6 +199,8 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
       return const Scaffold(body: Center(child: Text('İçerik bulunamadı veya erişim yetkiniz yok.')));
     }
     final canEdit = access.canEditMedia(m.uploaderId);
+    // Decision P-12/P-13: only Anne / Baba take a file out of the app.
+    final canShare = ref.watch(myMembershipProvider(baby.id))?.isParentAdmin ?? false;
     final isFav = favorites.contains(m.id);
     final uploader = ref.watch(authorNameProvider((baby.id, m.uploaderId)));
     final age = baby.ageOn(m.takenOn);
@@ -226,7 +228,12 @@ class _MediaViewerScreenState extends ConsumerState<MediaViewerScreen> {
                           if (context.mounted) showError(context, e);
                         }),
                   ),
-                  IconButton(tooltip: 'Paylaş / kaydet', icon: const Icon(Icons.ios_share_rounded), onPressed: _share),
+                  if (canShare)
+                    IconButton(
+                      tooltip: 'Paylaş / kaydet',
+                      icon: const Icon(Icons.ios_share_rounded),
+                      onPressed: _share,
+                    ),
                   if (canEdit)
                     PopupMenuButton<String>(
                       onSelected: (v) => switch (v) {

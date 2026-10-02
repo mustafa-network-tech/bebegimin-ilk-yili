@@ -2,6 +2,17 @@
 
 Bu belge Faz 12'de uygulanan kuralları anlatır. Kurallar Dijital Kitap (PDF), İlk Yıl Filmi (MP4) ve Offline HTML arşivi (ZIP) için **aynıdır**. Ortak çıktı hattı için bkz. [output-pipeline-setup.md](output-pipeline-setup.md).
 
+> **Güncelleme (2026-10-02, kararlar P-12 / P-13):** Çıktıları **yalnız Anne ve Baba** indirir. Family Member hiçbir koşulda indiremez ve çıktı ekranlarını görmez.
+> - Uygulama veriyi üçüncü kişilere dağıtmaz; ebeveyn indirdiği dosyayı isterse kendisi paylaşır.
+> - Gerekçe: bebeğin yasal temsilcileri ve varisleri ebeveynlerdir.
+> - `20261002000600_parent_only_downloads.sql`:
+>   - Mevcut paylaşımlar silinmeden `parents_only_decision` nedeniyle iptal edildi ve `member_downloads` bayrağı kapatıldı.
+>   - Ebeveyn olmayan herkes her istekte `not_parent` alır.
+>   - `set_artifact_download_permission(..., true)` `member_downloads_disabled` ile reddedilir; iptal hâlâ çalışır.
+> - Uygulamadan paylaşım ekranı kaldırıldı. Medya görüntüleyicideki "Paylaş / kaydet" yalnız ebeveyne görünür.
+>
+> Aşağıdaki tablonun Family Member sütunu ve paylaşım maddeleri tarihsel bilgidir; artık geçerli değildir.
+
 ## Kim indirebilir?
 
 Her indirme isteğinde (`output-download` → `authorize_artifact_download` → `output_artifact_download_block`) aşağıdaki koşullar baştan denetlenir:

@@ -4,6 +4,11 @@ export type DownloadRefusal = { status: number; error: string; reason: string };
 
 const MESSAGES: Record<string, [number, string]> = {
   not_found: [404, "Dosya bulunamadı."],
+  // Decision P-12: only Anne / Baba download the outputs.
+  not_parent: [
+    403,
+    "Kitap, film ve çevrimdışı arşivi yalnızca Anne veya Baba indirebilir.",
+  ],
   permission_denied: [403, "Bu dosya sizinle paylaşılmadı."],
   membership_inactive: [403, "Aile üyeliğiniz etkin değil."],
   member_downloads_disabled: [

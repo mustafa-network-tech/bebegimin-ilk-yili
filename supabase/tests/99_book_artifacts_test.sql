@@ -262,12 +262,18 @@ select tests.eq((select version || ':' || page_count || ':' || coalesce(download
                    from public.book_versions(:'lale')), '3:48:ok', 'parent sees the official version');
 select tests.eq((select storage_path from public.request_output_download(:'art')), :'art_path'::text, 'parent can download');
 select tests.login('9e000000-0000-4000-8000-000000000011');
-select tests.eq(tests.count(format('select 1 from public.book_versions(%L)', :'lale')), 0::bigint, 'not shared: the family member sees no version');
+select tests.eq(tests.count(format('select 1 from public.book_versions(%L)', :'lale')), 0::bigint, 'a Family Member sees no version');
+-- Decision P-12 (2026-10-02): the parents cannot share downloads any more.
 select tests.login('9e000000-0000-4000-8000-000000000001');
-select public.set_artifact_download_permission(:'lale', '9e000000-0000-4000-8000-000000000011', 'first_year_book', true);
-select tests.login('9e000000-0000-4000-8000-000000000011');
-select tests.eq((select coalesce(download_block, 'ok') from public.book_versions(:'lale')), 'ok', 'shared by a parent: the family member sees it');
+select tests.expect_error(
+  format('select public.set_artifact_download_permission(%L, %L, %L, true)', :'lale', '9e000000-0000-4000-8000-000000000011',
+         'first_year_book'),
+  'member_downloads_disabled');
 select tests.eq((select sha256 from public.book_versions(:'lale')), repeat('d', 64), 'checksum offered for client-side verification');
+select tests.login('9e000000-0000-4000-8000-000000000011');
+select tests.eq(tests.count(format('select 1 from public.book_versions(%L)', :'lale')), 0::bigint,
+                'a Family Member still sees no version');
+select tests.expect_error(format('select * from public.request_output_download(%L)', :'art'), 'not_parent');
 select tests.login('9e000000-0000-4000-8000-000000000021');
 select tests.expect_error(format('select * from public.book_versions(%L)', :'lale'), 'not found');
 reset role;

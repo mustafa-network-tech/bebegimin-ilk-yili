@@ -120,11 +120,15 @@ select tests.eq((select storage_path || ':' || sha256 from public.request_output
                 'parent downloads the ZIP; the same sha256 on every download');
 select tests.eq((select sha256 from public.request_output_download(:'art')), repeat('e', 64), 're-download returns the same checksum');
 select tests.login('ab000000-0000-4000-8000-000000000011');
-select tests.eq((select artifact_id is null from public.html_state(:'ada')), true, 'not shared: the archive is hidden from the family member');
+select tests.eq((select artifact_id is null from public.html_state(:'ada')), true, 'the archive is hidden from a Family Member');
+-- Decision P-12 (2026-10-02): nothing can be shared with Family Members.
 select tests.login('ab000000-0000-4000-8000-000000000001');
-select public.set_artifact_download_permission(:'ada', 'ab000000-0000-4000-8000-000000000011', 'first_year_html', true);
+select tests.expect_error(
+  format('select public.set_artifact_download_permission(%L, %L, %L, true)', :'ada', 'ab000000-0000-4000-8000-000000000011',
+         'first_year_html'),
+  'member_downloads_disabled');
 select tests.login('ab000000-0000-4000-8000-000000000011');
-select tests.eq((select coalesce(download_block, 'ok') from public.html_state(:'ada')), 'ok', 'shared by a parent: the family member may download');
+select tests.expect_error(format('select * from public.request_output_download(%L)', :'art'), 'not_parent');
 reset role;
 select tests.logout();
 

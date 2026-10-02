@@ -13,10 +13,8 @@ class ArchiveAccess {
 
   bool get canCreate => block == null;
 
-  /// Purchased, but the caller is a Family Member: the ready archive only.
-  bool get isFamilyMemberView => block == 'not_parent';
-
-  bool get canView => canCreate || isFamilyMemberView;
+  /// Decision P-12: only Anne / Baba open and download the outputs.
+  bool get canView => canCreate;
 }
 
 /// Latest archive job and latest ready archive (`html_state`).

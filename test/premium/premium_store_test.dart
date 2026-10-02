@@ -153,7 +153,7 @@ void main() {
     // An owned product opens its own screen instead of "Satın al".
     expect(find.text('Kitabı aç'), findsOneWidget);
     // Parents of an owning family can share downloads with Family Members.
-    expect(find.text('Aile üyeleriyle paylaş'), findsOneWidget);
+    expect(find.text('Aile üyeleriyle paylaş'), findsNothing, reason: 'decision P-12: downloads are not shared');
     expect(find.text('Satın al'), findsNWidgets(2));
   });
 

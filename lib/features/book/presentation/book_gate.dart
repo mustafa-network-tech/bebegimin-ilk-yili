@@ -30,8 +30,8 @@ class BookRouteGate extends ConsumerWidget {
   final String babyId;
   final Widget child;
 
-  /// Editor routes: parents only. Family Members may still open the book
-  /// home (official versions) and the viewer.
+  /// Editor routes. Every book route is for parents only since decision
+  /// P-12 (Family Members never open or download the outputs).
   final bool requireEdit;
 
   @override
@@ -48,7 +48,7 @@ class BookRouteGate extends ConsumerWidget {
             : const LoadingView(),
       );
     }
-    if (a.canEdit || (!requireEdit && a.isFamilyMemberView)) return child;
+    if (a.canView) return child;
     final closeDate = ref.watch(babyLifecycleProvider(baby.id)).value?.effectiveCloseDate;
     return Scaffold(
       appBar: AppBar(title: const Text('İlk Yılım kitabı')),
@@ -96,7 +96,7 @@ class _BlockedBook extends StatelessWidget {
       'not_parent' => EmptyState(
         icon: Icons.lock_outline_rounded,
         title: 'Yalnızca Anne ve Baba',
-        message: 'Kitabı yalnızca Anne veya Baba düzenleyebilir.',
+        message: 'Kitap, film ve çevrimdışı arşivi yalnızca Anne veya Baba açabilir ve indirebilir.',
         action: FilledButton(onPressed: back, child: const Text('Geri dön')),
       ),
       _ => EmptyState(
