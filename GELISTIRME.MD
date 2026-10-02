@@ -42,6 +42,25 @@ Bir önceki faz eksikse sessizce varsayım yapma. Eksikliği raporla; mevcut faz
 
 Eski rapordaki `365 gün` varsayımı geçersizdir. Nihai teknik yaşam döngüsü **375 gün + en fazla 30 gün onaylı uzatma** olarak uygulanacaktır.
 
+### Karar kaydı (2026-10-02)
+
+Aşağıdaki kararlar ürün sahibi tarafından bu belgeden sonra açıkça verilmiştir (kaynak önceliği #2). Bu belgenin geri kalanındaki çelişen ifadelerin **önüne geçer**. Ayrıntılı gerekçe ve etki analizi: `CLAUDE-REPORT.MD` §8.
+
+| No | Karar | Geçersiz kıldığı / netleştirdiği yerler |
+|---|---|---|
+| P-1 | **Resmî çıktı sınırı:** Kitap, Film ve HTML yalnız bebeğin kendi efektif kapanış tarihinden önceki içeriği alır: `content_date < birth_date + 375 + approved_extension_days` (yarı açık; en fazla 405). Herkes için sabit `birth_date + 405` kullanılmaz. Kitap aday penceresi de aynı sınırı kullanır; ilk doğum gününde durmaz. Efektif kapanış dışındaki legacy içerik yalnız Super Admin'in audited grandfather kararıyla girer. | §2.1/11–12, Faz 9, Faz 13 "Legacy veri politikası" |
+| P-2 | **Abonelik pasifken arşiv salt okunurdur:** Aile hesabındaki herkes (Family Member dahil) arşivi görüntüleyebilir. Kaynak içerik yazma, premium satın alma, üretim ve indirme kapalıdır. Lifecycle etkilenmez. | §2.3, §2.5.2, §2.7, §3.1.1, Faz 6 Flutter maddeleri |
+| P-3 | **Bebeği yalnız ebeveynler silebilir:** Anne ve baba bunu tek başına yapabilir; ikinci ebeveyn onayı aranmaz. | §3.6 |
+| P-4/P-7 | **Genel veri dışa aktarımı yoktur:** Bebeğin verisi yalnız Film (MP4), Offline HTML (ZIP) ve Dijital Kitap (PDF) ürünleri olarak, bu ürünlerin mevcut kurallarıyla alınır. Ayrı bir export uç noktası yapılmaz. | Faz 13 "privacy export" maddesi, runbook |
+| P-5 | **Yönetici yalnız anne ve babadır:** Aynı bebek için en fazla iki kişidir ve ikisi eşit hak ve yetkiye sahiptir. Ebeveyn olmayan bir üye hiçbir yolla yönetici olamaz (davet, kardeşten ekleme, üye düzenleme, halef seçimi). | §2.5, §4.2 |
+| P-6 | **Uzatma talebini yalnız ebeveynler açabilir.** Ebeveyn olmayanın denemesi, tek seferlik hakkı tüketmeden reddedilir. | §2.2, Faz 2, Faz 4 |
+| P-8 | **Bir ebeveyn hesabını silerse diğeri tek yönetici kalır.** Silinen ebeveyn başka bir hesapla yalnız kalan ebeveynin onayıyla (onun oluşturduğu anne/baba davetiyle) geri dönebilir. Anne/baba davetini yalnız ebeveyn oluşturabilir. | §2.5, §3.6 |
+| P-9 | **Hiçbir ebeveyn diğer ebeveyni aileden çıkaramaz veya yöneticiliğini alamaz.** Ebeveyn üyeliği yalnız kişinin kendi isteğiyle (ayrılma veya hesap silme) ya da audited destek süreciyle sona erer. | §2.5 |
+| P-10 | **Tek ebeveyn, bebek varken hesabını silemez;** önce bebekleri silmelidir. Hesap silme sırasında bebekler otomatik silinmez ve halef yükseltilmez. | §3.6 |
+| P-11 | **Çıktılarda adı geçen her kişi "Ad + yakınlık" biçiminde yazılır:** "Esra Teyzesi", "Ahmet Amcası", "Elif Annesi". Kural mektup, yorum, anı ve ilkler dahil tüm içerikte ve üç üründe aynıdır. | §2.8, Faz 9–11 |
+| P-12 | **Kitap, Film ve HTML'i yalnız ebeveynler indirebilir.** Family Member hiçbir koşulda indiremez ve çıktı ekranlarını görmez. Uygulama veriyi üçüncü kişilere dağıtmaz; ebeveyn indirdiği çıktıyı isterse kendisi paylaşır. Gerekçe: bebeğin yasal temsilcileri ve varisleri ebeveynlerdir. | §2.7 (Family Member maddeleri), §3.1.1 son satır, §4.3 `artifact_download_permissions`, Faz 12, §6.3–6.4, §8 ilgili maddeler |
+| P-13 | **P-12 uygulama planı:** `member_downloads` bayrağı kapatılır. Family Member indirme yolu ileri migration ile kalıcı kapatılır; mevcut izinler silinmeden audit ile iptal edilir. İzin ekranı ve Family Member çıktı görünümü kaldırılır. Medya görüntüleyicideki "Paylaş / kaydet" düğmesi yalnız ebeveynlere gösterilir. | Faz 12 |
+
 ---
 
 ## 1. Mevcut sistem hakkında doğrulanmış bulgular
