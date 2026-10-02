@@ -12,6 +12,10 @@ concurrency:
 
 env:
   FLUTTER_VERSION: "3.47.5"
+  # One Deno for CI, the Edge Functions and the output worker image
+  # (workers/output/Dockerfile). The lockfiles are format v5, which older
+  # Deno releases (e.g. 2.1.x) cannot read.
+  DENO_VERSION: "v2.9.7"
 
 jobs:
   flutter:
@@ -71,12 +75,28 @@ jobs:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          deno-version: ${{ env.DENO_VERSION }}
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: deno fmt --check src tests
       - run: deno lint src tests
       - run: deno check src/main.ts
       - run: deno task test
+
+  edge-functions:
+    name: Edge Functions (Deno type check + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      # The functions guard downloads, purchases, book finalization and
+      # account deletion; a type error or a broken helper must fail CI.
+      - run: deno check */index.ts
+      - run: deno test --allow-read --allow-env tests/
 
   android:
     name: Android build (APK)

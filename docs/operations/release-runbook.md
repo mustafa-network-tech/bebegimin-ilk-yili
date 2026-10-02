@@ -121,6 +121,7 @@ Sonuçları tarih ve operatör adıyla bu belgenin sonuna ekleyin.
 - [ ] Yedek / geri yükleme tatbikatı başarılı (§6).
 - [ ] Destek / admin runbook'u ve destek metinleri hazır ([../support/support-texts.md](../support/support-texts.md)).
 - [ ] Fiyat ve lifecycle semantiği kullanıcı onayı olmadan değişmedi (katalog: 34900 / 44900 / 54900; planlar 29900 / 36900 / 46900 aylık).
+- [ ] Output worker imajı `deno.lock` ile ve CI'daki Deno sürümüyle (`DENO_VERSION`) derlendi (`deno cache --frozen`).
 
 Hepsi işaretlenince `PHASE_STATUS.md` içinde Faz 13 `COMPLETE` yapılır ve `first-year-lifecycle-v1` etiketi atılır.
 
