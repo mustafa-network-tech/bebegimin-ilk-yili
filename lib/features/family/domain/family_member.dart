@@ -56,6 +56,12 @@ class FamilyMember {
 
   String get relationName => relationText(relation, relationLabel);
 
+  /// Anne / Baba with admin rights: the only admins (decision P-5).
+  bool get isParentAdmin => isAdmin && relation.isParent;
+
+  /// Another member may not remove or demote a parent (decision P-9).
+  bool protectedFrom(String? actorUserId) => isParentAdmin && userId != actorUserId;
+
   /// "Teyzesi Zeynep" – how the member is introduced in texts.
   String get introduction {
     final name = displayName.trim();

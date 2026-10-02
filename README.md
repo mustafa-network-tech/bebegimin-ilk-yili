@@ -152,6 +152,7 @@ notifications, device_tokens (kullanıcı başına) ; activity_logs (bebek baş�
 - Örnek: `memories` SELECT → `view_memories`; INSERT → `add_memory`; UPDATE/DELETE → (yazar ve `edit_own_memory`) veya `manage_content`.
 - **IDOR koruması:** her alt tablo `(parent_id, baby_id)` bileşik yabancı anahtarıyla ebeveynine bağlanır; başka bebeğin anısına fotoğraf/yorum/kitap öğesi eklemek şema seviyesinde imkânsızdır. Yazar/uploader alanları tetikleyicilerle zorlanır (sahte `author_id` yazılamaz).
 - **Yetki yükseltme koruması:** yönetici olmayan üyeler yönetici atayamaz, kendi yetkisini değiştiremez, yönetim yetkisi veremez; ailenin son yöneticisi silinemez/düşürülemez.
+- **Ebeveyn yetkileri (2026-10-02 kararları):** yönetici yalnız Anne ve Babadır, ikisi eşittir. Hiçbir ebeveyn diğerini çıkaramaz veya düşüremez. Anne/Baba davetini yalnız ebeveyn oluşturur. Bebeği yalnız ebeveyn siler. Tek ebeveyn, bebekleri silmeden hesabını silemez (`20261002000200_parent_authority.sql`).
 - **Davetler:** kodlar `gen_random_uuid()` baytlarından üretilir (32 karakterlik alfabe, ~10¹⁵ kombinasyon), kabul işlemi satırı kilitler, süre/durum/e-posta kontrolü yapar, tek kullanımlıktır.
 - **Zaman kapsülü:** içerik ayrı tabloda; SELECT politikası `open_on <= current_date` olmadan satır döndürmez (yazar dahil). INSERT/UPDATE yetkisi yoktur, yalnızca `create_time_capsule` RPC'si yazar.
 

@@ -233,6 +233,9 @@ insert into public.babies (id, first_name, birth_date, created_by) values
   ('99000000-0000-4000-8000-000000000004', 'Karışık1', current_date - 40, '98000000-0000-4000-8000-000000000004'),
   ('99000000-0000-4000-8000-000000000005', 'Karışık2', current_date - 40, '98000000-0000-4000-8000-000000000004'),
   ('99000000-0000-4000-8000-000000000006', 'Sahipsiz', current_date - 40, '98000000-0000-4000-8000-000000000006');
+-- Legacy data predates decision P-5 (a non-parent admin below), so the
+-- fixture bypasses the parent_authority guard while it is inserted.
+alter table public.family_members disable trigger family_members_parent_guard;
 insert into public.family_members (baby_id, user_id, relation, is_admin, permissions) values
   ('99000000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000001', 'anne', true, '{}'),
   ('99000000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', 'baba', true, '{}'),
@@ -244,6 +247,7 @@ insert into public.family_members (baby_id, user_id, relation, is_admin, permiss
   ('99000000-0000-4000-8000-000000000005', '98000000-0000-4000-8000-000000000004', 'anne', true, '{}'),
   ('99000000-0000-4000-8000-000000000005', '98000000-0000-4000-8000-000000000005', 'baba', true, '{}'),
   ('99000000-0000-4000-8000-000000000006', '98000000-0000-4000-8000-000000000006', 'teyze', true, '{}');
+alter table public.family_members enable trigger family_members_parent_guard;
 select public.backfill_family_accounts();
 select tests.eq((select count(distinct family_account_id) from public.family_account_babies
                   where baby_id in ('99000000-0000-4000-8000-000000000001', '99000000-0000-4000-8000-000000000002')), 1::bigint,

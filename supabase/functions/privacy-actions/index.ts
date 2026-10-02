@@ -2,7 +2,8 @@
 //   { action: "delete_account", delete_content?: boolean }
 //   { action: "delete_baby", baby_id: string }
 // The caller is identified from their JWT; the database functions enforce
-// who may do what (only admins can delete a baby, etc.).
+// who may do what (only Anne / Baba can delete a baby, a parent who is alone
+// on a baby deletes it before the account, etc.).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { removeObjects, type StorageObject } from "../_shared/storage.ts";
@@ -43,6 +44,14 @@ Deno.serve(async (req) => {
         p_user: user.id,
         p_delete_content: body.delete_content === true,
       });
+      // Decision P-10: a parent who is alone on a baby deletes the babies first.
+      if (error?.hint === "delete_babies_first") {
+        return json({
+          error:
+            "Hesabınızı silmeden önce tek ebeveyni olduğunuz bebek profillerini silmelisiniz.",
+          reason: "delete_babies_first",
+        }, 409);
+      }
       if (error) throw error;
       const removed = await removeObjects(
         admin,
@@ -64,7 +73,7 @@ Deno.serve(async (req) => {
         const forbidden = error.code === "42501";
         return json({
           error: forbidden
-            ? "Bu işlem için yönetici olmalısınız."
+            ? "Bebeği yalnızca Anne veya Baba silebilir."
             : error.message,
         }, forbidden ? 403 : 400);
       }

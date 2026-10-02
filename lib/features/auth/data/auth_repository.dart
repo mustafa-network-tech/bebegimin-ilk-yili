@@ -55,6 +55,13 @@ class AuthRepository {
 
   /// Deletes the account through the `privacy-actions` Edge Function
   /// (needs the service role, which never ships with the app).
+  /// Babies the user is alone on as a parent: they must be deleted before
+  /// the account (decision P-10). Names only, for the settings screen.
+  Future<List<String>> accountDeletionBlockers() async {
+    final rows = await _client.rpc('account_deletion_blockers') as List;
+    return [for (final r in rows) (r as Map)['first_name'] as String];
+  }
+
   Future<void> deleteAccount({required bool deleteMyContent}) async {
     await _client.functions.invoke(
       'privacy-actions',

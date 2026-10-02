@@ -46,3 +46,5 @@ Destek ekibinin sık sorulara kullanabileceği hazır yanıtlar. Ton: sıcak, k�
 ## Hesap veya bebek silme
 
 > Ayarlar → Gizlilik bölümünden hesabınızı veya bebeğinizin tüm verilerini silebilirsiniz. Silinen fotoğraf ve videolar geri getirilemez. Yasal saklama yükümlülüğü olan ödeme kayıtları ilgili süre boyunca korunur.
+>
+> Bebek profilini yalnızca Anne veya Baba silebilir; ikisi de bunu tek başına yapabilir. Bir bebeğin tek ebeveyniyseniz hesabınızı silmeden önce o bebeğin profilini silmeniz gerekir. Diğer ebeveyn de ailedeyse, hesabınızı sildiğinizde diğer ebeveyn tek yönetici olarak kalır. Daha sonra başka bir hesapla geri dönmek isterseniz, ailede kalan ebeveynin göndereceği Anne/Baba davetiyle katılabilirsiniz.

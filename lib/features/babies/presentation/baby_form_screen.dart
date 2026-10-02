@@ -182,6 +182,8 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
   Widget build(BuildContext context) {
     final baby = _baby;
     final access = baby == null ? null : ref.watch(accessProvider(baby.id));
+    // Only Anne / Baba delete a baby (decision P-3).
+    final isParentAdmin = baby != null && (ref.watch(myMembershipProvider(baby.id))?.isParentAdmin ?? false);
     final today = Dates.today();
     // Editing needs manage_baby, which the access model switches off once the
     // archive is LOCKED: the whole profile becomes read-only.
@@ -213,7 +215,7 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
       appBar: AppBar(
         title: Text(_isEdit ? 'Bebek profili' : 'Yeni bebek'),
         actions: [
-          if (_isEdit && (access?.isAdmin ?? false))
+          if (_isEdit && isParentAdmin)
             IconButton(tooltip: 'Sil', icon: const Icon(Icons.delete_outline_rounded), onPressed: _delete),
         ],
       ),
@@ -330,7 +332,9 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final r in Relation.values)
+                  // The creator becomes the admin, and only Anne / Baba can be
+                  // admins (decision P-5).
+                  for (final r in Relation.values.where((r) => r.isParent))
                     ChoiceChip(
                       label: Text(r.label),
                       selected: _relation == r,
@@ -338,17 +342,10 @@ class _BabyFormScreenState extends ConsumerState<BabyFormScreen> {
                     ),
                 ],
               ),
-              if (_relation == Relation.diger) ...[
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _relationLabel,
-                  decoration: const InputDecoration(labelText: 'Yakınlık (ör. Vasi, Bakıcı)'),
-                  validator: (v) => Validators.required(v, field: 'Yakınlık'),
-                ),
-              ],
               const SizedBox(height: 8),
               Text(
-                'Bebeği oluşturan kişi ailenin yöneticisi olur. Diğer aile üyelerini daha sonra davet edebilirsiniz.',
+                'Bebek profilini Anne veya Baba oluşturur ve ailenin yöneticisi olur. Diğer aile üyelerini daha sonra '
+                'davet edebilirsiniz.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

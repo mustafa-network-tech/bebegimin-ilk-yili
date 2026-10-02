@@ -70,6 +70,9 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     final baby = ref.watch(activeBabyProvider);
     if (baby == null) return const Scaffold(body: LoadingView());
     final access = ref.watch(accessProvider(baby.id));
+    // Only Anne / Baba invite a parent, and a parent invitation is always an
+    // equal admin; nobody else can be an admin (decisions P-5 / P-8).
+    final actorIsParent = ref.watch(myMembershipProvider(baby.id))?.isParentAdmin ?? false;
     final theme = Theme.of(context);
     final created = _created;
 
@@ -142,15 +145,16 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
               runSpacing: 8,
               children: [
                 for (final r in Relation.values)
-                  ChoiceChip(
-                    label: Text(r.label),
-                    selected: _relation == r,
-                    onSelected: (_) => setState(() {
-                      _relation = r;
-                      _permissions = r.defaultPermissions.where((p) => access.isAdmin || !p.isManagement).toSet();
-                      _admin = access.isAdmin && r.defaultAdmin;
-                    }),
-                  ),
+                  if (!r.isParent || actorIsParent)
+                    ChoiceChip(
+                      label: Text(r.label),
+                      selected: _relation == r,
+                      onSelected: (_) => setState(() {
+                        _relation = r;
+                        _permissions = r.defaultPermissions.where((p) => access.isAdmin || !p.isManagement).toSet();
+                        _admin = actorIsParent && r.defaultAdmin;
+                      }),
+                    ),
               ],
             ),
             if (_relation == Relation.diger) ...[
@@ -184,13 +188,10 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
               onSelectionChanged: (s) => setState(() => _days = s.first),
             ),
             const SizedBox(height: 16),
-            if (access.isAdmin)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _admin,
-                onChanged: (v) => setState(() => _admin = v),
-                title: const Text('Yönetici yap'),
-                subtitle: const Text('Yöneticiler tüm yetkilere sahiptir (ör. anne/baba).'),
+            if (_admin)
+              Text(
+                '${_relation.label} daveti, sizinle eşit yönetici yetkisiyle gönderilir.',
+                style: theme.textTheme.bodyMedium,
               ),
             if (!_admin) ...[
               const SizedBox(height: 8),
@@ -227,6 +228,8 @@ class _AddFromSiblingScreenState extends ConsumerState<AddFromSiblingScreen> {
     if (baby == null) return const Scaffold(body: LoadingView());
     final babies = (ref.watch(babiesProvider).value ?? const []).where((b) => b.id != baby.id).toList();
     final current = {for (final m in ref.watch(membersProvider(baby.id)).value ?? const []) m.userId};
+    // Only Anne / Baba add a parent (decision P-8).
+    final actorIsParent = ref.watch(myMembershipProvider(baby.id))?.isParentAdmin ?? false;
     final candidates = <String, (String name, String? avatar, String from)>{};
     for (final b in babies) {
       if (!ref.watch(accessProvider(b.id)).isAdmin) continue;
@@ -272,7 +275,8 @@ class _AddFromSiblingScreenState extends ConsumerState<AddFromSiblingScreen> {
                                 initialValue: _selected[e.key],
                                 decoration: InputDecoration(labelText: '${baby.firstName} için yakınlık'),
                                 items: [
-                                  for (final r in Relation.values) DropdownMenuItem(value: r, child: Text(r.label)),
+                                  for (final r in Relation.values)
+                                    if (!r.isParent || actorIsParent) DropdownMenuItem(value: r, child: Text(r.label)),
                                 ],
                                 onChanged: (r) => setState(() => _selected[e.key] = r ?? Relation.diger),
                               ),

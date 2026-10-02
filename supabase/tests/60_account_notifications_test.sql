@@ -53,12 +53,16 @@ select tests.expect_error($q$select * from public.delete_baby_for_user(tests.id(
 reset role;
 
 select tests.logout();
--- service role: deleting Deniz's account removes Can (sole member) but not Defne
+-- service role: Deniz is Can's only member. Decision P-10: the account is not
+-- deleted while Can exists, and Can is never deleted implicitly.
 begin;
 set local role service_role;
-create temp table paths on commit drop as select * from public.prepare_account_deletion(tests.id('baska'), false);
+select tests.expect_error($q$select * from public.prepare_account_deletion(tests.id('baska'), false)$q$, 'delete_babies_first');
+select tests.eq((select count(*) from babies where id = tests.id('can')), 1::bigint, 'a refused account deletion keeps the baby');
+create temp table paths on commit drop as select * from public.delete_baby_for_user(tests.id('baska'), tests.id('can'));
 select tests.eq((select count(*) from paths where path like 'cccccccc%'), 1::bigint, 'storage objects of the deleted baby are returned');
-select tests.eq((select count(*) from babies where id = tests.id('can')), 0::bigint, 'sole-member baby deleted');
+select tests.eq((select count(*) from public.prepare_account_deletion(tests.id('baska'), false)) >= 0, true,
+                'the account can be deleted once its babies are gone');
 select tests.eq((select count(*) from babies where id = tests.id('defne')), 1::bigint, 'shared baby kept');
 rollback;
 
@@ -72,11 +76,11 @@ select tests.eq((select count(*) from memories where author_id = tests.id('anne'
 select tests.eq((select count(*) from storage_cleanup_queue where path like 'aaaaaaaa%') > 0, true, 'deleted media queued for storage cleanup');
 rollback;
 
--- baby deletion by an admin
+-- baby deletion by a parent (decision P-3)
 begin;
 set local role service_role;
-select tests.expect_error($q$select * from public.delete_baby_for_user(tests.id('teyze'), tests.id('defne'))$q$, 'only admins');
-select tests.eq((select count(*) from public.delete_baby_for_user(tests.id('anne'), tests.id('defne'))) > 0, true, 'admin deletes baby, paths returned');
+select tests.expect_error($q$select * from public.delete_baby_for_user(tests.id('teyze'), tests.id('defne'))$q$, 'only parents');
+select tests.eq((select count(*) from public.delete_baby_for_user(tests.id('anne'), tests.id('defne'))) > 0, true, 'a parent deletes the baby, paths returned');
 select tests.eq((select count(*) from family_members where baby_id = tests.id('defne')), 0::bigint, 'cascade removes family');
 select tests.eq((select count(*) from memories where baby_id = tests.id('defne')), 0::bigint, 'cascade removes memories');
 rollback;

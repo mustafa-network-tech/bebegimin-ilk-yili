@@ -351,6 +351,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
   }
 }
 
+/// Babies the user must delete before the account (decision P-10).
+final accountDeletionBlockersProvider = FutureProvider.autoDispose<List<String>>(
+  (ref) => ref.watch(authRepositoryProvider).accountDeletionBlockers(),
+);
+
 class DeleteAccountScreen extends ConsumerStatefulWidget {
   const DeleteAccountScreen({super.key});
 
@@ -372,6 +377,10 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final blockers = ref.watch(accountDeletionBlockersProvider);
+    final blocking = blockers.value ?? const <String>[];
+    // The server refuses too; the button is only offered when it can work.
+    final canDelete = !_busy && blockers.hasValue && blocking.isEmpty;
     return Scaffold(
       appBar: AppBar(title: const Text('Hesabımı sil')),
       body: ListView(
@@ -380,10 +389,37 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
           Text('Hesabınız kalıcı olarak silinecek.', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           const Text(
-            '• Tek üyesi olduğunuz bebek arşivleri, tüm fotoğraf ve videolarıyla silinir.\n'
-            '• Başka aile üyeleriyle paylaştığınız arşivlerde, son yöneticiyseniz en eski üye yönetici yapılır.\n'
+            '• Tek ebeveyni olduğunuz bebek profilleri varken hesabınız silinemez; önce bu profilleri silmelisiniz.\n'
+            '• Diğer ebeveynin de bulunduğu arşivlerde diğer ebeveyn tek yönetici olarak kalır.\n'
             '• Paylaşılan arşivlere eklediğiniz anılar varsayılan olarak ailede kalır (yazar bilgisi kaldırılır).',
           ),
+          if (blocking.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              color: theme.colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Önce şu bebek profillerini silin: ${blocking.join(', ')}',
+                      style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Bebek profilini, profil ekranındaki Sil düğmesiyle silebilirsiniz.',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (blockers.hasError) ...[
+            const SizedBox(height: 12),
+            ErrorView(error: blockers.error!, onRetry: () => ref.invalidate(accountDeletionBlockersProvider)),
+          ],
           const SizedBox(height: 12),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
@@ -402,7 +438,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               backgroundColor: theme.colorScheme.error,
               foregroundColor: theme.colorScheme.onError,
             ),
-            onPressed: _busy
+            onPressed: !canDelete
                 ? null
                 : () async {
                     if (_confirm.text.trim().toUpperCase() != 'SİL' && _confirm.text.trim().toUpperCase() != 'SIL') {

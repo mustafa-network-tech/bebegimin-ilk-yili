@@ -23,10 +23,14 @@ insert into public.family_members (baby_id, user_id, relation, is_admin, permiss
   ('9e000000-0000-4000-8000-000000000001', tests.id('baba'), 'baba', true, array(select key from public.permissions)),
   ('9e000000-0000-4000-8000-000000000001', '9e100000-0000-4000-8000-000000000001', 'teyze', false, '{view_memories}'),
   ('9e000000-0000-4000-8000-000000000002', tests.id('anne'), 'anne', true, array(select key from public.permissions)),
-  -- Legacy data: a non-parent admin (no longer possible under P-5).
-  ('9e000000-0000-4000-8000-000000000002', '9e100000-0000-4000-8000-000000000002', 'dede', true,
-   array(select key from public.permissions)),
   ('9e000000-0000-4000-8000-000000000003', tests.id('baba'), 'baba', true, array(select key from public.permissions));
+-- Legacy data: a non-parent admin. P-5 (parent_authority migration) makes
+-- this impossible to create today, so the fixture bypasses that guard.
+alter table public.family_members disable trigger family_members_parent_guard;
+insert into public.family_members (baby_id, user_id, relation, is_admin, permissions) values
+  ('9e000000-0000-4000-8000-000000000002', '9e100000-0000-4000-8000-000000000002', 'dede', true,
+   array(select key from public.permissions));
+alter table public.family_members enable trigger family_members_parent_guard;
 
 set role authenticated;
 

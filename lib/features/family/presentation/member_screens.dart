@@ -106,7 +106,12 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
     final access = ref.watch(accessProvider(baby.id));
     final uid = ref.watch(currentUserIdProvider);
     final isMe = m.userId == uid;
-    final canManage = access.can(AppPermission.manageMembers) && !isMe && (access.isAdmin || !m.isAdmin);
+    // Only Anne / Baba are admins and add parents (P-5 / P-8); nobody changes
+    // or removes the other parent (P-9). The server enforces the same rules.
+    final actorIsParent = ref.watch(myMembershipProvider(baby.id))?.isParentAdmin ?? false;
+    final protectedParent = m.protectedFrom(uid);
+    final canManage =
+        access.can(AppPermission.manageMembers) && !isMe && !protectedParent && (access.isAdmin || !m.isAdmin);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -137,6 +142,12 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
                     if (isMe) ...[
                       const SizedBox(height: 12),
                       Text('Kendi yetkilerinizi değiştiremezsiniz.', style: theme.textTheme.bodySmall),
+                    ] else if (protectedParent) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Anne veya Babanın aile üyeliği ve yetkileri yalnızca kendisi tarafından değiştirilebilir.',
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ],
                   ],
                 ),
@@ -146,8 +157,14 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
             DropdownButtonFormField<Relation>(
               initialValue: _relation,
               decoration: const InputDecoration(labelText: 'Yakınlık'),
-              items: [for (final r in Relation.values) DropdownMenuItem(value: r, child: Text(r.label))],
-              onChanged: (r) => setState(() => _relation = r ?? _relation),
+              items: [
+                for (final r in Relation.values)
+                  if (!r.isParent || actorIsParent || r == m.relation) DropdownMenuItem(value: r, child: Text(r.label)),
+              ],
+              onChanged: (r) => setState(() {
+                _relation = r ?? _relation;
+                if (!_relation.isParent) _admin = false;
+              }),
             ),
             if (_relation == Relation.diger) ...[
               const SizedBox(height: 12),
@@ -157,13 +174,13 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
                 decoration: const InputDecoration(labelText: 'Yakınlık adı'),
               ),
             ],
-            if (access.isAdmin)
+            if (actorIsParent && _relation.isParent)
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 value: _admin,
                 onChanged: (v) => setState(() => _admin = v),
                 title: const Text('Yönetici'),
-                subtitle: const Text('Tüm yetkiler, üyeleri yönetme ve bebeği silme.'),
+                subtitle: const Text('Anne ve Baba eşit yöneticidir: tüm yetkiler, üyeleri yönetme ve bebeği silme.'),
               ),
             if (!_admin)
               PermissionEditor(
