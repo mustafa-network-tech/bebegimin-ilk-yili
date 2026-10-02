@@ -219,6 +219,10 @@ class _ExtensionCardState extends ConsumerState<_ExtensionCard> {
           Text('Uzatma hakkı kullanıldı; yeni talep oluşturulamaz.', style: theme.textTheme.bodySmall),
         ],
       ];
+    } else if (!isParent) {
+      // The server also refuses non-parents (can_request_extension is false
+      // for them), so this has to win over the closing-date message.
+      content = [Text('Uzatma talebini Anne veya Baba oluşturabilir.', style: theme.textTheme.bodyMedium)];
     } else if (!l.canRequestExtension) {
       content = [
         Text(
@@ -226,8 +230,6 @@ class _ExtensionCardState extends ConsumerState<_ExtensionCard> {
           style: theme.textTheme.bodyMedium,
         ),
       ];
-    } else if (!isParent) {
-      content = [Text('Uzatma talebini Anne veya Baba oluşturabilir.', style: theme.textTheme.bodyMedium)];
     } else {
       content = [
         Text(

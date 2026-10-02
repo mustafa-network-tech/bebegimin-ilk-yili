@@ -16,8 +16,8 @@ Ortak hata kodları:
 | RPC | Girdi | Çıktı | Önemli hint'ler |
 |---|---|---|---|
 | `app_config()` | — | `min_supported_build`, `latest_build` | — (oturumsuz okunabilir) |
-| `baby_lifecycle_summary(baby_id)` | bebek | durum, kapanış tarihleri, kalan gün, uzatma durumu | — |
-| `request_baby_extension(baby_id, days)` | 1–30 gün | talep | `lifecycle_locked`, tek talep |
+| `baby_lifecycle_summary(baby_id)` | bebek | durum, kapanış tarihleri, kalan gün, uzatma durumu; `can_request_extension` yalnız Anne/Baba için `true` olabilir | — |
+| `request_baby_extension(baby_id, days)` | 1–30 gün | talep (yalnız Anne/Baba; karar P-6) | `not_parent` (hak tüketilmez), `lifecycle_locked`, tek talep |
 | `create_baby(…)`, `accept_invitation(code)`, `preview_invitation(code)`, `revoke_invitation(id)`, `add_member_from_sibling(…)` | | | `invitation_*`, `family_capacity_full`, `parent_seats_full` |
 
 ## Abonelik ve satın alma

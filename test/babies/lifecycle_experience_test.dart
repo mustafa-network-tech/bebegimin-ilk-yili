@@ -336,5 +336,31 @@ void main() {
       expect(find.text('Uzatma talep et'), findsNothing);
       expect(find.text('Uzatma talebini Anne veya Baba oluşturabilir.'), findsOneWidget);
     });
+
+    // The server reports can_request_extension = false for non-parents
+    // (decision P-6); the screen must not blame the closing date.
+    Future<void> expectParentsOnlyMessage(WidgetTester tester, FamilyMember m) async {
+      await tester.pumpWidget(
+        _app(
+          const BabyLifecycleScreen(babyId: 'baby-ege'),
+          screenOverrides(lifecycle(ege.id, active: true, close: d(2027, 6, 11), remaining: 20), m),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Uzatma talep et'), findsNothing);
+      expect(find.text('Uzatma talebini Anne veya Baba oluşturabilir.'), findsOneWidget);
+      expect(find.text('Uzatma talebi yalnızca standart kapanış tarihinden önce oluşturulabilir.'), findsNothing);
+    }
+
+    testWidgets('a refused non-parent member is told who can request', (tester) async {
+      await expectParentsOnlyMessage(
+        tester,
+        member(ege.id, relation: 'teyze', admin: false, perms: const ['view_memories']),
+      );
+    });
+
+    testWidgets('a refused legacy non-parent admin is told who can request', (tester) async {
+      await expectParentsOnlyMessage(tester, member(ege.id, relation: 'teyze'));
+    });
   });
 }
