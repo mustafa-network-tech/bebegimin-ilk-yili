@@ -99,7 +99,9 @@ select tests.eq((:'report'::jsonb -> 'orphan_media_sample') ? (:'old_baby' || '/
                 'orphan storage objects are reported');
 
 -- Release health ----------------------------------------------------------------------------------------------
-select tests.eq((select count(*) from public.admin_release_health()), 9::bigint, 'nine rollout checks');
+select tests.eq((select count(*) from public.admin_release_health()), 10::bigint, 'ten rollout checks');
+select tests.eq((select status || ':' || value from public.admin_release_health() where check_name = 'demo_accounts'), 'critical:4',
+                'the seeded demo accounts are a critical finding (never in production)');
 select tests.eq((select status from public.admin_release_health() where check_name = 'lifecycle_mismatch'), 'ok', 'lifecycle invariants hold');
 reset role;
 select tests.logout();
