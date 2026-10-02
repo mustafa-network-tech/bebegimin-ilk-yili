@@ -39,13 +39,20 @@ final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
   }
 });
 
-/// Server decision for a baby: open, or the payment page.
+/// Server decision for a baby: `allowed` = the family may write. Without an
+/// active family subscription the archive is read-only (decision P-2).
 final babyAccessStateProvider = FutureProvider.family<BabyAccessState, String>((ref, babyId) {
   ref.watch(lifecycleRevisionProvider);
   return ref.watch(subscriptionRepositoryProvider).accessState(babyId);
 });
 
-/// Access state of the selected baby (drives the router's payment redirect).
+/// True once the server reports that the family subscription is inactive:
+/// the archive stays readable, nothing can be added or changed (P-2).
+final babySubscriptionReadOnlyProvider = Provider.family<bool, String>(
+  (ref, babyId) => ref.watch(babyAccessStateProvider(babyId)).value?.allowed == false,
+);
+
+/// Access state of the selected baby (drives the read-only banner).
 final activeAccessGateProvider = Provider<BabyAccessState?>((ref) {
   final baby = ref.watch(activeBabyProvider);
   if (baby == null) return null;

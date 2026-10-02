@@ -115,24 +115,28 @@ select tests.eq(public.billing_apply_event('app_store', 'n-expired', 'EXPIRED',
   json_build_object('provider_subscription_id', 'orig-1', 'provider_product_id', 'bebegimin.small_family.monthly',
                     'status', 'expired')::jsonb), 'applied', 'expiry applied');
 
--- Family Member: blocked everywhere on the server.
+-- Family Member: decision P-2 (2026-10-02) - the archive is read-only.
 set role authenticated;
 select tests.login('9b000000-0000-4000-8000-000000000011');
-select tests.eq((select allowed from public.baby_access_state(:'baby')), false, 'ended subscription closes the archive');
-select tests.eq((select reason from public.baby_access_state(:'baby')), 'subscription_ended', 'reason for the payment page');
+select tests.eq((select allowed from public.baby_access_state(:'baby')), false, 'ended subscription removes write access');
+select tests.eq((select reason from public.baby_access_state(:'baby')), 'subscription_ended', 'reason for the renewal prompt');
 select tests.eq((select is_parent from public.baby_access_state(:'baby')), false, 'family member cannot pay');
-select tests.eq(tests.count(format('select 1 from memories where baby_id = %L', :'baby')), 0::bigint, 'memories hidden');
-select tests.eq(tests.count(format('select 1 from timeline_entries where baby_id = %L', :'baby')), 0::bigint, 'timeline hidden');
-select tests.eq(tests.count(format('select 1 from media where baby_id = %L', :'baby')), 0::bigint, 'album hidden');
-select tests.eq(public.can_read_baby_object(:'baby' || '/9b100000-0000-4000-8000-000000000001/p.jpg'), false, 'no signed URL for media');
+select tests.eq(tests.count(format('select 1 from memories where baby_id = %L', :'baby')), 1::bigint, 'memories stay readable');
+select tests.eq(tests.count(format('select 1 from timeline_entries where baby_id = %L', :'baby')) >= 1, true, 'timeline stays readable');
+select tests.eq(tests.count(format('select 1 from media where baby_id = %L', :'baby')), 1::bigint, 'album stays readable');
+select tests.eq(public.can_read_baby_object(:'baby' || '/9b100000-0000-4000-8000-000000000001/p.jpg'), true, 'signed URLs for media still work');
 select tests.expect_error(format('insert into memories (baby_id, title, memory_date) values (%L, %L, current_date)', :'baby', 'x'), 'subscription_inactive');
+select tests.eq(public.can_write_baby_object(:'baby' || '/9b100000-0000-4000-8000-000000000002/p.jpg'), false, 'no uploads either');
 select tests.eq(tests.count(format('select 1 from babies where id = %L', :'baby')), 1::bigint, 'baby name stays visible for the payment page');
 select tests.eq(tests.count(format('select 1 from family_members where baby_id = %L', :'baby')) >= 2, true, 'family list stays visible');
 
--- Parent: same gate, but can pay and manage the family.
+-- Parent: same read-only archive, but can pay and manage the family.
 select tests.login('9b000000-0000-4000-8000-000000000001');
 select tests.eq((select is_parent from public.baby_access_state(:'baby')), true, 'parent is offered the purchase');
-select tests.eq(tests.count(format('select 1 from memories where baby_id = %L', :'baby')), 0::bigint, 'parents are blocked too');
+select tests.eq(tests.count(format('select 1 from memories where baby_id = %L', :'baby')), 1::bigint, 'parents read the archive');
+update memories set title = 'yeni' where baby_id = :'baby';
+select tests.eq(tests.count(format('select 1 from memories where baby_id = %L and title = %L', :'baby', 'yeni')), 0::bigint,
+                'parents cannot edit the read-only archive');
 select tests.expect_error(format('select public.create_time_capsule(%L, %L, %L, current_date + 30)', :'baby', 'k', 'm'), 'not allowed');
 select tests.eq(public.can_write_baby_object(:'baby' || '/profile/a.jpg'), false, 'no uploads');
 update family_members set permissions = permissions || '{comment}'::text[]

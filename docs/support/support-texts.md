@@ -12,7 +12,7 @@ Destek ekibinin sık sorulara kullanabileceği hazır yanıtlar. Ton: sıcak, k�
 
 ## Aboneliğim bitti, dosyalarım silindi mi?
 
-> Hayır. Satın aldığınız ürünler ve hazırlanmış dosyalar korunur. Aile paketiniz yeniden etkin olduğunda aynı dosyaları ek ücret ödemeden tekrar indirebilirsiniz.
+> Hayır. Satın aldığınız ürünler ve hazırlanmış dosyalar korunur. Aile paketiniz yeniden etkin olduğunda aynı dosyaları ek ücret ödemeden tekrar indirebilirsiniz. Paket aktif değilken arşiviniz salt okunur kalır: anıları, albümü ve takvimi görüntülemeye devam edersiniz; yeni içerik eklemek ve dosya indirmek için paketin yenilenmesi gerekir.
 
 ## Teyze / dede neden indiremiyor?
 

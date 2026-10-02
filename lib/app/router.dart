@@ -332,11 +332,11 @@ String? _redirect(Ref ref, GoRouterState state) {
     return '/home';
   }
 
-  // Inactive family subscription: the whole family goes to the payment page
-  // (the server enforces the same rule on every read and write).
+  // Inactive family subscription: the archive stays readable (decision P-2);
+  // the shell shows a read-only banner and write routes are guarded. The
+  // payment page is only left automatically once access is back.
   final gate = ref.read(activeAccessGateProvider);
   final blocked = gate != null && !gate.allowed;
-  if (blocked && !allowedWithoutSubscription(loc)) return paywallRoute;
   if (!blocked && loc == paywallRoute && gate != null) return '/home';
   return null;
 }

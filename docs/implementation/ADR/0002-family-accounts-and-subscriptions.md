@@ -38,7 +38,16 @@ Mevcut sistemde üyelik bebek bazlıdır (`family_members`) ve ödeme sağlayıc
 - Ebeveynler, kimin çıkacağına kendileri karar verir; çıkış olunca bayrak kendiliğinden temizlenir.
 - Neden: Sağlayıcı tarafında düşürmeyi bekletmek her sağlayıcıda mümkün değildir. Bu yaklaşım kimseyi habersiz silmez.
 
-### 4. Abonelik bitince erişim (ürün kararı, 2026-09-29)
+### 4. Abonelik bitince erişim (ürün kararı, 2026-09-29; 2026-10-02 karar P-2 ile değişti)
+
+> **Güncelleme (2026-10-02, karar P-2):** Aile paketi aktif değilken arşiv **salt okunurdur**; kimse ödeme sayfasına zorlanmaz.
+> - **Okuma açık:** Anne, Baba ve aile üyeleri arşivi, albümü, takvimi ve imzalı medya bağlantılarını kullanmaya devam eder. `has_baby_permission` içinde `view_memories` ve `view_album` artık abonelik istemez.
+> - **Yazma kapalı:** Kaynak içerik yazma (`lifecycle_source_guard`), Storage yükleme/silme ve bebek profili düzenleme kapalı kalır.
+> - **Premium:** Premium satın alma, üretim ve indirme kapalı kalır (plan §2.7).
+> - **Uygulama:** Kabukta salt okunur bandı gösterir; bant ödeme sayfasına götürür. Yazma formları kapalıdır, `+` düğmesi gizlenir.
+> - **Migration:** `20261002000400_subscription_read_only.sql`.
+>
+> Aşağıdaki maddelerden "arşivi kullanamaz / ödeme sayfasına yönlendirilir" ifadeleri bu güncellemeyle geçersizdir.
 
 - Aile paketi aktif değilse, o ailedeki **herkes** (Anne, Baba ve aile üyeleri) arşivi kullanamaz ve ödeme sayfasına yönlendirilir.
 - **Erişim veren durumlar:** `trialing`, `active` (dönem sonu 1 gün toleransla geçmemiş) ve `grace`.

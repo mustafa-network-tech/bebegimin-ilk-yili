@@ -93,6 +93,6 @@ supabase functions deploy billing-verify-purchase
    update public.platform_flags set enabled = true, note = 'Mağaza abonelikleri canlı' where key = 'subscription_enforcement';
    ```
 
-Bu andan itibaren aktif paketi olmayan aileler ödeme sayfasına yönlendirilir.
+Bu andan itibaren aktif paketi olmayan ailelerin arşivi salt okunur olur (karar P-2, 2026-10-02): görüntüleme sürer; içerik ekleme, düzenleme ve premium işlemler kapanır. Uygulama salt okunur bandından ödeme sayfasına yönlendirir.
 
 Geri almak için aynı komut `enabled = false` ile çalıştırılır. Hiçbir veri silinmez.

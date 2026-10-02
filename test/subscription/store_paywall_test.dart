@@ -1,7 +1,13 @@
 import 'dart:async';
 
 import 'package:bebegimin_ilk_yili/app/theme.dart';
+import 'package:bebegimin_ilk_yili/core/supabase_providers.dart';
+import 'package:bebegimin_ilk_yili/features/babies/application/baby_lifecycle_providers.dart';
 import 'package:bebegimin_ilk_yili/features/babies/application/baby_providers.dart';
+import 'package:bebegimin_ilk_yili/features/babies/domain/baby_lifecycle.dart';
+import 'package:bebegimin_ilk_yili/features/family/application/family_providers.dart';
+import 'package:bebegimin_ilk_yili/features/family/domain/family_member.dart';
+import 'package:bebegimin_ilk_yili/features/family/domain/permission.dart';
 import 'package:bebegimin_ilk_yili/features/premium/domain/premium_models.dart';
 import 'package:bebegimin_ilk_yili/features/subscription/application/subscription_providers.dart';
 import 'package:bebegimin_ilk_yili/features/subscription/data/store_billing.dart';
@@ -9,6 +15,8 @@ import 'package:bebegimin_ilk_yili/features/subscription/data/subscription_repos
 import 'package:bebegimin_ilk_yili/features/subscription/domain/subscription_models.dart';
 import 'package:bebegimin_ilk_yili/features/subscription/presentation/family_plan_screen.dart';
 import 'package:bebegimin_ilk_yili/features/subscription/presentation/paywall_screen.dart';
+import 'package:bebegimin_ilk_yili/features/subscription/presentation/read_only_banner.dart';
+import 'package:bebegimin_ilk_yili/features/babies/presentation/lifecycle_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -105,21 +113,112 @@ void main() {
     expect(() => GoogleProductRef.parse(':monthly'), throwsFormatException);
   });
 
-  test('only payment, plans, settings, joining and a new baby stay reachable', () {
-    for (final ok in ['/paywall', '/family/plan', '/settings', '/settings/delete-account', '/join', '/baby/new']) {
-      expect(allowedWithoutSubscription(ok), isTrue, reason: ok);
-    }
-    for (final blocked in ['/home', '/timeline', '/album', '/memory/new', '/babies/x/memories/y', '/calendar']) {
-      expect(allowedWithoutSubscription(blocked), isFalse, reason: blocked);
-    }
+  test('an inactive family subscription makes the archive read-only, not hidden (decision P-2)', () {
+    ProviderContainer container(bool allowed) => ProviderContainer(
+      overrides: [
+        currentUserIdProvider.overrideWithValue('user-anne'),
+        membersProvider(defne.id).overrideWithValue(
+          AsyncData([
+            FamilyMember.fromJson({
+              'id': 'fm-anne',
+              'baby_id': defne.id,
+              'user_id': 'user-anne',
+              'relation': 'anne',
+              'relation_label': null,
+              'is_admin': true,
+              'permissions': const <String>[],
+              'joined_at': '2025-09-20T10:00:00Z',
+              'profiles': {'display_name': 'Elif', 'avatar_path': null},
+            }),
+          ]),
+        ),
+        babyLifecycleProvider(defne.id).overrideWithValue(
+          AsyncData(
+            BabyLifecycle(
+              babyId: defne.id,
+              status: BabyLifecycleStatus.active,
+              businessDate: DateTime(2026, 1, 1),
+              baseCloseDate: DateTime(2026, 9, 22),
+              effectiveCloseDate: DateTime(2026, 9, 22),
+              remainingDays: 264,
+              extensionStatus: null,
+              approvedExtensionDays: 0,
+              canRequestExtension: false,
+            ),
+          ),
+        ),
+        babyAccessStateProvider(defne.id).overrideWithValue(AsyncData(state(allowed: allowed))),
+      ],
+    );
+
+    final lapsed = container(false);
+    addTearDown(lapsed.dispose);
+    final access = lapsed.read(accessProvider(defne.id));
+    expect(lapsed.read(babySubscriptionReadOnlyProvider(defne.id)), isTrue);
+    expect(access.can(AppPermission.viewMemories), isTrue);
+    expect(access.can(AppPermission.viewAlbum), isTrue);
+    expect(access.can(AppPermission.manageMembers), isTrue, reason: 'family management stays open');
+    expect(access.can(AppPermission.addMemory), isFalse);
+    expect(access.canCreateAnything, isFalse, reason: 'no + button');
+
+    final paid = container(true);
+    addTearDown(paid.dispose);
+    expect(paid.read(babySubscriptionReadOnlyProvider(defne.id)), isFalse);
+    expect(paid.read(accessProvider(defne.id)).can(AppPermission.addMemory), isTrue);
   });
 
   test('access reasons are explained without promising deletion', () {
     expect(state().message, contains('hiçbir şey silinmedi'));
     expect(state(parent: false).message, contains('Anne veya Baba'));
+    expect(state().message, contains('salt okunur'), reason: 'decision P-2: the archive stays readable');
+    expect(state(parent: false).message, contains('hiçbir şey silinmedi'));
     expect(state(reason: 'payment_issue').title, 'Ödeme alınamadı');
     expect(state(reason: 'account_unmapped').title, 'Aile hesabı eşleştiriliyor');
     expect(state(allowed: true, reason: 'ok').allowed, isTrue);
+  });
+
+  Future<void> pumpWithGate(WidgetTester tester, Widget child, {required bool allowed}) => tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        babiesProvider.overrideWithValue(AsyncData([defne])),
+        activeBabyIdProvider.overrideWithBuild((ref, _) => defne.id),
+        babyAccessStateProvider(defne.id).overrideWithValue(AsyncData(state(allowed: allowed))),
+        babyLifecycleProvider(defne.id).overrideWithValue(
+          AsyncData(
+            BabyLifecycle(
+              babyId: defne.id,
+              status: BabyLifecycleStatus.active,
+              businessDate: DateTime(2026, 1, 1),
+              baseCloseDate: DateTime(2026, 9, 22),
+              effectiveCloseDate: DateTime(2026, 9, 22),
+              remainingDays: 264,
+              extensionStatus: null,
+              approvedExtensionDays: 0,
+              canRequestExtension: false,
+            ),
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.light(),
+        home: Scaffold(body: child),
+      ),
+    ),
+  );
+
+  testWidgets('a lapsed subscription shows a read-only banner instead of locking the app', (tester) async {
+    await pumpWithGate(tester, const SubscriptionReadOnlyBanner(), allowed: false);
+    expect(find.text('Aile paketi aktif değil: arşiv salt okunur.'), findsOneWidget);
+    await pumpWithGate(tester, const SubscriptionReadOnlyBanner(), allowed: true);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('salt okunur'), findsNothing);
+  });
+
+  testWidgets('write forms stay closed while the archive is read-only', (tester) async {
+    await pumpWithGate(tester, LifecycleWriteGuard(babyId: defne.id, child: const Text('FORM')), allowed: false);
+    await tester.pumpAndSettle();
+    expect(find.text('FORM'), findsNothing);
+    expect(find.text('Aile paketi aktif değil'), findsOneWidget);
   });
 
   testWidgets('parents can choose a plan or restore purchases', (tester) async {
@@ -136,7 +235,8 @@ void main() {
     await _pumpPaywall(tester, state(parent: false), _FakeStore(StoreProvider.googlePlay));
     expect(find.text('Aile paketini seç'), findsNothing);
     expect(find.text('Satın alımları geri yükle'), findsNothing);
-    expect(find.textContaining('Anne veya Baba paketi yeniledikten sonra'), findsOneWidget);
+    expect(find.textContaining('arşiv salt okunur'), findsOneWidget);
+    expect(find.textContaining('Anne veya Baba paketi yenilediğinde'), findsOneWidget);
     expect(find.text('Tekrar kontrol et'), findsOneWidget);
   });
 

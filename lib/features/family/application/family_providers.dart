@@ -9,6 +9,7 @@ import '../domain/activity_entry.dart';
 import '../domain/family_member.dart';
 import '../domain/invitation.dart';
 import '../domain/permission.dart';
+import '../../subscription/application/subscription_providers.dart';
 
 final membersProvider = FutureProvider.family<List<FamilyMember>, String>(
   (ref, babyId) => ref.watch(familyRepositoryProvider).members(babyId),
@@ -27,7 +28,11 @@ final myMembershipProvider = Provider.family<FamilyMember?, String>((ref, babyId
 final accessProvider = Provider.family<MemberAccess, String>((ref, babyId) {
   final membership = ref.watch(myMembershipProvider(babyId));
   if (membership == null) return MemberAccess.none;
-  return membership.access.withArchiveLocked(ref.watch(babyArchiveLockedProvider(babyId)));
+  // A LOCKED archive and an inactive family subscription (decision P-2) are
+  // both read-only: same experience, the server enforces both.
+  return membership.access.withArchiveLocked(
+    ref.watch(babyArchiveLockedProvider(babyId)) || ref.watch(babySubscriptionReadOnlyProvider(babyId)),
+  );
 });
 
 /// Access for the active baby (UI convenience).

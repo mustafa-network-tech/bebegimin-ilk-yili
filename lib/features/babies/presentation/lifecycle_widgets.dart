@@ -11,6 +11,8 @@ import '../application/baby_lifecycle_providers.dart';
 import '../application/baby_providers.dart';
 import '../domain/baby.dart';
 import '../domain/baby_lifecycle.dart';
+import '../../subscription/application/subscription_providers.dart';
+import '../../subscription/presentation/paywall_screen.dart';
 
 String lifecycleRoute(String babyId) => '/babies/$babyId/lifecycle';
 
@@ -157,6 +159,8 @@ class LifecycleWriteGuard extends ConsumerWidget {
     if (id == null) return const Scaffold(body: LoadingView());
     final lifecycle = ref.watch(babyLifecycleProvider(id));
     final l = lifecycle.value;
+    // Decision P-2: without an active family subscription nothing is written.
+    if (ref.watch(babySubscriptionReadOnlyProvider(id))) return const _SubscriptionReadOnlyRouteView();
     if (l != null && l.isActive) return child;
     if (l != null) return _LockedRouteView(babyId: id);
     if (lifecycle.hasError) {
@@ -186,6 +190,23 @@ class _LockedRouteView extends StatelessWidget {
           onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
           child: const Text('Geri dön'),
         ),
+      ),
+    );
+  }
+}
+
+class _SubscriptionReadOnlyRouteView extends StatelessWidget {
+  const _SubscriptionReadOnlyRouteView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Arşiv salt okunur')),
+      body: EmptyState(
+        icon: Icons.visibility_rounded,
+        title: 'Aile paketi aktif değil',
+        message: 'Arşivi görüntülemeye devam edebilirsiniz. Yeni içerik eklemek ve düzenlemek için aile paketi yenilenmelidir.',
+        action: FilledButton(onPressed: () => context.push(paywallRoute), child: const Text('Aile paketi')),
       ),
     );
   }

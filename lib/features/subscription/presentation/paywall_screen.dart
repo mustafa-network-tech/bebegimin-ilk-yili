@@ -17,19 +17,9 @@ import 'family_plan_screen.dart';
 
 const paywallRoute = '/paywall';
 
-/// Routes that stay reachable while the family subscription is inactive:
-/// the payment page itself, plans, account settings (incl. deletion and
-/// sign-out), joining another family and creating a baby.
-bool allowedWithoutSubscription(String location) =>
-    location == paywallRoute ||
-    location == familyPlanRoute ||
-    location.startsWith('/settings') ||
-    location == '/join' ||
-    location == '/baby/new' ||
-    location == '/admin';
-
-/// Shown instead of the app when the family subscription is not active.
-/// Parents can buy or restore; Family Members are told who can renew.
+/// Opened from the read-only banner while the family subscription is not
+/// active (the archive stays readable, decision P-2). Parents can buy or
+/// restore; Family Members are told who can renew.
 class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key});
 
@@ -80,7 +70,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: const Text('Aile paketi'),
         actions: [
           IconButton(

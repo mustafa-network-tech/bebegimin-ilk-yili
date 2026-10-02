@@ -291,10 +291,10 @@ class BabyAccessState {
     AccessReason.paymentIssue when isParent =>
       'Mağaza ödemeyi alamadı. Ödeme yönteminizi güncelleyin ya da yeni bir paket seçin. Anılarınız güvende.',
     _ when isParent =>
-      'Uygulamayı kullanmaya devam etmek için aile paketini seçin veya yenileyin. Anılarınız, fotoğraflarınız ve ilk yıl '
-          'arşiviniz güvende; hiçbir şey silinmedi.',
+      'Arşiviniz salt okunur: anıları, albümü ve takvimi görüntülemeye devam edebilirsiniz. Yeni içerik eklemek ve '
+          'düzenlemek için aile paketini seçin veya yenileyin; hiçbir şey silinmedi.',
     _ =>
-      'Ailenizin paketi aktif değil. Anne veya Baba paketi yeniledikten sonra kaldığınız yerden devam edebilirsiniz. '
-          'Hiçbir şey silinmedi.',
+      'Ailenizin paketi aktif değil; arşiv salt okunur. Görüntülemeye devam edebilirsiniz. Anne veya Baba paketi '
+          'yenilediğinde yeniden içerik ekleyebilirsiniz; hiçbir şey silinmedi.',
   };
 }

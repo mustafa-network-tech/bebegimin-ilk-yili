@@ -10,6 +10,7 @@ import '../features/family/application/family_providers.dart';
 import '../features/family/domain/permission.dart';
 import '../features/media/presentation/upload_status_bar.dart';
 import '../features/notifications/data/push_service.dart';
+import '../features/subscription/presentation/read_only_banner.dart';
 
 /// Bottom navigation: Ana Sayfa · Anılar · (+) · Takvim · Aile
 class AppShell extends ConsumerStatefulWidget {
@@ -119,6 +120,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
       body: Column(
         children: [
           const OfflineBanner(),
+          const SubscriptionReadOnlyBanner(),
           Expanded(child: widget.shell),
           const UploadStatusBar(),
         ],

@@ -36,6 +36,7 @@ Ebeveyn yetkileri (kararlar P-3, P-5, P-8, P-9, P-10; `20261002000200_parent_aut
 | `subscription_plan_catalog()`, `subscription_store_products(provider)` | Plan kataloğu ve mağaza ürün kimlikleri | — |
 | `request_subscription_checkout(account, plan, period, provider)` | Satın alma niyeti (ebeveyn) | `not_parent` |
 | `family_account_overview(account)` | Hesap, abonelik, kapasite | — |
+| `baby_access_state(baby_id)` | `allowed` = aile yazabilir; `false` ise arşiv salt okunurdur (karar P-2): okuma açık, yazma / premium kapalı. `reason`: `ok`, `enforcement_off`, `no_subscription`, `payment_issue`, `subscription_ended`, `account_unmapped`; `is_parent` | — |
 | `premium_storefront(baby_id)` | Ürünler + fiyat (sunucu kataloğu) + satın alma engeli | `not_parent`, `premium_requires_locked` |
 | `request_premium_purchase(baby_id, product, provider)` | Sipariş açar; fiyat sabitlenir | `already_owned`, `subscription_required`, `storefront_closed` |
 | `baby_entitlements(baby_id)` | Sahip olunan ürünler | — |
