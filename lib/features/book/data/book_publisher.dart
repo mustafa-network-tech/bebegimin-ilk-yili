@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 import 'package:uuid/uuid.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -61,7 +62,7 @@ class BookPublisher {
       // From here on the server owns the outcome (verify, quarantine, retry).
       failureCode = '';
       onProgress?.call(const BookProgress('Sunucu doğruluyor', 0, 0));
-      final version = await repo.finalize(slot.artifactId, pages);
+      final version = await retryTransient(() => repo.finalize(slot.artifactId, pages));
       final file = await generator.saveLocally('ilk-yil-kitabi-v$version.pdf', bytes);
       return BookPublishResult(file: file, version: version, pageCount: pages);
     } catch (e) {
@@ -71,6 +72,27 @@ class BookPublisher {
       heartbeat.cancel();
     }
   }
+
+  /// Finalize is idempotent on the server, so a lost reply or a transient
+  /// server error is retried with the same artifact. Giving up would throw
+  /// away a rendered book while the job's lease blocks a new attempt.
+  static Future<T> retryTransient<T>(
+    Future<T> Function() op, {
+    int attempts = 3,
+    Duration delay = const Duration(seconds: 2),
+  }) async {
+    for (var attempt = 1; ; attempt++) {
+      try {
+        return await op();
+      } catch (e) {
+        if (attempt >= attempts || !isTransient(e)) rethrow;
+        await Future<void>.delayed(delay * attempt);
+      }
+    }
+  }
+
+  /// Network trouble or a 5xx from the function; refusals (4xx) are final.
+  static bool isTransient(Object e) => AppException.isNetworkError(e) || (e is FunctionException && e.status >= 500);
 
   static Object _friendly(Object e) => switch (e) {
     BookIntegrityException() => const AppException(

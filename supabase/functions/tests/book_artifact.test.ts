@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   bookClientWorker,
+  finalizeAction,
   looksLikePdf,
   parseFinalizeRequest,
   sha256Hex,
@@ -89,4 +90,14 @@ test("lease owner matches book_client_worker()", () => {
     bookClientWorker("9e000000-0000-4000-8000-000000000001"),
     "book-client:9e000000-0000-4000-8000-000000000001",
   );
+});
+
+test("finalize is safe to repeat: every artifact state has one action", () => {
+  assert.equal(finalizeAction("staging"), "verify");
+  // Verified earlier, but the move or the publish did not finish.
+  assert.equal(finalizeAction("verified"), "resume");
+  // Published earlier; the reply to the app was lost.
+  assert.equal(finalizeAction("ready"), "already_ready");
+  assert.equal(finalizeAction("quarantined"), "refuse");
+  assert.equal(finalizeAction("revoked"), "refuse");
 });

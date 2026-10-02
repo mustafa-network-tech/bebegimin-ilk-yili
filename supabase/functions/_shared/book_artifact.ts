@@ -53,3 +53,28 @@ export async function sha256Hex(bytes: Uint8Array): Promise<string> {
 export function bookClientWorker(userId: string): string {
   return `book-client:${userId}`;
 }
+
+export type FinalizeAction = "verify" | "resume" | "already_ready" | "refuse";
+
+/**
+ * What a finalize call does for the artifact's current state. Finalize is
+ * retried by the app, so every step must be safe to repeat:
+ *   staging  -> hash the upload, verify, move, publish (first call);
+ *   verified -> an earlier call verified it but the move or the publish
+ *               did not finish: re-hash the object and continue;
+ *   ready    -> an earlier call published it (the reply was lost): answer
+ *               with the published version again;
+ *   anything else (quarantined, revoked) is refused.
+ */
+export function finalizeAction(status: string): FinalizeAction {
+  switch (status) {
+    case "staging":
+      return "verify";
+    case "verified":
+      return "resume";
+    case "ready":
+      return "already_ready";
+    default:
+      return "refuse";
+  }
+}

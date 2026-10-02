@@ -26,7 +26,7 @@ PDF motoru (`BookComposer` → `BookRenderResolver` → `BookPdfBuilder`) uygula
 | `book_render_heartbeat(job)` | Lease sahibi | Lease'i 15 dakika uzatır (uygulama 4 dakikada bir çağırır). |
 | `book_artifact_begin(job, sha256, size)` | Lease sahibi | Artifact satırı yüklemeden **önce** oluşur; dönen `staging_path` tek yazılabilir yoldur. |
 | Storage upload | Lease sahibi | `output-artifacts` bucket'ına yalnız INSERT ve yalnız o `staging_path`. Okuma, üzerine yazma ve başka yol yoktur. |
-| `book-artifact-finalize` Edge Function | Ebeveyn (JWT) → service role | Kullanıcının lease ve kitap kapısı JWT ile yeniden denetlenir. Staging nesnesi **sunucuda** indirilir, `%PDF-` / `%%EOF` kontrolü yapılır, SHA-256 hesaplanır. `output_artifact_verify` → final yola taşıma → `book_artifact_publish`. |
+| `book-artifact-finalize` Edge Function | Ebeveyn (JWT) → service role | Kullanıcının lease ve kitap kapısı JWT ile yeniden denetlenir. Staging nesnesi **sunucuda** indirilir, `%PDF-` / `%%EOF` kontrolü yapılır, SHA-256 hesaplanır. `output_artifact_verify` → final yola taşıma → `book_artifact_publish`. Çağrı tekrar edilebilir (uygulama ağ hatası / 5xx sonrası aynı dosyayla en çok 3 kez dener): `verified` durumundaki kayıt, final ya da staging nesne yeniden hash'lenerek kaldığı yerden sürdürülür; `ready` kayıt için yayınlanmış sürüm tekrar döner. |
 | `book_artifact_publish(artifact, worker, pages)` | Service role | Artifact `ready`, job `succeeded`, kitap sürümü atomik artar ve `book_exports` satırı artifact'a bağlanır. Hepsi tek transaction'dır. |
 | `book_render_fail(job, code)` | Lease sahibi | Render, fotoğraf veya yükleme hatası. Deneme aynı snapshot + manifest ile backoff sonrası tekrar edilebilir. |
 
