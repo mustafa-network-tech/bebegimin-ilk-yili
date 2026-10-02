@@ -86,6 +86,8 @@ abstract final class BookSnapshotDecoder {
     if (version != 1) throw const BookIntegrityException('schema_version');
     final baby = Baby.fromJson((content['baby'] as Map).cast<String, dynamic>());
     final babyId = baby.id;
+    // The close date the server cut the snapshot at (decision P-1).
+    final closeDate = DateTime.tryParse(((content['lifecycle'] as Map?)?['effective_close_date'] as String?) ?? '');
 
     final people = <String, FamilyMember>{};
     void person(Object? raw, {bool member = false}) {
@@ -183,6 +185,7 @@ abstract final class BookSnapshotDecoder {
         milestones: milestones,
         milestoneTypes: types,
         letters: letters,
+        closeDate: closeDate,
       ),
       members: people.values.toList(),
     );

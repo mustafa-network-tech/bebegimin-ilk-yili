@@ -45,7 +45,11 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
     var cover = p.coverMediaId;
     final fy = source.baby.firstYear;
     final photos =
-        source.media.where((m) => m.status == 'ready' && !m.isVideo && fy.isBookCandidate(m.takenOn)).toList()
+        source.media
+            .where(
+              (m) => m.status == 'ready' && !m.isVideo && fy.isBookCandidate(m.takenOn, closeDate: source.closeDate),
+            )
+            .toList()
           ..sort((a, b) => b.takenOn.compareTo(a.takenOn));
 
     final saved = await showModalBottomSheet<bool>(

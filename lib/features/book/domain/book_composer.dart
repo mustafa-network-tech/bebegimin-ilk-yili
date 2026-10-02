@@ -19,6 +19,7 @@ class BookSource {
     required this.milestoneTypes,
     required this.letters,
     this.favoriteIds = const {},
+    this.closeDate,
   });
 
   final Baby baby;
@@ -28,6 +29,10 @@ class BookSource {
   final Map<String, MilestoneType> milestoneTypes;
   final List<Letter> letters;
   final Set<String> favoriteIds;
+
+  /// Exclusive close date of the archive (decision P-1): the effective close
+  /// date incl. an approved extension. `null` = the standard 375 days.
+  final DateTime? closeDate;
 }
 
 /// A page slot of the default structure plus the items that belong to it.
@@ -100,17 +105,20 @@ class BookComposer {
   ];
 
   /// Which page slot a dated piece of content belongs to (null = not in book).
-  String? slotForDate(FirstYearPeriod fy, DateTime date) {
+  /// After the 365 days and before the archive closed ([closeDate], see
+  /// [BookSource.closeDate]) content belongs to "Bir Yaşındayım".
+  String? slotForDate(FirstYearPeriod fy, DateTime date, {DateTime? closeDate}) {
     if (fy.isPregnancy(date)) return BookPageType.welcome.key;
     if (Dates.isSameDay(date, fy.start)) return BookPageType.birth.key;
     if (fy.contains(date)) return 'month:${fy.monthIndex(date)}';
-    if (fy.isBirthdayWindow(date)) return BookPageType.oneYear.key;
+    if (fy.isClosingWindow(date, closeDate: closeDate)) return BookPageType.oneYear.key;
     return null;
   }
 
-  /// Letters are family messages: written any time up to the first
-  /// birthday (pregnancy included). Later letters can be added manually.
-  bool letterIsCandidate(FirstYearPeriod fy, Letter l) => !l.writtenOn.isAfter(fy.firstBirthday);
+  /// Letters are family messages: written any time before the archive
+  /// closed (pregnancy included).
+  bool letterIsCandidate(FirstYearPeriod fy, Letter l, {DateTime? closeDate}) =>
+      Dates.dateOnly(l.writtenOn).isBefore(Dates.dateOnly(closeDate ?? fy.standardClose));
 
   BookPlan plan(BookSource src) {
     final fy = src.baby.firstYear;
@@ -119,7 +127,7 @@ class BookComposer {
 
     final includedMemoryIds = <String>{};
     for (final m in src.memories.where((m) => m.includeInBook)) {
-      final slot = slotForDate(fy, m.date);
+      final slot = slotForDate(fy, m.date, closeDate: src.closeDate);
       if (slot == null) continue;
       bySlot[slot]!.items.add(PlannedItem(type: BookItemType.memory, refId: m.id, date: m.date));
       includedMemoryIds.add(m.id);
@@ -127,7 +135,7 @@ class BookComposer {
 
     final includedMilestoneIds = <String>{};
     for (final ms in src.milestones.where((m) => m.includeInBook)) {
-      if (slotForDate(fy, ms.achievedOn) == null) continue;
+      if (slotForDate(fy, ms.achievedOn, closeDate: src.closeDate) == null) continue;
       bySlot[BookPageType.milestones.key]!.items.add(
         PlannedItem(type: BookItemType.milestone, refId: ms.id, date: ms.achievedOn),
       );
@@ -135,7 +143,7 @@ class BookComposer {
     }
 
     final includedLetterIds = <String>{};
-    for (final l in src.letters.where((l) => l.includeInBook && letterIsCandidate(fy, l))) {
+    for (final l in src.letters.where((l) => l.includeInBook && letterIsCandidate(fy, l, closeDate: src.closeDate))) {
       bySlot[BookPageType.letters.key]!.items.add(
         PlannedItem(type: BookItemType.letter, refId: l.id, date: l.writtenOn),
       );
@@ -157,7 +165,7 @@ class BookComposer {
       } else {
         final memory = media.memoryId == null ? null : src.memories.firstWhereOrNull((m) => m.id == media.memoryId);
         if (memory != null && !memory.includeInBook) continue;
-        slot = slotForDate(fy, memory?.date ?? media.takenOn);
+        slot = slotForDate(fy, memory?.date ?? media.takenOn, closeDate: src.closeDate);
       }
       if (slot == null) continue;
       bySlot[slot]!.items.add(PlannedItem(type: BookItemType.media, refId: media.id, date: media.takenOn));
@@ -221,7 +229,13 @@ class BookComposer {
     final fy = src.baby.firstYear;
     final photos =
         src.media
-            .where((m) => m.status == 'ready' && !m.isVideo && m.includeInBook && fy.isBookCandidate(m.takenOn))
+            .where(
+              (m) =>
+                  m.status == 'ready' &&
+                  !m.isVideo &&
+                  m.includeInBook &&
+                  fy.isBookCandidate(m.takenOn, closeDate: src.closeDate),
+            )
             .toList()
           ..sort((a, b) => b.takenOn.compareTo(a.takenOn));
     if (photos.isEmpty) return null;

@@ -41,7 +41,7 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
             format: _format,
             plan: plan,
           );
-    }, message: 'İlk 365 günün içerikleri toplanıyor…');
+    }, message: 'İlk yıl arşivinin içerikleri toplanıyor…');
     if (project != null && mounted) {
       ref.invalidate(bookProjectProvider(baby.id));
       context.push('/book/editor');

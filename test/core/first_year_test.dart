@@ -58,12 +58,25 @@ void main() {
     }
   });
 
-  test('pregnancy and birthday are book candidates, later dates are not', () {
+  test('pregnancy, the first year and the closing window of the archive are book candidates', () {
     expect(fy.isPregnancy(d(2025, 8, 1)), isTrue);
     expect(fy.isBookCandidate(d(2025, 8, 1)), isTrue);
     expect(fy.isBookCandidate(d(2024, 8, 1)), isFalse);
     expect(fy.isBookCandidate(d(2026, 9, 12)), isTrue); // first birthday
-    expect(fy.isBookCandidate(d(2026, 9, 13)), isFalse);
+    // Decision P-1: the standard archive is 375 days (birth + 375 exclusive).
+    expect(fy.standardClose, d(2026, 9, 22));
+    expect(fy.isBookCandidate(d(2026, 9, 13)), isTrue);
+    expect(fy.isBookCandidate(d(2026, 9, 21)), isTrue); // day 375
+    expect(fy.isBookCandidate(d(2026, 9, 22)), isFalse);
+  });
+
+  test('an approved extension moves the closing window (at most 405 days)', () {
+    final close = d(2026, 10, 22); // 30-day extension: birth + 405
+    expect(fy.isClosingWindow(d(2026, 9, 11), closeDate: close), isFalse); // still day 365
+    expect(fy.isClosingWindow(d(2026, 10, 21), closeDate: close), isTrue);
+    expect(fy.isClosingWindow(d(2026, 10, 22), closeDate: close), isFalse);
+    expect(fy.isBookCandidate(d(2026, 10, 21), closeDate: close), isTrue);
+    expect(fy.isBookCandidate(d(2026, 10, 21)), isFalse, reason: 'not without the extension');
   });
 
   test('progress and remaining days', () {

@@ -69,11 +69,11 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
     final fy = src.baby.firstYear;
     const composer = BookComposer();
     bool fits(DateTime d) {
-      final slot = composer.slotForDate(fy, d);
+      final slot = composer.slotForDate(fy, d, closeDate: src.closeDate);
       return switch (page.type) {
         BookPageType.month => slot == 'month:${page.monthIndex}',
         BookPageType.welcome || BookPageType.birth || BookPageType.oneYear => slot == page.type.key,
-        _ => fy.isBookCandidate(d),
+        _ => fy.isBookCandidate(d, closeDate: src.closeDate),
       };
     }
 
@@ -85,7 +85,7 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
           PlannedItem(type: BookItemType.media, refId: m.id, date: m.takenOn),
       if (page.type == BookPageType.milestones || page.type == BookPageType.custom)
         for (final m in src.milestones)
-          if (!onPage.contains(m.id) && fy.isBookCandidate(m.achievedOn))
+          if (!onPage.contains(m.id) && fy.isBookCandidate(m.achievedOn, closeDate: src.closeDate))
             PlannedItem(type: BookItemType.milestone, refId: m.id, date: m.achievedOn),
       // letters may come from any date (family messages)
       if (page.type == BookPageType.letters || page.type == BookPageType.custom)

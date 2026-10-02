@@ -11,8 +11,9 @@ insert into auth.users (id, email) values
   ('a2000000-0000-4000-8000-000000000031', 'rel-admin@example.com');
 insert into public.platform_user_roles (user_id, role) values ('a2000000-0000-4000-8000-000000000031', 'super_admin');
 
--- A legacy baby: 500 days old, with content written before the lifecycle
--- existed, some of it dated after the 405-day ceiling.
+-- A legacy baby: 500 days old, no extension, with content written before the
+-- lifecycle existed, some of it dated on / after its close date (birth + 375;
+-- decision P-1 of 2026-10-02).
 set role authenticated;
 select tests.login('a2000000-0000-4000-8000-000000000001');
 select (public.create_baby('Eski', public.business_date_istanbul() - 500, 'anne')).id as old_baby \gset
@@ -23,6 +24,7 @@ select birth_date::text as birth from public.babies where id = :'old_baby' \gset
 
 insert into public.memories (id, baby_id, author_id, title, memory_date) values
   ('a2100000-0000-4000-8000-000000000001', :'old_baby', 'a2000000-0000-4000-8000-000000000001', 'İlk yıl içinde', :'birth'::date + 100),
+  ('a2100000-0000-4000-8000-000000000004', :'old_baby', 'a2000000-0000-4000-8000-000000000001', 'Son gün', :'birth'::date + 374),
   ('a2100000-0000-4000-8000-000000000002', :'old_baby', 'a2000000-0000-4000-8000-000000000001', 'Tavan günü', :'birth'::date + 405),
   ('a2100000-0000-4000-8000-000000000003', :'old_baby', 'a2000000-0000-4000-8000-000000000001', 'Legacy sonrası', :'birth'::date + 450);
 insert into public.media (id, baby_id, uploader_id, kind, storage_path, mime_type, taken_on, status) values
@@ -44,10 +46,10 @@ values (:'acct', :'old_baby', 'first_year_html', 'a2400000-0000-4000-8000-000000
 select public.output_create_snapshot(:'old_baby', 'first_year_html') as snap1 \gset
 select tests.eq((select string_agg(m ->> 'title', ',' order by m ->> 'memory_date') from public.archive_snapshots s,
                         jsonb_array_elements(s.content -> 'memories') m where s.id = :'snap1'),
-                'İlk yıl içinde,Tavan günü', 'content after birth + 405 is not sealed by default (day 405 is)');
+                'İlk yıl içinde,Son gün', 'only content before the close date (birth + 375 without an extension) is sealed');
 select tests.eq((select jsonb_array_length(content -> 'media') || ':' || jsonb_array_length(content -> 'comments')
                    from public.archive_snapshots where id = :'snap1'), '0:0', 'post-cutoff media and their comments stay out');
-select tests.eq((select count(*) from public.memories where baby_id = :'old_baby'), 3::bigint, 'legacy content is never deleted');
+select tests.eq((select count(*) from public.memories where baby_id = :'old_baby'), 4::bigint, 'legacy content is never deleted');
 
 set role authenticated;
 select tests.login('a2000000-0000-4000-8000-000000000001');
@@ -63,7 +65,7 @@ select public.output_create_snapshot(:'old_baby', 'first_year_html') as snap2 \g
 select tests.eq(:'snap2'::uuid <> :'snap1'::uuid, true, 'the decision produces a new sealed snapshot');
 select tests.eq((select jsonb_array_length(content -> 'memories') || ':' || jsonb_array_length(content -> 'media') || ':'
                         || jsonb_array_length(content -> 'comments') from public.archive_snapshots where id = :'snap2'),
-                '3:1:1', 'grandfathered: legacy content, media and comments are included');
+                '4:1:1', 'grandfathered: legacy content, media and comments are included');
 select tests.eq((select jsonb_array_length(content -> 'memories') from public.archive_snapshots where id = :'snap1'), 2,
                 'the earlier sealed snapshot is unchanged');
 select tests.eq((select count(*) from public.activity_logs where baby_id = :'old_baby' and action = 'legacy_grandfathered'
@@ -90,7 +92,7 @@ select tests.login('a2000000-0000-4000-8000-000000000031');
 select public.admin_legacy_rollout_report() as report \gset
 select tests.eq((:'report'::jsonb -> 'babies_locked_ids') ? :'old_baby', true, 'babies past the lifecycle are reported as LOCKED');
 select tests.eq((select (e ->> 'items')::int from jsonb_array_elements(:'report'::jsonb -> 'post_cutoff_content') e
-                  where e ->> 'baby_id' = :'old_baby'), 2, 'post-cutoff legacy items are counted per baby');
+                  where e ->> 'baby_id' = :'old_baby'), 3, 'items on / after the close date are counted per baby');
 select tests.eq((:'report'::jsonb -> 'unmapped_babies') ? 'a2300000-0000-4000-8000-000000000001', true,
                 'babies without a family account are reported (never merged automatically)');
 select tests.eq((:'report'::jsonb -> 'orphan_media_sample') ? (:'old_baby' || '/a2900000-0000-4000-8000-000000000009/kayip.jpg'), true,

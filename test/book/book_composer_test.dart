@@ -45,6 +45,29 @@ void main() {
     expect(all, isNot(contains('ms-late')));
   });
 
+  test('the final period of the 375 days goes to "Bir Yaşındayım" (decision P-1)', () {
+    final s = demoSource();
+    final source = BookSourceCopy.withMemories(s, [
+      ...s.memories,
+      memory('m-final-period', Dates.addDays(defne.birthDate, 370)),
+      memory('m-after-close', Dates.addDays(defne.birthDate, 375)),
+    ]);
+    final plan = composer.plan(source);
+    expect(refs(plan, 'one_year'), contains('m-final-period'));
+    final all = {for (final p in plan.pages) ...p.items.map((i) => i.refId)};
+    expect(all, isNot(contains('m-after-close')));
+  });
+
+  test('an approved extension brings its content into the book, up to the close date', () {
+    final s = demoSource();
+    final extended = BookSourceCopy.withCloseDate(s, Dates.addDays(defne.birthDate, 405));
+    final plan = composer.plan(extended);
+    expect(refs(plan, 'one_year'), contains('m-after')); // day 400
+    final all = {for (final p in plan.pages) ...p.items.map((i) => i.refId)};
+    expect(all, isNot(contains('p-after'))); // day 420: after the close date
+    expect(all, isNot(contains('ms-late'))); // day 500
+  });
+
   test('a first-year memory added after the first birthday is included', () {
     final plan = composer.plan(demoSource());
     final fy = defne.firstYear;
@@ -178,6 +201,17 @@ extension BookSourceCopy on BookSource {
     milestoneTypes: s.milestoneTypes,
     letters: s.letters,
     favoriteIds: favorites,
+  );
+
+  static BookSource withCloseDate(BookSource s, DateTime closeDate) => BookSource(
+    baby: s.baby,
+    memories: s.memories,
+    media: s.media,
+    milestones: s.milestones,
+    milestoneTypes: s.milestoneTypes,
+    letters: s.letters,
+    favoriteIds: s.favoriteIds,
+    closeDate: closeDate,
   );
 
   static BookSource withMemories(BookSource s, List memories) => BookSource(

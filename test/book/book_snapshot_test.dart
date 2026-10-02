@@ -184,6 +184,12 @@ void main() {
     expect(sealed.pages.last.type, BookPageType.oneYear);
   });
 
+  test('the book uses the close date the server sealed the snapshot at (decision P-1)', () {
+    final content = snapshotFor(source)..['lifecycle'] = {'extension_days': 30, 'effective_close_date': '2026-10-22'};
+    final inputs = BookRenderInputs.fromPayload(payloadFor(content, manifestFor(project)));
+    expect(inputs.source.closeDate, DateTime(2026, 10, 22));
+  });
+
   test('author names and relations come from the snapshot, not live profiles', () {
     final inputs = BookRenderInputs.fromPayload(payloadFor(snapshotFor(source), manifestFor(project)));
     final data = const BookRenderResolver().resolve(

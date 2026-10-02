@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/storage/signed_urls.dart';
+import '../../babies/application/baby_lifecycle_providers.dart';
 import '../../babies/domain/baby.dart';
 import '../../family/data/family_repository.dart';
 import '../../family/domain/family_member.dart';
@@ -43,9 +44,10 @@ class BookGenerator {
   final Ref _ref;
 
   /// Loads ALL content of the baby; the composer decides what belongs to
-  /// the first year.
+  /// the first year, up to the server's effective close date (P-1).
   Future<BookSource> loadSource(Baby baby) async {
     final memoriesRepo = _ref.read(memoryRepositoryProvider);
+    final lifecycle = await _ref.read(babyLifecycleProvider(baby.id).future);
     final results = await Future.wait([
       memoriesRepo.forBaby(baby.id),
       _ref.read(mediaRepositoryProvider).allForBaby(baby.id),
@@ -63,6 +65,7 @@ class BookGenerator {
       milestoneTypes: {for (final t in types) t.id as String: t},
       letters: (results[4] as List).cast(),
       favoriteIds: results[5] as Set<String>,
+      closeDate: lifecycle.effectiveCloseDate,
     );
   }
 
