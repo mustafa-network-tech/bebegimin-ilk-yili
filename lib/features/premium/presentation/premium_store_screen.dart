@@ -17,6 +17,9 @@ import '../../subscription/presentation/family_plan_screen.dart';
 import '../application/premium_providers.dart';
 import '../data/premium_repository.dart';
 import '../domain/premium_models.dart';
+import '../../archive/presentation/archive_screen.dart';
+import '../../book/presentation/book_gate.dart';
+import '../../film/presentation/film_screen.dart';
 import 'download_permissions_screen.dart';
 
 String premiumStoreRoute(String babyId) => '/babies/$babyId/premium';
@@ -139,6 +142,7 @@ class _PremiumStoreScreenState extends ConsumerState<PremiumStoreScreen> {
       ),
       for (final offer in view.offers)
         _ProductCard(
+          babyId: widget.babyId,
           product: offer.product,
           priceMinor: offer.priceMinor,
           storePrice: storePrices[offer.product.code],
@@ -167,12 +171,13 @@ class _PremiumStoreScreenState extends ConsumerState<PremiumStoreScreen> {
       child: Text('Dijital ürünleri Anne veya Baba satın alabilir.', style: Theme.of(context).textTheme.bodyMedium),
     ),
     for (final product in PremiumProduct.values)
-      _ProductCard(product: product, owned: view.owned.contains(product), busy: false),
+      _ProductCard(babyId: widget.babyId, product: product, owned: view.owned.contains(product), busy: false),
   ];
 }
 
 class _ProductCard extends StatelessWidget {
   const _ProductCard({
+    required this.babyId,
     required this.product,
     required this.owned,
     required this.busy,
@@ -183,6 +188,7 @@ class _ProductCard extends StatelessWidget {
     this.onOpenPlan,
   });
 
+  final String babyId;
   final PremiumProduct product;
   final int? priceMinor;
   final String? storePrice;
@@ -223,7 +229,7 @@ class _ProductCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   const Expanded(child: Text('Satın alındı')),
                   FilledButton.tonal(
-                    onPressed: () => context.push(_openRoute(product)),
+                    onPressed: () => context.push(_openRoute(product, babyId)),
                     child: Text(switch (product) {
                       PremiumProduct.book => 'Kitabı aç',
                       PremiumProduct.film => 'Filmi aç',
@@ -247,10 +253,10 @@ class _ProductCard extends StatelessWidget {
 }
 
 /// Where an owned product is prepared and downloaded.
-String _openRoute(PremiumProduct product) => switch (product) {
-  PremiumProduct.book => '/book',
-  PremiumProduct.film => '/film',
-  PremiumProduct.html => '/archive',
+String _openRoute(PremiumProduct product, String babyId) => switch (product) {
+  PremiumProduct.book => bookRoute(babyId),
+  PremiumProduct.film => filmRoute(babyId),
+  PremiumProduct.html => archiveRoute(babyId),
 };
 
 /// Home entry for a LOCKED archive: opens the premium storefront.

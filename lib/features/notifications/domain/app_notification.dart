@@ -41,7 +41,7 @@ class AppNotification {
     switch (type) {
       case 'book_ready':
       case 'book_generated':
-        return '/book';
+        return babyId == null ? '/home' : '/babies/$babyId/book';
       case 'time_capsule_opened':
         return '/capsules';
       case 'member_joined':

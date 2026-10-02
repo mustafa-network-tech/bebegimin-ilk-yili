@@ -11,12 +11,14 @@ import '../data/book_repository.dart';
 import '../domain/book_composer.dart';
 import '../domain/book_models.dart';
 import 'book_item_tile.dart';
+import '../../babies/presentation/route_baby.dart';
 
 /// Edit one chapter: title, note, item order, hide/show, captions and
 /// adding content from the first-year archive.
 class BookPageEditorScreen extends ConsumerStatefulWidget {
-  const BookPageEditorScreen({super.key, required this.pageId});
+  const BookPageEditorScreen({super.key, required this.babyId, required this.pageId});
 
+  final String babyId;
   final String pageId;
 
   @override
@@ -176,8 +178,8 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(widget.babyId));
+    if (baby == null) return const RouteBabyMissing();
     final project = ref.watch(bookProjectProvider(baby.id)).value;
     final source = ref.watch(bookSourceProvider(baby.id));
     final page = project?.pages.firstWhereOrNull((p) => p.id == widget.pageId);
@@ -321,7 +323,7 @@ class _BookPageEditorScreenState extends ConsumerState<BookPageEditorScreen> {
                     destructive: true,
                   );
                   if (!ok || !context.mounted) return;
-                  await runWithProgress(context, () => ref.read(bookRepositoryProvider).deletePage(page.id));
+                  await runWithProgress(context, () => ref.read(bookRepositoryProvider).deletePage(baby.id, page.id));
                   ref.invalidate(bookProjectProvider(baby.id));
                   if (context.mounted) Navigator.pop(context);
                 },

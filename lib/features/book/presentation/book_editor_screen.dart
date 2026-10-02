@@ -11,6 +11,8 @@ import '../application/book_providers.dart';
 import '../data/book_repository.dart';
 import '../domain/book_composer.dart';
 import '../domain/book_models.dart';
+import 'book_gate.dart';
+import '../../babies/presentation/route_baby.dart';
 
 IconData pageIcon(BookPageType t) => switch (t) {
   BookPageType.cover => Icons.photo_album_rounded,
@@ -27,7 +29,9 @@ IconData pageIcon(BookPageType t) => switch (t) {
 /// Book editor: title, format, cover, back cover text, chapter order and
 /// visibility. Chapter content is edited in [BookPageEditorScreen].
 class BookEditorScreen extends ConsumerStatefulWidget {
-  const BookEditorScreen({super.key});
+  const BookEditorScreen({super.key, required this.babyId});
+
+  final String babyId;
 
   @override
   ConsumerState<BookEditorScreen> createState() => _BookEditorScreenState();
@@ -142,6 +146,7 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
       () => ref
           .read(bookRepositoryProvider)
           .updateProject(
+            p.babyId,
             p.id,
             title: title.text.trim().isEmpty ? p.title : title.text.trim(),
             subtitle: subtitle.text.trim().isEmpty ? null : subtitle.text.trim(),
@@ -168,8 +173,8 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(widget.babyId));
+    if (baby == null) return const RouteBabyMissing();
     final project = ref.watch(bookProjectProvider(baby.id));
     final source = ref.watch(bookSourceProvider(baby.id));
     final theme = Theme.of(context);
@@ -275,7 +280,7 @@ class _BookEditorScreenState extends ConsumerState<BookEditorScreen> {
                 subtitle: Text(page.isHidden ? 'Kitapta gizli' : subtitle),
                 onTap: page.type == BookPageType.cover || page.type == BookPageType.backCover
                     ? (source.hasValue ? () => _editSettings(p, source.requireValue) : null)
-                    : () => context.push('/book/page/${page.id}'),
+                    : () => context.push(bookPageRoute(p.babyId, page.id)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

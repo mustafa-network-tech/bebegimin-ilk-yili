@@ -20,21 +20,25 @@ import '../../subscription/presentation/family_plan_screen.dart';
 import '../application/film_providers.dart';
 import '../data/film_repository.dart';
 import '../domain/film_models.dart';
+import '../../babies/presentation/route_baby.dart';
 
-const filmRoute = '/film';
-const filmViewRoute = '/film/view';
+/// Film routes carry the baby explicitly (plan 2.4 / 3.3).
+String filmRoute(String babyId) => '/babies/$babyId/film';
+String filmViewRoute(String babyId) => '${filmRoute(babyId)}/view';
 
 /// Server-backed gate of the film routes: LOCKED + family subscription +
 /// purchased film. Family Members see the ready film only.
 class FilmRouteGate extends ConsumerWidget {
-  const FilmRouteGate({super.key, required this.child});
+  const FilmRouteGate({super.key, required this.babyId, required this.child});
 
+  /// Route baby (`/babies/:babyId/film...`), never the active selection.
+  final String babyId;
   final Widget child;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(babyId));
+    if (baby == null) return const RouteBabyMissing();
     final access = ref.watch(filmAccessProvider(baby.id));
     final a = access.value;
     if (a == null) {
@@ -86,12 +90,14 @@ class FilmRouteGate extends ConsumerWidget {
 }
 
 class FilmScreen extends ConsumerWidget {
-  const FilmScreen({super.key});
+  const FilmScreen({super.key, required this.babyId});
+
+  final String babyId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(babyId));
+    if (baby == null) return const RouteBabyMissing();
     final access = ref.watch(filmAccessProvider(baby.id)).value;
     final canEdit = access?.canEdit ?? false;
     final state = ref.watch(filmStateProvider(baby.id));
@@ -105,7 +111,7 @@ class FilmScreen extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
             children: [
-              if (s.hasFilm) _ReadyFilm(state: s),
+              if (s.hasFilm) _ReadyFilm(babyId: baby.id, state: s),
               if (canEdit) ...[
                 if (s.isWorking) _Progress(state: s),
                 if (s.hasFailed) _Failure(babyId: baby.id, state: s),
@@ -125,8 +131,9 @@ class FilmScreen extends ConsumerWidget {
 }
 
 class _ReadyFilm extends ConsumerWidget {
-  const _ReadyFilm({required this.state});
+  const _ReadyFilm({required this.babyId, required this.state});
 
+  final String babyId;
   final FilmState state;
 
   @override
@@ -167,7 +174,7 @@ class _ReadyFilm extends ConsumerWidget {
                     await f.writeAsBytes(bytes, flush: true);
                     return f;
                   }, message: 'Film indiriliyor…');
-                  if (file != null && context.mounted) context.push(filmViewRoute, extra: file);
+                  if (file != null && context.mounted) context.push(filmViewRoute(babyId), extra: file);
                 },
                 icon: const Icon(Icons.download_rounded),
                 label: const Text('İndir ve izle'),

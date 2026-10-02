@@ -36,6 +36,7 @@ class FamilyRepository {
   );
 
   Future<void> updateMember(
+    String babyId,
     String memberId, {
     required Relation relation,
     String? relationLabel,
@@ -50,10 +51,12 @@ class FamilyRepository {
           'is_admin': isAdmin,
           'permissions': permissions.map((p) => p.key).toList(),
         })
+        .eq('baby_id', babyId)
         .eq('id', memberId);
   }
 
-  Future<void> removeMember(String memberId) => _client.from('family_members').delete().eq('id', memberId);
+  Future<void> removeMember(String babyId, String memberId) =>
+      _client.from('family_members').delete().eq('baby_id', babyId).eq('id', memberId);
 
   Future<void> leave(String babyId, String uid) =>
       _client.from('family_members').delete().eq('baby_id', babyId).eq('user_id', uid);

@@ -31,8 +31,10 @@ class BookRepository {
     return row == null ? null : BookProject.fromJson(row);
   }
 
-  Future<BookProject> _reload(String projectId) async =>
-      BookProject.fromJson(await _client.from('book_projects').select(_projectSelect).eq('id', projectId).single());
+  // Every query and mutation is scoped by baby as well as by id (plan 3.3).
+  Future<BookProject> _reload(String babyId, String projectId) async => BookProject.fromJson(
+    await _client.from('book_projects').select(_projectSelect).eq('baby_id', babyId).eq('id', projectId).single(),
+  );
 
   /// Creates the project with the default chapters and all planned items.
   Future<BookProject> create({
@@ -56,7 +58,7 @@ class BookRepository {
         .single();
     final projectId = project['id'] as String;
     await _insertPlanned(babyId, projectId, plan.pages, startOrder: 0);
-    return _reload(projectId);
+    return _reload(babyId, projectId);
   }
 
   Future<void> _insertPlanned(
@@ -123,11 +125,13 @@ class BookRepository {
     await _client
         .from('book_projects')
         .update({'last_synced_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('baby_id', project.babyId)
         .eq('id', project.id);
-    return _reload(project.id);
+    return _reload(project.babyId, project.id);
   }
 
   Future<void> updateProject(
+    String babyId,
     String id, {
     String? title,
     String? subtitle,
@@ -145,6 +149,7 @@ class BookRepository {
           'cover_media_id': ?coverMediaId,
           'back_cover_text': ?backCoverText,
         })
+        .eq('baby_id', babyId)
         .eq('id', id);
   }
 
@@ -177,7 +182,8 @@ class BookRepository {
     return page;
   }
 
-  Future<void> deletePage(String pageId) => _client.from('book_pages').delete().eq('id', pageId);
+  Future<void> deletePage(String babyId, String pageId) =>
+      _client.from('book_pages').delete().eq('baby_id', babyId).eq('id', pageId);
 
   Future<void> addItems(String babyId, String pageId, List<PlannedItem> items, int startOrder) async {
     if (items.isEmpty) return;
@@ -186,7 +192,8 @@ class BookRepository {
     ]);
   }
 
-  Future<void> deleteItem(String itemId) => _client.from('book_items').delete().eq('id', itemId);
+  Future<void> deleteItem(String babyId, String itemId) =>
+      _client.from('book_items').delete().eq('baby_id', babyId).eq('id', itemId);
 
   // Official book (Phase 9) ------------------------------------------------------
   /// Server-side gate: lifecycle, family subscription, entitlement and role.

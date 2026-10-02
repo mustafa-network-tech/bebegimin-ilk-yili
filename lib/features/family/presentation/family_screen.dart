@@ -18,6 +18,7 @@ import '../data/family_repository.dart';
 import '../domain/family_member.dart';
 import '../domain/invitation.dart';
 import '../domain/permission.dart';
+import 'member_screens.dart';
 
 class FamilyScreen extends ConsumerWidget {
   const FamilyScreen({super.key});
@@ -100,7 +101,7 @@ class FamilyScreen extends ConsumerWidget {
                           trailing: m.isAdmin
                               ? const Icon(Icons.verified_user_rounded, size: 20)
                               : const Icon(Icons.chevron_right_rounded),
-                          onTap: () => context.push('/family/member/${m.id}'),
+                          onTap: () => context.push(memberRoute(m.babyId, m.id)),
                         ),
                     ],
                   ),

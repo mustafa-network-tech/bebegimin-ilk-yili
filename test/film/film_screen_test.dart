@@ -98,7 +98,16 @@ Widget _app(Widget child, _FakeFilmRepo repo, {bool active = false}) => Provider
 );
 
 Future<void> _pump(WidgetTester tester, _FakeFilmRepo repo, {bool active = false}) async {
-  await tester.pumpWidget(_app(const FilmRouteGate(child: FilmScreen()), repo, active: active));
+  await tester.pumpWidget(
+    _app(
+      FilmRouteGate(
+        babyId: defne.id,
+        child: FilmScreen(babyId: defne.id),
+      ),
+      repo,
+      active: active,
+    ),
+  );
   await tester.pumpAndSettle();
 }
 

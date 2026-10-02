@@ -42,34 +42,46 @@ Widget _app(Widget child, String? block, {bool renderer = true}) => ProviderScop
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
 
+  testWidgets('a book route of a baby the user cannot reach shows nothing about it (plan 2.4)', (tester) async {
+    await tester.pumpWidget(_app(const BookRouteGate(babyId: 'baby-unknown', child: Text('BOOK')), null));
+    expect(find.text('BOOK'), findsNothing);
+    expect(find.text('Sayfa bulunamadı'), findsOneWidget);
+  });
+
   testWidgets('ACTIVE archive: every book route is closed', (tester) async {
-    await tester.pumpWidget(_app(const BookRouteGate(child: Text('BOOK')), 'premium_requires_locked'));
+    await tester.pumpWidget(
+      _app(BookRouteGate(babyId: defne.id, child: const Text('BOOK')), 'premium_requires_locked'),
+    );
     expect(find.text('BOOK'), findsNothing);
     expect(find.text('İlk yıl devam ediyor'), findsOneWidget);
     expect(find.textContaining('22 Eylül 2026'), findsOneWidget);
   });
 
   testWidgets('LOCKED without the purchase: offer the store, never the editor', (tester) async {
-    await tester.pumpWidget(_app(const BookRouteGate(child: Text('BOOK')), 'entitlement_required'));
+    await tester.pumpWidget(_app(BookRouteGate(babyId: defne.id, child: const Text('BOOK')), 'entitlement_required'));
     expect(find.text('BOOK'), findsNothing);
     expect(find.text('Dijital ürünleri gör'), findsOneWidget);
   });
 
   testWidgets('inactive family subscription closes the book but keeps it', (tester) async {
-    await tester.pumpWidget(_app(const BookRouteGate(child: Text('BOOK')), 'subscription_required'));
+    await tester.pumpWidget(_app(BookRouteGate(babyId: defne.id, child: const Text('BOOK')), 'subscription_required'));
     expect(find.text('BOOK'), findsNothing);
     expect(find.text('Aile paketi gerekiyor'), findsOneWidget);
   });
 
   testWidgets('entitled parent opens the book and its editor', (tester) async {
-    await tester.pumpWidget(_app(const BookRouteGate(requireEdit: true, child: Text('EDITOR')), null));
+    await tester.pumpWidget(
+      _app(BookRouteGate(babyId: defne.id, requireEdit: true, child: const Text('EDITOR')), null),
+    );
     expect(find.text('EDITOR'), findsOneWidget);
   });
 
   testWidgets('family member sees the book home but not the editor', (tester) async {
-    await tester.pumpWidget(_app(const BookRouteGate(child: Text('BOOK')), 'not_parent'));
+    await tester.pumpWidget(_app(BookRouteGate(babyId: defne.id, child: const Text('BOOK')), 'not_parent'));
     expect(find.text('BOOK'), findsOneWidget);
-    await tester.pumpWidget(_app(const BookRouteGate(requireEdit: true, child: Text('EDITOR')), 'not_parent'));
+    await tester.pumpWidget(
+      _app(BookRouteGate(babyId: defne.id, requireEdit: true, child: const Text('EDITOR')), 'not_parent'),
+    );
     expect(find.text('EDITOR'), findsNothing);
     expect(find.text('Yalnızca Anne ve Baba'), findsOneWidget);
   });

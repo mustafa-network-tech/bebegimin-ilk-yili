@@ -67,7 +67,10 @@ Future<void> _pump(WidgetTester tester, _FakeArchiveRepo repo, {bool active = fa
       ],
       child: MaterialApp(
         theme: AppTheme.light(),
-        home: const ArchiveRouteGate(child: ArchiveScreen()),
+        home: ArchiveRouteGate(
+          babyId: defne.id,
+          child: ArchiveScreen(babyId: defne.id),
+        ),
       ),
     ),
   );

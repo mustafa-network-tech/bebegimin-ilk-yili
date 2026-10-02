@@ -11,6 +11,7 @@ import '../../babies/domain/baby.dart';
 import '../data/book_generator.dart';
 import '../data/book_publisher.dart';
 import '../domain/book_models.dart';
+import 'book_gate.dart';
 
 /// Runs [task] behind a non-dismissible progress dialog. Heavy work (image
 /// downscaling on native threads, PDF layout on a background isolate) keeps
@@ -88,7 +89,7 @@ Future<void> publishBook(BuildContext context, WidgetRef ref, Baby baby) async {
   if (result == null || !context.mounted) return;
   ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text('Kitap hazır: sürüm ${result.version}, ${result.pageCount} sayfa 📖')));
-  context.push('/book/view', extra: result.file);
+  context.push(bookViewRoute(baby.id), extra: result.file);
 }
 
 /// In-app PDF viewer with print / share / save actions.

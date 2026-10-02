@@ -15,12 +15,17 @@ import '../domain/activity_entry.dart';
 import '../domain/family_member.dart';
 import '../domain/permission.dart';
 import '../domain/relation.dart';
+import '../../babies/presentation/route_baby.dart';
 import 'permission_editor.dart';
+
+String memberRoute(String babyId, String memberId) => '/babies/$babyId/members/$memberId';
 
 /// Role / permission management for one member (manage_members).
 class MemberEditScreen extends ConsumerStatefulWidget {
-  const MemberEditScreen({super.key, required this.memberId});
+  const MemberEditScreen({super.key, required this.babyId, required this.memberId});
 
+  /// Route baby (`/babies/:babyId/members/:memberId`).
+  final String babyId;
   final String memberId;
 
   @override
@@ -57,6 +62,7 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
       await ref
           .read(familyRepositoryProvider)
           .updateMember(
+            m.babyId,
             m.id,
             relation: _relation,
             relationLabel: _relation == Relation.diger ? _label.text : null,
@@ -86,7 +92,7 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
     );
     if (!ok || !mounted) return;
     final done = await runWithProgress(context, () async {
-      await ref.read(familyRepositoryProvider).removeMember(m.id);
+      await ref.read(familyRepositoryProvider).removeMember(m.babyId, m.id);
       return true;
     });
     if (done == true && mounted) {
@@ -97,8 +103,8 @@ class _MemberEditScreenState extends ConsumerState<MemberEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(widget.babyId));
+    if (baby == null) return const RouteBabyMissing();
     final members = ref.watch(membersProvider(baby.id)).value;
     final m = members?.firstWhereOrNull((x) => x.id == widget.memberId);
     if (m == null) return Scaffold(appBar: AppBar(), body: const LoadingView());

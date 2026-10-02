@@ -15,6 +15,7 @@ import '../features/babies/presentation/baby_form_screen.dart';
 import '../features/babies/presentation/lifecycle_screen.dart';
 import '../features/babies/presentation/lifecycle_widgets.dart';
 import '../features/babies/presentation/onboarding_screens.dart';
+import '../features/babies/presentation/route_baby.dart';
 import '../features/archive/presentation/archive_screen.dart';
 import '../features/book/presentation/book_editor_screen.dart';
 import '../features/book/presentation/book_gate.dart';
@@ -106,13 +107,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Create routes pin the baby selected when they open (plan 2.4).
       GoRoute(
         path: '/memory/new',
-        builder: (_, s) => LifecycleWriteGuard(
-          child: MemoryFormScreen(
-            initialCategory: MemoryCategory.fromKey(s.uri.queryParameters['category']),
-            initialDate: Dates.tryFromSql(s.uri.queryParameters['date']),
-            autoPick: s.uri.queryParameters['pick'],
+        builder: (_, s) => PinnedActiveBaby(
+          builder: (babyId) => LifecycleWriteGuard(
+            babyId: babyId,
+            child: MemoryFormScreen(
+              babyId: babyId,
+              initialCategory: MemoryCategory.fromKey(s.uri.queryParameters['category']),
+              initialDate: Dates.tryFromSql(s.uri.queryParameters['date']),
+              autoPick: s.uri.queryParameters['pick'],
+            ),
           ),
         ),
       ),
@@ -140,12 +146,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/album', builder: (_, _) => const AlbumScreen()),
       GoRoute(
         path: '/babies/:babyId/media',
+        // Opened from a list with its items; a restored / external link has none.
+        redirect: (_, s) => s.extra is MediaViewerArgs ? null : '/album',
         builder: (_, s) => MediaViewerScreen(babyId: s.pathParameters['babyId']!, args: s.extra! as MediaViewerArgs),
       ),
       GoRoute(path: '/milestones', builder: (_, _) => const MilestonesScreen()),
       GoRoute(
         path: '/milestone/new',
-        builder: (_, s) => LifecycleWriteGuard(child: MilestoneFormScreen(typeId: s.uri.queryParameters['typeId'])),
+        builder: (_, s) => PinnedActiveBaby(
+          builder: (babyId) => LifecycleWriteGuard(
+            babyId: babyId,
+            child: MilestoneFormScreen(babyId: babyId, typeId: s.uri.queryParameters['typeId']),
+          ),
+        ),
       ),
       GoRoute(
         path: '/milestone/:id',
@@ -175,7 +188,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/letters', builder: (_, _) => const LettersScreen()),
       GoRoute(
         path: '/letter/new',
-        builder: (_, _) => const LifecycleWriteGuard(child: LetterFormScreen()),
+        builder: (_, _) => PinnedActiveBaby(
+          builder: (babyId) => LifecycleWriteGuard(
+            babyId: babyId,
+            child: LetterFormScreen(babyId: babyId),
+          ),
+        ),
       ),
       GoRoute(
         path: '/letter/:id',
@@ -201,42 +219,79 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/capsules', builder: (_, _) => const CapsulesScreen()),
       GoRoute(
         path: '/capsule/new',
-        builder: (_, _) => const LifecycleWriteGuard(child: CapsuleFormScreen()),
+        builder: (_, _) => PinnedActiveBaby(
+          builder: (babyId) => LifecycleWriteGuard(
+            babyId: babyId,
+            child: CapsuleFormScreen(babyId: babyId),
+          ),
+        ),
       ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
       // Book: LOCKED + family subscription + purchased book (plan 2.9 /
-      // phase 9); editor routes are for parents only.
+      // phase 9); editor routes are for parents only. Every premium route
+      // carries its baby (plan 2.4 / 3.3).
       GoRoute(
-        path: '/book',
-        builder: (_, _) => const BookRouteGate(child: BookHomeScreen()),
+        path: '/babies/:babyId/book',
+        builder: (_, s) => BookRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          child: BookHomeScreen(babyId: s.pathParameters['babyId']!),
+        ),
       ),
       GoRoute(
-        path: '/book/editor',
-        builder: (_, _) => const BookRouteGate(requireEdit: true, child: BookEditorScreen()),
+        path: '/babies/:babyId/book/editor',
+        builder: (_, s) => BookRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          requireEdit: true,
+          child: BookEditorScreen(babyId: s.pathParameters['babyId']!),
+        ),
       ),
       GoRoute(
-        path: '/book/view',
-        builder: (_, s) => BookRouteGate(child: BookPdfViewScreen(file: s.extra! as File)),
+        path: '/babies/:babyId/book/view',
+        redirect: (_, s) => s.extra is File ? null : bookRoute(s.pathParameters['babyId']!),
+        builder: (_, s) => BookRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          child: BookPdfViewScreen(file: s.extra! as File),
+        ),
       ),
       GoRoute(
-        path: '/book/page/:pageId',
-        builder: (_, s) =>
-            BookRouteGate(requireEdit: true, child: BookPageEditorScreen(pageId: s.pathParameters['pageId']!)),
+        path: '/babies/:babyId/book/pages/:pageId',
+        builder: (_, s) => BookRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          requireEdit: true,
+          child: BookPageEditorScreen(babyId: s.pathParameters['babyId']!, pageId: s.pathParameters['pageId']!),
+        ),
       ),
       // Offline HTML archive: same premium gate; built on the server (phase 11).
       GoRoute(
-        path: archiveRoute,
-        builder: (_, _) => const ArchiveRouteGate(child: ArchiveScreen()),
+        path: '/babies/:babyId/archive',
+        builder: (_, s) => ArchiveRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          child: ArchiveScreen(babyId: s.pathParameters['babyId']!),
+        ),
       ),
       // Film: same premium gate; produced on the server (phase 10).
       GoRoute(
-        path: filmRoute,
-        builder: (_, _) => const FilmRouteGate(child: FilmScreen()),
+        path: '/babies/:babyId/film',
+        builder: (_, s) => FilmRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          child: FilmScreen(babyId: s.pathParameters['babyId']!),
+        ),
       ),
       GoRoute(
-        path: filmViewRoute,
-        builder: (_, s) => FilmRouteGate(child: FilmPlayerScreen(file: s.extra! as File)),
+        path: '/babies/:babyId/film/view',
+        redirect: (_, s) => s.extra is File ? null : filmRoute(s.pathParameters['babyId']!),
+        builder: (_, s) => FilmRouteGate(
+          babyId: s.pathParameters['babyId']!,
+          child: FilmPlayerScreen(file: s.extra! as File),
+        ),
       ),
+      // Old links (stored notifications, earlier app versions) open the
+      // selected baby's canonical route.
+      GoRoute(path: '/book', redirect: (_, _) => _forActiveBaby(ref, bookRoute)),
+      GoRoute(path: '/film', redirect: (_, _) => _forActiveBaby(ref, filmRoute)),
+      GoRoute(path: '/archive', redirect: (_, _) => _forActiveBaby(ref, archiveRoute)),
+      // Decision P-12: downloads are not shared with Family Members any more;
+      // old links land on the baby's store page.
       GoRoute(
         path: '/babies/:babyId/download-permissions',
         builder: (_, s) => DownloadPermissionsScreen(babyId: s.pathParameters['babyId']!),
@@ -266,14 +321,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: familyPlanRoute, builder: (_, _) => const FamilyPlanScreen()),
       GoRoute(path: paywallRoute, builder: (_, _) => const PaywallScreen()),
       GoRoute(
+        path: '/babies/:babyId/members/:memberId',
+        builder: (_, s) =>
+            MemberEditScreen(babyId: s.pathParameters['babyId']!, memberId: s.pathParameters['memberId']!),
+      ),
+      GoRoute(
         path: '/family/member/:id',
-        builder: (_, s) => MemberEditScreen(memberId: s.pathParameters['id']!),
+        redirect: (_, s) => _forActiveBaby(ref, (babyId) => memberRoute(babyId, s.pathParameters['id']!)),
       ),
       GoRoute(path: '/family/activity', builder: (_, _) => const ActivityLogScreen()),
       GoRoute(path: '/family/add-from-sibling', builder: (_, _) => const AddFromSiblingScreen()),
     ],
   );
 });
+
+/// Canonical baby-scoped route for the selected baby (legacy links only).
+String _forActiveBaby(Ref ref, String Function(String babyId) route) {
+  final baby = ref.read(activeBabyProvider);
+  return baby == null ? '/home' : route(baby.id);
+}
 
 const _publicRoutes = {'/login', '/register', '/forgot-password', '/verify-email', '/config-error'};
 const _onboardingRoutes = {

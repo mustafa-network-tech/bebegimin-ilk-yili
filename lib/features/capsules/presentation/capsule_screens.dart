@@ -143,7 +143,10 @@ class CapsulesScreen extends ConsumerWidget {
 }
 
 class CapsuleFormScreen extends ConsumerStatefulWidget {
-  const CapsuleFormScreen({super.key});
+  const CapsuleFormScreen({super.key, this.babyId});
+
+  /// Baby pinned by the route; `null` uses the active selection.
+  final String? babyId;
 
   @override
   ConsumerState<CapsuleFormScreen> createState() => _CapsuleFormScreenState();
@@ -207,7 +210,7 @@ class _CapsuleFormScreenState extends ConsumerState<CapsuleFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
+    final baby = widget.babyId == null ? ref.watch(activeBabyProvider) : ref.watch(babyByIdProvider(widget.babyId!));
     if (baby == null) return const Scaffold(body: LoadingView());
     final openOn = _openOn(baby.birthDate);
     return Scaffold(

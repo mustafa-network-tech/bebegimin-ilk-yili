@@ -17,9 +17,12 @@ import '../domain/book_composer.dart';
 import '../domain/book_models.dart';
 import 'book_gate.dart';
 import 'book_generation.dart';
+import '../../babies/presentation/route_baby.dart';
 
 class BookHomeScreen extends ConsumerStatefulWidget {
-  const BookHomeScreen({super.key});
+  const BookHomeScreen({super.key, required this.babyId});
+
+  final String babyId;
 
   @override
   ConsumerState<BookHomeScreen> createState() => _BookHomeScreenState();
@@ -44,14 +47,14 @@ class _BookHomeScreenState extends ConsumerState<BookHomeScreen> {
     }, message: 'İlk yıl arşivinin içerikleri toplanıyor…');
     if (project != null && mounted) {
       ref.invalidate(bookProjectProvider(baby.id));
-      context.push('/book/editor');
+      context.push(bookEditorRoute(baby.id));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(widget.babyId));
+    if (baby == null) return const RouteBabyMissing();
     // The route gate guarantees an access value that allows viewing.
     final access = ref.watch(bookAccessProvider(baby.id)).value;
     final canCreate = access?.canEdit ?? false;
@@ -220,7 +223,7 @@ class _ProjectCard extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => context.push('/book/editor'),
+                      onPressed: () => context.push(bookEditorRoute(baby.id)),
                       icon: const Icon(Icons.edit_note_rounded),
                       label: const Text('Düzenle'),
                     ),
@@ -230,7 +233,7 @@ class _ProjectCard extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         final res = await generateWithProgress(context, ref, project, baby, BookQuality.screen);
-                        if (res != null && context.mounted) context.push('/book/view', extra: res.$1);
+                        if (res != null && context.mounted) context.push(bookViewRoute(baby.id), extra: res.$1);
                       },
                       icon: const Icon(Icons.visibility_outlined),
                       label: const Text('Önizle'),
@@ -314,7 +317,7 @@ class _Versions extends ConsumerWidget {
                               final bytes = await ref.read(bookRepositoryProvider).download(v);
                               return ref.read(bookGeneratorProvider).saveLocally(v.fileName, bytes);
                             }, message: 'İndiriliyor…');
-                            if (file != null && context.mounted) context.push('/book/view', extra: file);
+                            if (file != null && context.mounted) context.push(bookViewRoute(babyId), extra: file);
                           },
                         ),
                     ],

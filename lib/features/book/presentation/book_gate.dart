@@ -7,18 +7,27 @@ import '../../../core/utils/dates.dart';
 import '../../../core/widgets/states.dart';
 import '../../babies/application/baby_lifecycle_providers.dart';
 import '../../babies/application/baby_providers.dart';
+import '../../babies/presentation/route_baby.dart';
 import '../../premium/presentation/premium_store_screen.dart';
 import '../../subscription/presentation/family_plan_screen.dart';
 import '../application/book_providers.dart';
 import '../domain/book_models.dart';
+
+/// Book routes carry the baby explicitly (plan 2.4 / 3.3).
+String bookRoute(String babyId) => '/babies/$babyId/book';
+String bookEditorRoute(String babyId) => '${bookRoute(babyId)}/editor';
+String bookViewRoute(String babyId) => '${bookRoute(babyId)}/view';
+String bookPageRoute(String babyId, String pageId) => '${bookRoute(babyId)}/pages/$pageId';
 
 /// Server-backed gate of the book routes (plan 2.9 / Phase 9). The book is
 /// usable only for a LOCKED baby with a live family subscription and a
 /// purchased book; editing additionally needs a parent. The backend enforces
 /// the same rules on every RPC, table and Storage path.
 class BookRouteGate extends ConsumerWidget {
-  const BookRouteGate({super.key, required this.child, this.requireEdit = false});
+  const BookRouteGate({super.key, required this.babyId, required this.child, this.requireEdit = false});
 
+  /// Route baby (`/babies/:babyId/book...`), never the active selection.
+  final String babyId;
   final Widget child;
 
   /// Editor routes: parents only. Family Members may still open the book
@@ -27,8 +36,8 @@ class BookRouteGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(babyId));
+    if (baby == null) return const RouteBabyMissing();
     final access = ref.watch(bookAccessProvider(baby.id));
     final a = access.value;
     if (a == null) {

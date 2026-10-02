@@ -56,6 +56,7 @@ Widget _app(Widget child, List<dynamic> overrides) => ProviderScope(
 List<dynamic> memberOverrides() => [
   currentUserIdProvider.overrideWithValue('user-anne'),
   activeBabyProvider.overrideWithValue(ege),
+  babiesProvider.overrideWithValue(AsyncData([ege])),
   membersProvider(ege.id).overrideWithValue(AsyncData([anne, baba, teyze])),
   babyLifecycleProvider(ege.id).overrideWithValue(AsyncData(active)),
 ];
@@ -79,7 +80,7 @@ void main() {
 
   group('member screen', () {
     testWidgets('the other parent cannot be removed or edited', (tester) async {
-      await tester.pumpWidget(_app(const MemberEditScreen(memberId: 'fm-user-baba'), memberOverrides()));
+      await tester.pumpWidget(_app(MemberEditScreen(babyId: ege.id, memberId: 'fm-user-baba'), memberOverrides()));
       await tester.pumpAndSettle();
       expect(find.text('Aileden çıkar'), findsNothing);
       expect(find.text('Kaydet'), findsNothing);
@@ -90,7 +91,7 @@ void main() {
     });
 
     testWidgets('a parent still manages relatives, without making them admin', (tester) async {
-      await tester.pumpWidget(_app(const MemberEditScreen(memberId: 'fm-user-teyze'), memberOverrides()));
+      await tester.pumpWidget(_app(MemberEditScreen(babyId: ege.id, memberId: 'fm-user-teyze'), memberOverrides()));
       await tester.pumpAndSettle();
       expect(find.text('Yönetici'), findsNothing, reason: 'a teyze can never be an admin');
       await tester.scrollUntilVisible(find.text('Aileden çıkar'), 300);

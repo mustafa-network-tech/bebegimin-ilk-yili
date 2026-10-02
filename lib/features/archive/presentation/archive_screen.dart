@@ -18,20 +18,24 @@ import '../../subscription/presentation/family_plan_screen.dart';
 import '../application/archive_providers.dart';
 import '../data/archive_repository.dart';
 import '../domain/archive_models.dart';
+import '../../babies/presentation/route_baby.dart';
 
-const archiveRoute = '/archive';
+/// The offline archive route carries the baby explicitly (plan 2.4 / 3.3).
+String archiveRoute(String babyId) => '/babies/$babyId/archive';
 
 /// Server-backed gate: LOCKED + family subscription + purchased archive.
 /// Family Members see the ready archive only.
 class ArchiveRouteGate extends ConsumerWidget {
-  const ArchiveRouteGate({super.key, required this.child});
+  const ArchiveRouteGate({super.key, required this.babyId, required this.child});
 
+  /// Route baby (`/babies/:babyId/archive`), never the active selection.
+  final String babyId;
   final Widget child;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(babyId));
+    if (baby == null) return const RouteBabyMissing();
     final access = ref.watch(archiveAccessProvider(baby.id));
     final a = access.value;
     if (a == null) {
@@ -83,12 +87,14 @@ class ArchiveRouteGate extends ConsumerWidget {
 }
 
 class ArchiveScreen extends ConsumerWidget {
-  const ArchiveScreen({super.key});
+  const ArchiveScreen({super.key, required this.babyId});
+
+  final String babyId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final baby = ref.watch(activeBabyProvider);
-    if (baby == null) return const Scaffold(body: LoadingView());
+    final baby = ref.watch(babyByIdProvider(babyId));
+    if (baby == null) return const RouteBabyMissing();
     final access = ref.watch(archiveAccessProvider(baby.id)).value;
     final canCreate = access?.canCreate ?? false;
     final state = ref.watch(archiveStateProvider(baby.id));
