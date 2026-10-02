@@ -59,6 +59,9 @@ class FamilyMember {
   /// Anne / Baba with admin rights: the only admins (decision P-5).
   bool get isParentAdmin => isAdmin && relation.isParent;
 
+  /// "Esra Teyzesi" – the name in the official outputs (decision P-11).
+  String get outputName => outputPersonName(displayName, relation, relationLabel);
+
   /// Another member may not remove or demote a parent (decision P-9).
   bool protectedFrom(String? actorUserId) => isParentAdmin && userId != actorUserId;
 

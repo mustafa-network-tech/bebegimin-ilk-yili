@@ -163,12 +163,18 @@ const POSSESSIVE: Record<string, string> = {
   dede: "Dedesi",
 };
 
-/** "Teyzesi Zeynep" (as in the app). */
+/**
+ * "Esra Teyzesi" – how a person is named in the official outputs (decision
+ * P-11). The relation word is the custom label if set, else the possessive
+ * of a known relation. Same rule and test vectors as outputPersonName()
+ * (book, app) and output_person_name() (film, SQL).
+ */
 export function personLabel(p: Person | null | undefined): string {
   if (!p) return "";
-  const rel = (p.relation && POSSESSIVE[p.relation]) || p.relation_label?.trim() || "Bir yakını";
   const name = (p.name ?? "").trim();
-  return name ? `${rel} ${name}` : rel;
+  const rel = p.relation_label?.trim() || (p.relation && POSSESSIVE[p.relation]) || "";
+  if (!name) return rel || "Bir yakını";
+  return rel ? `${name} ${rel}` : name;
 }
 
 function layout(title: string, babyName: string, body: string): string {

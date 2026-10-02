@@ -235,7 +235,7 @@ class BookRenderResolver {
           case BookItemType.memory:
             final m = memories[item.refId];
             if (m == null) continue;
-            final author = m.authorId == null ? null : membersByUser[m.authorId]?.introduction;
+            final author = m.authorId == null ? null : membersByUser[m.authorId]?.outputName;
             rp.memories.add(
               RenderMemory(
                 title: m.title,
@@ -266,7 +266,7 @@ class BookRenderResolver {
               RenderLetter(
                 title: l.title,
                 body: l.body,
-                signature: l.signature,
+                signature: l.outputSignature,
                 dateLabel: Dates.long(l.writtenOn),
                 photos: attached((x) => x.letterId == l.id),
               ),

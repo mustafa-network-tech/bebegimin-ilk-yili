@@ -43,6 +43,9 @@ class Letter {
   final DateTime createdAt;
 
   /// "Teyzesi Zeynep"
+  /// "Esra Teyzesi" – the signature in the official outputs (decision P-11).
+  String get outputSignature => outputPersonName(authorName, authorRelation, authorRelationLabel);
+
   String get signature {
     final rel = relationPossessive(authorRelation, authorRelationLabel);
     return authorName.trim().isEmpty ? rel : '$rel $authorName';

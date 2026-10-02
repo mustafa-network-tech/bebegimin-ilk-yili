@@ -71,3 +71,16 @@ String relationText(Relation r, String? customLabel) =>
 
 String relationPossessive(Relation r, String? customLabel) =>
     (customLabel != null && customLabel.trim().isNotEmpty) ? customLabel.trim() : r.possessive;
+
+/// How a person is named in the official outputs (decision P-11):
+/// "Esra Teyzesi", "Ahmet Amcası", "Elif Annesi". The relation word is the
+/// custom label if set, else the possessive of a known relation. The same
+/// rule is `output_person_name()` (film, SQL) and `personLabel()` (offline
+/// HTML, worker); the three share the test vectors.
+String outputPersonName(String name, Relation relation, String? customLabel) {
+  final n = name.trim();
+  final label = customLabel?.trim() ?? '';
+  final rel = label.isNotEmpty ? label : (relation == Relation.diger ? '' : relation.possessive);
+  if (n.isEmpty) return rel.isEmpty ? Relation.diger.possessive : rel;
+  return rel.isEmpty ? n : '$n $rel';
+}

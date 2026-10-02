@@ -198,9 +198,9 @@ void main() {
       members: inputs.members,
     );
     final memories = data.pages.expand((p) => p.memories).toList();
-    expect(memories.first.author, 'Annesi Ayşe');
+    expect(memories.first.author, 'Ayşe Annesi'); // decision P-11
     final letter = data.pages.expand((p) => p.letters).single;
-    expect(letter.signature, 'Teyzesi Zeynep');
+    expect(letter.signature, 'Zeynep Teyzesi');
     expect(data.pages.expand((p) => p.milestones).map((m) => m.title), containsAll(['İlk adımım', 'İlk dişim']));
   });
 

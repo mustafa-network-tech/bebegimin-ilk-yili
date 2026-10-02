@@ -2,7 +2,16 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { crc32Update, readZipEntries, readZipEntry, writeZip } from "../src/html/zip.ts";
 import { assertSafeArchivePath, slug } from "../src/html/paths.ts";
-import { buildPages, chapterOf, chapterSubtitle, CSP, esc, type MediaOutput, paragraphs } from "../src/html/site.ts";
+import {
+  buildPages,
+  chapterOf,
+  chapterSubtitle,
+  CSP,
+  esc,
+  type MediaOutput,
+  paragraphs,
+  personLabel,
+} from "../src/html/site.ts";
 import { sampleSnapshot } from "./fixtures.ts";
 
 const P1 = "22222222-2222-4222-8222-222222222222";
@@ -103,7 +112,8 @@ test("pages: escaped content, CSP, relative links only, no editing surface", () 
   assert.ok(all.includes("&lt;script&gt;alert(1)&lt;/script&gt; İlk gün"));
   assert.ok(!all.includes("<img src=x"), "attribute injection escaped");
   assert.ok(all.includes("Uykucu &lt;b&gt;"));
-  assert.ok(all.includes("Annesi Ayşe") && all.includes("Teyzesi Zeynep") && all.includes("Komşu"));
+  // Decision P-11: "Name + relation".
+  assert.ok(all.includes("Ayşe Annesi") && all.includes("Zeynep Teyzesi") && all.includes("Komşu"));
   assert.ok(all.includes("Bu video pakete eklenemedi."));
   for (const [name, html] of pages) {
     assert.ok(html.includes(`content="${CSP}"`), `${name} has CSP`);
@@ -111,4 +121,16 @@ test("pages: escaped content, CSP, relative links only, no editing surface", () 
     assert.ok(!/<(form|input|textarea|iframe|button)\b/i.test(html), `${name} has no editing surface`);
     assert.equal((html.match(/<script\b/g) ?? []).length, 1, `${name} loads only app.js`);
   }
+});
+
+test("people are named Name + relation (same vectors as the book and the film)", () => {
+  assert.equal(personLabel({ name: "Esra", relation: "teyze" }), "Esra Teyzesi");
+  assert.equal(personLabel({ name: "Ahmet", relation: "amca" }), "Ahmet Amcası");
+  assert.equal(personLabel({ name: "Elif", relation: "anne" }), "Elif Annesi");
+  assert.equal(
+    personLabel({ name: "Deniz", relation: "diger", relation_label: "Vaftiz annesi" }),
+    "Deniz Vaftiz annesi",
+  );
+  assert.equal(personLabel({ name: "Deniz", relation: "diger" }), "Deniz");
+  assert.equal(personLabel({ name: "  ", relation: "teyze" }), "Teyzesi");
 });
