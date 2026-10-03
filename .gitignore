@@ -53,11 +53,13 @@ app.*.map.json
 !.env.example
 env/*.json
 !env/example.json
+!env/*.example.json
 android/key.properties
 *.jks
 *.keystore
 **/google-services.json
 **/GoogleService-Info.plist
+dev.json
 
 # Supabase local
 supabase/.branches

@@ -1,0 +1,6 @@
+{
+  "SUPABASE_URL": "http://10.0.2.2:54321",
+  "SUPABASE_ANON_KEY": "PASTE-THE-LOCAL-ANON-KEY-FROM-supabase-status",
+  "PREMIUM_PREVIEW": "false",
+  "DEMO_MODE": "true"
+}
