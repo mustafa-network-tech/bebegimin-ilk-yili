@@ -16,7 +16,7 @@ if (keystoreFile.exists()) {
 }
 
 android {
-    namespace = "app.bebegimin.bebegimin_ilk_yili"
+    namespace = "com.mkdigitalsystems.bebegimin_ilk_yili"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         // Change to your own reverse-domain id before publishing.
-        applicationId = "app.bebegimin.bebegimin_ilk_yili"
+        applicationId = "com.mkdigitalsystems.bebegimin_ilk_yili"
         // Firebase Messaging requires API 23+; 24 keeps the video/image
         // plugins on their modern code paths.
         minSdk = maxOf(24, flutter.minSdkVersion)

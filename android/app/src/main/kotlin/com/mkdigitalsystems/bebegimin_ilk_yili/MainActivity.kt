@@ -1,4 +1,4 @@
-package app.bebegimin.bebegimin_ilk_yili
+package com.mkdigitalsystems.bebegimin_ilk_yili
 
 import io.flutter.embedding.android.FlutterActivity
 

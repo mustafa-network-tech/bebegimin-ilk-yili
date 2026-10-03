@@ -315,7 +315,7 @@ $$);
 
 Push olmadan da bildirimler uygulama içinde (realtime rozetle) çalışır.
 
-1. Firebase projesi oluşturun, Android (`app.bebegimin.bebegimin_ilk_yili`) ve iOS uygulamalarını ekleyin.
+1. Firebase projesi oluşturun, Android (`com.mkdigitalsystems.bebegimin_ilk_yili`) ve iOS uygulamalarını ekleyin.
 2. `FIREBASE_*` değerlerini `env/<ortam>.json` dosyasına yazın (google-services.json / GoogleService-Info.plist **gerekmez**; seçenekler `--dart-define` ile verilir).
 3. iOS: Apple Developer'da APNs anahtarı oluşturup Firebase'e yükleyin; Xcode'da *Push Notifications* ve *Background Modes → Remote notifications* yeteneklerini açın.
 4. Firebase'de "Firebase Cloud Messaging API" rolüne sahip bir service account oluşturup JSON'unu `FCM_SERVICE_ACCOUNT` secret'ı olarak kaydedin.

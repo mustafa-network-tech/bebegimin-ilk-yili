@@ -3,7 +3,7 @@
 Kod tarafı hazırdır. Canlıya almadan önce aşağıdaki adımlar mağaza konsollarında ve Supabase'de yapılmalıdır. Uygulama kimlikleri:
 
 - iOS bundle ID: `app.bebegimin.bebegiminIlkYili`
-- Android paket adı: `app.bebegimin.bebegimin_ilk_yili`
+- Android paket adı: `com.mkdigitalsystems.bebegimin_ilk_yili`
 
 ## 1. Ürünler
 
@@ -58,7 +58,7 @@ supabase secrets set \
   APPLE_ENVIRONMENT=Production \
   APPLE_ROOT_CERTS_B64=<Apple Root CA - G3 .cer, base64> \
   APPLE_ISSUER_ID=<...> APPLE_KEY_ID=<...> APPLE_PRIVATE_KEY="$(cat SubscriptionKey_XXXX.p8)" \
-  GOOGLE_PLAY_PACKAGE_NAME=app.bebegimin.bebegimin_ilk_yili \
+  GOOGLE_PLAY_PACKAGE_NAME=com.mkdigitalsystems.bebegimin_ilk_yili \
   GOOGLE_PLAY_SERVICE_ACCOUNT="$(cat play-service-account.json)" \
   GOOGLE_RTDN_TOKEN=<uzun rastgele değer>
 supabase functions deploy billing-webhook --no-verify-jwt
