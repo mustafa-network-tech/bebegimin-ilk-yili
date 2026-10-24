@@ -6,7 +6,9 @@ Bağımsız Next.js yönetim paneli. Mobil uygulamayla aynı Supabase Auth hesab
 ## Yerel çalıştırma
 
 1. `.env.example` dosyasını `.env.local` olarak kopyalayın.
-2. Aynı Supabase projesinin URL ve publishable/anon anahtarını girin.
+2. Aynı Supabase projesinin URL'sini ve `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   veya `NEXT_PUBLIC_SUPABASE_ANON_KEY` değişkenlerinden birini girin. İkisi de
+   varsa publishable anahtar tercih edilir.
 3. `npm install`, ardından `npm run dev` çalıştırın.
 
 `service_role`, Google Play servis hesabı ve webhook secret'ları bu uygulamanın
