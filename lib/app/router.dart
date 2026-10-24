@@ -9,6 +9,8 @@ import '../core/content/content_route.dart';
 import '../core/content/legacy_content_redirect_screen.dart';
 import '../core/utils/dates.dart';
 import '../features/admin/presentation/admin_screens.dart';
+import '../features/admin/application/admin_providers.dart';
+import '../features/admin/domain/admin_models.dart';
 import '../features/auth/presentation/auth_screens.dart';
 import '../features/babies/application/baby_providers.dart';
 import '../features/babies/presentation/baby_form_screen.dart';
@@ -371,6 +373,12 @@ String? _redirect(Ref ref, GoRouterState state) {
     return loc == '/reset-password' ? null : '/reset-password';
   }
 
+  // Platform administrators never enter the family application. The role is
+  // read from the database (not e-mail or client claims) and a failed role
+  // check fails closed into the guarded admin route.
+  final adminRedirect = platformAdminRedirect(loc, ref.read(adminSessionProvider));
+  if (adminRedirect != null) return adminRedirect;
+
   final profile = ref.read(myProfileProvider);
   final babies = ref.read(babiesProvider);
   if ((profile.isLoading && !profile.hasValue) || (babies.isLoading && !babies.hasValue)) {
@@ -406,12 +414,26 @@ String? _redirect(Ref ref, GoRouterState state) {
   return null;
 }
 
+/// Pure redirect rule kept public so cold start, resumed session and role
+/// failure behaviour can be covered without a live Supabase client.
+String? platformAdminRedirect(String location, AsyncValue<AdminSession> session) {
+  if (session.isLoading && !session.hasValue) {
+    return location == '/splash' ? null : '/splash';
+  }
+  if (session.hasError) return location == '/admin' ? null : '/admin';
+  if (session.value?.isSuperAdmin ?? false) {
+    return location == '/admin' ? null : '/admin';
+  }
+  return null;
+}
+
 /// Re-runs the redirect whenever session-relevant state changes.
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     if (!Env.isSupabaseConfigured) return;
     ref.listen(currentUserIdProvider, (_, _) => notifyListeners());
     ref.listen(passwordRecoveryProvider, (_, _) => notifyListeners());
+    ref.listen(adminSessionProvider, (_, _) => notifyListeners());
     ref.listen(myProfileProvider, (_, _) => notifyListeners());
     ref.listen(babiesProvider, (_, _) => notifyListeners());
     ref.listen(pendingInviteCodeProvider, (_, _) => notifyListeners());

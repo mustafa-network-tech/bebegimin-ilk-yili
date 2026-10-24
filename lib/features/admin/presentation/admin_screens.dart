@@ -8,6 +8,7 @@ import '../../../core/utils/dates.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/form_fields.dart';
 import '../../../core/widgets/states.dart';
+import '../../auth/data/auth_repository.dart';
 import '../application/admin_providers.dart';
 import '../data/admin_repository.dart';
 import '../domain/admin_models.dart';
@@ -43,7 +44,15 @@ class AdminGate extends ConsumerWidget {
         }
         if (!s.consoleEnabled) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(
+              actions: [
+                IconButton(
+                  tooltip: 'Çıkış yap',
+                  onPressed: () => ref.read(authRepositoryProvider).signOut(),
+                  icon: const Icon(Icons.logout_rounded),
+                ),
+              ],
+            ),
             body: const EmptyState(
               icon: Icons.pause_circle_outline_rounded,
               title: 'Yönetim paneli kapalı',
@@ -57,16 +66,23 @@ class AdminGate extends ConsumerWidget {
   }
 }
 
-class AdminConsoleScreen extends StatelessWidget {
+class AdminConsoleScreen extends ConsumerWidget {
   const AdminConsoleScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Platform yönetimi'),
+          actions: [
+            IconButton(
+              tooltip: 'Çıkış yap',
+              onPressed: () => ref.read(authRepositoryProvider).signOut(),
+              icon: const Icon(Icons.logout_rounded),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Uzatmalar'),
