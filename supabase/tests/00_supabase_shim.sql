@@ -13,7 +13,9 @@ create schema if not exists extensions;
 
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
-  email text unique,
+  -- Match the managed Supabase Auth schema closely enough to catch strict
+  -- RETURNS TABLE text/varchar mismatches in security-definer RPCs.
+  email varchar(255) unique,
   raw_user_meta_data jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );

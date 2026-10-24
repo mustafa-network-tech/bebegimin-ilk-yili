@@ -27,6 +27,8 @@ select tests.login(tests.id('baska'));
 select tests.eq((public.admin_dashboard_summary() ->> 'users_total')::bigint > 0, true, 'dashboard uses real users');
 select tests.eq((select count(*) from public.admin_users_families(null, 'all', 1, 0)), 1::bigint, 'users are paginated');
 select tests.eq((select total_count from public.admin_users_families(null, 'all', 1, 0) limit 1) > 1, true, 'user total count returned');
+select tests.eq((select email from public.admin_users_families('anne@example.com', 'all', 1, 0)),
+                'anne@example.com', 'managed auth varchar email is exposed as text');
 select tests.expect_error($q$select * from public.admin_users_families(null, 'bogus')$q$, 'invalid status');
 select tests.expect_error(format('select * from public.admin_users_families(%L)', repeat('x', 61)), 'too long');
 
@@ -39,6 +41,8 @@ select tests.eq((select google_base_plan_id from public.admin_subscription_plans
                 'monthly', 'Google base plan id');
 select tests.expect_error($q$select * from public.admin_subscriptions('unknown')$q$, 'invalid status');
 select tests.expect_error($q$select * from public.admin_subscriptions('all', 'unknown')$q$, 'invalid plan');
+select tests.eq((select count(*) from public.admin_subscriptions('all', null, null, 10, 0)) >= 0,
+                true, 'subscription return tuple matches its declared table type');
 
 select tests.eq((select count(*) from public.admin_premium_products()), 3::bigint, 'three premium products');
 select tests.eq((select google_product_id from public.admin_premium_products()
@@ -47,6 +51,12 @@ select tests.expect_error($q$select * from public.admin_purchase_records('unknow
 select tests.expect_error($q$select * from public.admin_payment_events('unknown')$q$, 'invalid event kind');
 select tests.expect_error($q$select * from public.admin_payment_events('all', 'unknown')$q$, 'invalid result');
 select tests.expect_error($q$select * from public.admin_platform_audit_log('unknown')$q$, 'invalid audit source');
+select tests.eq((select count(*) from public.admin_purchase_records('all', null, null, 10, 0)) >= 0,
+                true, 'purchase return tuple matches its declared table type');
+select tests.eq((select count(*) from public.admin_payment_events('all', null, 10, 0)) >= 0,
+                true, 'payment event return tuple matches its declared table type');
+select tests.eq((select count(*) from public.admin_platform_audit_log('all', 10, 0)) >= 0,
+                true, 'audit return tuple matches its declared table type');
 
 -- Store payloads and tokens are intentionally absent from the returned schema.
 select tests.expect_error(
@@ -78,5 +88,5 @@ select tests.expect_error($q$select public.admin_dashboard_summary()$q$, 'not au
 
 reset role;
 select tests.logout();
-update public.platform_user_roles set revoked_at = null
+delete from public.platform_user_roles
  where user_id = tests.id('baska') and role = 'super_admin';
