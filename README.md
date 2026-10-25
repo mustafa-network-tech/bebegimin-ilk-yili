@@ -359,7 +359,7 @@ flutter run --dart-define-from-file=env/dev.json
 | teyze@example.com | Demo1234! | Defne – sınırlı yetki |
 | baska@example.com | Demo1234! | Başka aile (izolasyon denemesi) |
 
-Uygulamayı `DEMO_MODE=true` ile çalıştırırsanız giriş ekranında bu hesaplar için kısayollar görünür. Fotoğraflar yalnızca metadata olduğu için yer tutucu ile gösterilir.
+`DEMO_MODE=true` yerel demo derlemesini işaretler; hesap bilgileri ve hızlı giriş kısayolları giriş ekranında gösterilmez. Fotoğraflar yalnızca metadata olduğu için yer tutucu ile gösterilir.
 
 ## Testler
 

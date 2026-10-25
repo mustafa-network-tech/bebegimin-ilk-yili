@@ -143,33 +143,35 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
                       '${m.relationshipLabel == null ? '' : ' · ${m.relationshipLabel}'} · ${m.statusLabel}',
                     ),
                   ),
-                const SectionHeader(title: 'Planlar'),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SegmentedButton<BillingPeriod>(
-                    segments: [for (final p in BillingPeriod.values) ButtonSegment(value: p, label: Text(p.label))],
-                    selected: {period},
-                    onSelectionChanged: (s) => setState(() => _period = s.first),
+                if (!account.testAccess) ...[
+                  const SectionHeader(title: 'Planlar'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SegmentedButton<BillingPeriod>(
+                      segments: [for (final p in BillingPeriod.values) ButtonSegment(value: p, label: Text(p.label))],
+                      selected: {period},
+                      onSelectionChanged: (s) => setState(() => _period = s.first),
+                    ),
                   ),
-                ),
-                AsyncValueView<PlanCatalog>(
-                  value: catalog,
-                  onRetry: () => ref.invalidate(planCatalogProvider),
-                  data: (c) => Column(
-                    children: [
-                      for (final plan in c.forPeriod(period))
-                        _PlanCard(
-                          plan: plan,
-                          storePrice: ref.watch(storePricesProvider).value?['${plan.planCode}.${plan.period.key}'],
-                          saving: period == BillingPeriod.annual ? c.annualSavingMinor(plan.planCode) : null,
-                          account: account,
-                          busy: _busy,
-                          onChoose: account.isParent ? () => _choose(account, plan) : null,
-                        ),
-                    ],
+                  AsyncValueView<PlanCatalog>(
+                    value: catalog,
+                    onRetry: () => ref.invalidate(planCatalogProvider),
+                    data: (c) => Column(
+                      children: [
+                        for (final plan in c.forPeriod(period))
+                          _PlanCard(
+                            plan: plan,
+                            storePrice: ref.watch(storePricesProvider).value?['${plan.planCode}.${plan.period.key}'],
+                            saving: period == BillingPeriod.annual ? c.annualSavingMinor(plan.planCode) : null,
+                            account: account,
+                            busy: _busy,
+                            onChoose: account.isParent ? () => _choose(account, plan) : null,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                if (!account.isParent)
+                ],
+                if (!account.isParent && !account.testAccess)
                   const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text('Aile paketini Anne veya Baba yönetir. Aile üyeleri için ayrı abonelik gerekmez.'),
@@ -201,7 +203,11 @@ class _SubscriptionCard extends StatelessWidget {
           children: [
             Text(account.displayName, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            if (s == null)
+            if (account.testAccess) ...[
+              Text('Sınırsız test erişimi', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
+              const Text('Süresiz · tüm ücretli özellikler ve dijital çıktılar dahil'),
+            ] else if (s == null)
               const Text('Henüz bir aile paketi yok.')
             else ...[
               Text('${planName(s.planCode)} · ${s.period.label}', style: theme.textTheme.titleLarge),
@@ -266,7 +272,12 @@ class _CapacityCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            Text('Ebeveynler: ${account.activeParents} / 2 (kapasiteye dahil değil)', style: theme.textTheme.bodySmall),
+            Text(
+              account.testAccess
+                  ? 'Ebeveynler: ${account.activeParents} / 2 · aile üyesi kapasitesi sınırsız'
+                  : 'Ebeveynler: ${account.activeParents} / 2 (kapasiteye dahil değil)',
+              style: theme.textTheme.bodySmall,
+            ),
             if (account.isFull && account.isParent) ...[
               const SizedBox(height: 8),
               Text(
@@ -370,6 +381,8 @@ class FamilyPlanTile extends ConsumerWidget {
       subtitle: Text(
         account == null
             ? 'Plan ve aile üyesi kapasitesi'
+            : account.testAccess
+            ? 'Sınırsız test erişimi · ${account.activeFamilyMembers} aile üyesi'
             : account.subscription == null || !account.subscriptionLive
             ? 'Aktif paket yok'
             : '${planName(account.subscription!.planCode)} · ${account.activeFamilyMembers} / $cap aile üyesi'

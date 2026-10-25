@@ -60,3 +60,34 @@ export function BirthCorrectionForm({
     </form>
   );
 }
+
+export function TestAccessActionForm({
+  action,
+  userId,
+  enabled,
+}: {
+  action: (state: ActionState, data: FormData) => Promise<ActionState>;
+  userId: string;
+  enabled: boolean;
+}) {
+  const [state, formAction, pending] = useActionState(action, initialState);
+  return (
+    <form action={formAction} className="inline-action-form">
+      <input type="hidden" name="user_id" value={userId} />
+      <input type="hidden" name="enabled" value={enabled ? "false" : "true"} />
+      <textarea
+        name="reason"
+        required
+        minLength={3}
+        maxLength={500}
+        rows={2}
+        placeholder={enabled ? "İptal gerekçesi" : "Yetkilendirme gerekçesi"}
+      />
+      {state.error && <span className="form-message error">{state.error}</span>}
+      {state.success && <span className="form-message success">{state.success}</span>}
+      <button className={`button ${enabled ? "secondary" : "primary"}`} type="submit" disabled={pending}>
+        {pending ? "Kaydediliyor…" : enabled ? "Erişimi iptal et" : "Sınırsız erişim ver"}
+      </button>
+    </form>
+  );
+}

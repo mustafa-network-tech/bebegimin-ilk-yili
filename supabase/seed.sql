@@ -205,3 +205,23 @@ insert into public.notifications (user_id, baby_id, type, title, body, data) val
    '{"target_type":"memories","target_id":"e0000000-0000-4000-8000-000000000009"}'),
   ('11111111-1111-4111-8111-111111111111', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'book_ready',
    'Defne''nin İlk Yılım kitabı oluşturulmaya hazır 📖', 'İlk 365 günün tüm anıları bir kitapta buluşsun.', '{}');
+
+-- The production migration grants these UUIDs when the existing Auth users
+-- are already present. A local reset applies migrations before this seed, so
+-- repeat the same approved, idempotent grant after seeded users exist.
+with approved (user_id, reason) as (
+  values
+    ('11111111-1111-4111-8111-111111111111'::uuid, 'Owner-approved unlimited demo access'),
+    ('22222222-2222-4222-8222-222222222222'::uuid, 'Owner-approved unlimited demo access'),
+    ('44444444-4444-4444-8444-444444444444'::uuid, 'Owner-approved unlimited demo access'),
+    ('098ed0fd-b95a-42bb-8bdb-16050541466f'::uuid, 'Owner-approved unlimited demo access')
+), inserted as (
+  insert into public.test_access_grants (user_id, enabled, granted_by, grant_reason)
+  select a.user_id, true, null, a.reason
+    from approved a
+    join auth.users u on u.id = a.user_id
+  on conflict (user_id) do nothing
+  returning user_id, grant_reason
+)
+insert into public.test_access_events (user_id, action, actor_id, reason)
+select i.user_id, 'granted', null, i.grant_reason from inserted i;

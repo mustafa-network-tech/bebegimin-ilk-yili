@@ -38,6 +38,7 @@ enum PremiumProduct {
 /// Why a parent cannot buy right now (server hint).
 enum PurchaseBlock {
   alreadyOwned,
+  testAccessIncluded,
   subscriptionRequired,
   storefrontClosed,
   requiresLocked,
@@ -47,6 +48,7 @@ enum PurchaseBlock {
   static PurchaseBlock? fromHint(String? hint) => switch (hint) {
     null => null,
     'already_owned' => alreadyOwned,
+    'test_access_included' => testAccessIncluded,
     'subscription_required' => subscriptionRequired,
     'storefront_closed' => storefrontClosed,
     'premium_requires_locked' => requiresLocked,

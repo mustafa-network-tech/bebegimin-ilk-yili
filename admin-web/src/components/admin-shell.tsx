@@ -9,6 +9,7 @@ const nav = [
   ["/abonelik-planlari", "Abonelik planları", "◫"],
   ["/abonelikler", "Aktif abonelikler", "↻"],
   ["/urunler", "Dijital ürünler", "◇"],
+  ["/test-erisimleri", "Test erişimleri", "∞"],
   ["/odemeler", "Satın alma ve ödemeler", "₺"],
   ["/uzatmalar", "Uzatma talepleri", "+"],
   ["/dogum-tarihi", "Doğum tarihi", "◷"],

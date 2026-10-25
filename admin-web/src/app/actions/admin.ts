@@ -47,3 +47,32 @@ export async function correctBirthDateAction(_: ActionState, formData: FormData)
   revalidatePath("/denetim");
   return { success: "Doğum tarihi düzeltildi ve denetim kaydı oluşturuldu." };
 }
+
+export async function setTestAccessAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  await requireSuperAdmin();
+  const userId = String(formData.get("user_id") ?? "");
+  const enabled = String(formData.get("enabled") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    return { error: "Geçerli bir kullanıcı UUID'si zorunludur." };
+  }
+  if (!['true', 'false'].includes(enabled)) return { error: "Geçersiz erişim işlemi." };
+  if (reason.length < 3 || reason.length > 500) return { error: "Gerekçe 3–500 karakter olmalıdır." };
+
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("admin_set_test_access", {
+    p_user_id: userId,
+    p_enabled: enabled === "true",
+    p_reason: reason,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/test-erisimleri");
+  const result = data as string;
+  return {
+    success: result === "granted"
+      ? "Sınırsız test erişimi verildi ve denetlendi."
+      : result === "revoked"
+      ? "Test erişimi iptal edildi ve denetlendi."
+      : "Erişim durumu zaten seçilen değerdeydi.",
+  };
+}

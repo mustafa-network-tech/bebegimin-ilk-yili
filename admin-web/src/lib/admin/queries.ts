@@ -13,6 +13,8 @@ import type {
   ProductRow,
   PurchaseRow,
   SubscriptionRow,
+  TestAccessEventRow,
+  TestAccessUserRow,
   UserFamilyRow,
 } from "./types";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -77,3 +79,12 @@ export const getAuditLog = (action: string | null, offset: number) =>
   });
 export const getPlatformAuditLog = (source: string, offset: number) =>
   rpc<PlatformAuditRow[]>("admin_platform_audit_log", { p_source: source, p_limit: 50, p_offset: offset });
+export const getTestAccessUsers = (search: string | null, status: string, offset: number) =>
+  rpc<TestAccessUserRow[]>("admin_test_access_users", {
+    p_search: search,
+    p_status: status,
+    p_limit: 50,
+    p_offset: offset,
+  });
+export const getTestAccessEvents = (offset: number) =>
+  rpc<TestAccessEventRow[]>("admin_test_access_events", { p_user_id: null, p_limit: 50, p_offset: offset });

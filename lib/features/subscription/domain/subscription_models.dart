@@ -160,6 +160,7 @@ class FamilyAccountOverview {
     required this.isParent,
     required this.subscription,
     required this.subscriptionLive,
+    required this.testAccess,
     required this.enforcement,
     required this.activeParents,
     required this.activeFamilyMembers,
@@ -175,6 +176,7 @@ class FamilyAccountOverview {
         ? null
         : FamilySubscription.fromJson((j['subscription'] as Map).cast<String, dynamic>()),
     subscriptionLive: j['subscription_live'] as bool? ?? false,
+    testAccess: j['test_access'] as bool? ?? false,
     enforcement: j['enforcement'] as bool? ?? false,
     activeParents: (j['active_parents'] as num).toInt(),
     activeFamilyMembers: (j['active_family_members'] as num).toInt(),
@@ -189,6 +191,7 @@ class FamilyAccountOverview {
   final bool isParent;
   final FamilySubscription? subscription;
   final bool subscriptionLive;
+  final bool testAccess;
   final bool enforcement;
   final int activeParents;
   final int activeFamilyMembers;
@@ -196,11 +199,15 @@ class FamilyAccountOverview {
   final List<AccountMember> members;
 
   /// Capacity of the live plan; `null` without a live subscription.
-  int? get capacity => subscriptionLive ? subscription?.maxFamilyMembers : null;
+  int? get capacity => testAccess
+      ? null
+      : subscriptionLive
+      ? subscription?.maxFamilyMembers
+      : null;
 
-  bool get isFull => capacity != null && activeFamilyMembers >= capacity!;
+  bool get isFull => !testAccess && capacity != null && activeFamilyMembers >= capacity!;
 
-  bool get overCapacity => subscriptionLive && (subscription?.overCapacity ?? false);
+  bool get overCapacity => !testAccess && subscriptionLive && (subscription?.overCapacity ?? false);
 }
 
 class CheckoutIntent {
@@ -238,6 +245,7 @@ class CheckoutIntent {
 /// Why the app is open or sends the family to the payment page.
 enum AccessReason {
   ok,
+  testAccess,
   enforcementOff,
   noSubscription,
   subscriptionEnded,
@@ -246,6 +254,7 @@ enum AccessReason {
 
   static AccessReason fromKey(String? key) => switch (key) {
     'ok' => ok,
+    'test_access' => testAccess,
     'enforcement_off' => enforcementOff,
     'no_subscription' => noSubscription,
     'payment_issue' => paymentIssue,
@@ -279,6 +288,7 @@ class BabyAccessState {
   final String? familyAccountId;
 
   String get title => switch (reason) {
+    AccessReason.testAccess => 'Sınırsız test erişimi',
     AccessReason.noSubscription => 'Aile paketi gerekli',
     AccessReason.paymentIssue => 'Ödeme alınamadı',
     AccessReason.accountUnmapped => 'Aile hesabı eşleştiriliyor',
@@ -286,6 +296,7 @@ class BabyAccessState {
   };
 
   String get message => switch (reason) {
+    AccessReason.testAccess => 'Bu aile için süresiz ve sınırsız test erişimi etkin.',
     AccessReason.accountUnmapped =>
       'Bu bebeğin aile hesabı henüz eşleştirilmedi. Destek ekibimiz eşleştirmeyi tamamladığında devam edebilirsiniz.',
     AccessReason.paymentIssue when isParent =>

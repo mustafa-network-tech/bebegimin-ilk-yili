@@ -17,8 +17,8 @@ abstract final class Env {
   /// Universal Links are configured.
   static const inviteLinkBase = String.fromEnvironment('INVITE_LINK_BASE', defaultValue: 'bebegimin://invite');
 
-  /// Shows demo account shortcuts on the login screen. Only for local
-  /// development against `supabase db reset` + seed.sql.
+  /// Marks local builds that use `supabase db reset` + seed.sql. Demo account
+  /// credentials are intentionally never rendered on the login screen.
   static const demoMode = bool.fromEnvironment('DEMO_MODE');
 
   /// Opens the existing on-device book tools for LOCKED profiles, for

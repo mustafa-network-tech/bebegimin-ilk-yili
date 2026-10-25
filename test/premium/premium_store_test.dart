@@ -81,7 +81,7 @@ PremiumOffer offer(String code, int price, {bool owned = false, String? block}) 
   'price_minor': price,
   'currency': 'TRY',
   'owned': owned,
-  'purchase_block': owned ? 'already_owned' : block,
+  'purchase_block': block ?? (owned ? 'already_owned' : null),
 });
 
 PremiumStoreView parentView({String? block}) => PremiumStoreView(
@@ -130,6 +130,7 @@ void main() {
     expect(PremiumProduct.book.format, 'PDF');
     expect(PremiumProduct.book.description, contains('Fiziksel / basılı kitap bu ürüne dahil değildir'));
     expect(PurchaseBlock.fromHint('subscription_required'), PurchaseBlock.subscriptionRequired);
+    expect(PurchaseBlock.fromHint('test_access_included'), PurchaseBlock.testAccessIncluded);
     expect(PurchaseBlock.fromHint(null), isNull);
     expect(offer('first_year_film', 54900).canBuy, isTrue);
     expect(offer('first_year_film', 54900, owned: true).canBuy, isFalse);
@@ -155,6 +156,20 @@ void main() {
     // Parents of an owning family can share downloads with Family Members.
     expect(find.text('Aile üyeleriyle paylaş'), findsNothing, reason: 'decision P-12: downloads are not shared');
     expect(find.text('Satın al'), findsNWidgets(2));
+  });
+
+  testWidgets('unlimited test access is not presented as a purchase', (tester) async {
+    final view = PremiumStoreView(
+      isParent: true,
+      offers: [offer('first_year_book', 34900, owned: true, block: 'test_access_included')],
+      owned: {PremiumProduct.book},
+    );
+
+    await _pump(tester, locked: true, view: view);
+
+    expect(find.text('Ücretsiz test erişimi'), findsOneWidget);
+    expect(find.text('Satın alındı'), findsNothing);
+    expect(find.text('Satın al'), findsNothing);
   });
 
   testWidgets('buying opens an order and starts the store purchase', (tester) async {

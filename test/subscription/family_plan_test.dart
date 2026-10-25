@@ -41,6 +41,7 @@ FamilyAccountOverview overview({
   String status = 'active',
   int members = 1,
   bool overCapacity = false,
+  bool testAccess = false,
 }) => FamilyAccountOverview.fromJson({
   'id': 'acct-1',
   'display_name': 'Elif\'in ailesi',
@@ -59,6 +60,7 @@ FamilyAccountOverview overview({
           'currency': 'TRY',
         },
   'subscription_live': plan != null && status == 'active',
+  'test_access': testAccess,
   'enforcement': false,
   'active_parents': 2,
   'active_family_members': members,
@@ -102,6 +104,17 @@ void main() {
     expect(overview(members: 3).isFull, isTrue);
     expect(overview(plan: null, members: 30).capacity, isNull);
     expect(overview(status: 'canceled', members: 5).isFull, isFalse);
+  });
+
+  testWidgets('unlimited test access hides paid plans and has no member capacity', (tester) async {
+    final account = overview(plan: null, members: 25, testAccess: true);
+    expect(account.capacity, isNull);
+    expect(account.isFull, isFalse);
+    await pumpPlan(tester, account);
+    expect(find.text('Sınırsız test erişimi'), findsOneWidget);
+    expect(find.textContaining('aile üyesi kapasitesi sınırsız'), findsOneWidget);
+    expect(find.text('Planlar'), findsNothing);
+    expect(find.text('Seç'), findsNothing);
   });
 
   testWidgets('parents see one family plan for both babies and can upgrade', (tester) async {

@@ -182,3 +182,37 @@ export type PlatformAuditRow = {
   created_at: string;
   total_count: number;
 };
+
+export type TestAccessUserRow = {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  user_created_at: string;
+  families: Array<{
+    id: string;
+    display_name: string;
+    account_status: string;
+    member_role: string;
+    member_status: string;
+    baby_count: number;
+  }>;
+  access_enabled: boolean;
+  granted_at: string | null;
+  granted_by: string | null;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  total_count: number;
+};
+
+export type TestAccessEventRow = {
+  event_id: number;
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  action: "granted" | "revoked";
+  actor_id: string | null;
+  actor_name: string;
+  reason: string;
+  created_at: string;
+  total_count: number;
+};

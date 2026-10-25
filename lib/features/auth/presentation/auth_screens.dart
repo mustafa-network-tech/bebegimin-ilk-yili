@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/env.dart';
 import '../../../app/session.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/feedback.dart';
@@ -215,32 +214,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 12),
         OutlinedButton(onPressed: () => context.push('/register'), child: const Text('Yeni hesap oluştur')),
-        if (Env.demoMode) ...[
-          const SizedBox(height: 28),
-          const Divider(),
-          Text('Demo hesapları (yalnızca yerel geliştirme)', style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final (label, mail) in [
-                ('Anne · Elif', 'anne@example.com'),
-                ('Baba · Mert', 'baba@example.com'),
-                ('Teyze · Zeynep', 'teyze@example.com'),
-                ('Başka aile', 'baska@example.com'),
-              ])
-                ActionChip(
-                  label: Text(label),
-                  onPressed: () {
-                    _email.text = mail;
-                    _password.text = 'Demo1234!';
-                    _submit();
-                  },
-                ),
-            ],
-          ),
-        ],
       ],
     );
   }

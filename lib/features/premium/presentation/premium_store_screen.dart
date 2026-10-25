@@ -216,7 +216,9 @@ class _ProductCard extends StatelessWidget {
                 children: [
                   Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
-                  const Expanded(child: Text('Satın alındı')),
+                  Expanded(
+                    child: Text(block == PurchaseBlock.testAccessIncluded ? 'Ücretsiz test erişimi' : 'Satın alındı'),
+                  ),
                   FilledButton.tonal(
                     onPressed: () => context.push(_openRoute(product, babyId)),
                     child: Text(switch (product) {
