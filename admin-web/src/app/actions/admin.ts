@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 
 import { requireSuperAdmin } from "@/lib/admin/auth";
+import type { PlanRow, ProductRow } from "@/lib/admin/types";
+import { checkGooglePlayCatalog } from "@/lib/google-play/client";
+import type { LocalCatalog } from "@/lib/google-play/catalog";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export type ActionState = { error?: string; success?: string };
@@ -74,5 +77,76 @@ export async function setTestAccessAction(_: ActionState, formData: FormData): P
       : result === "revoked"
       ? "Test erişimi iptal edildi ve denetlendi."
       : "Erişim durumu zaten seçilen değerdeydi.",
+  };
+}
+
+export async function checkGooglePlayCatalogAction(_: ActionState, _formData: FormData): Promise<ActionState> {
+  await requireSuperAdmin();
+  const supabase = await createServerSupabase();
+  const [{ data: planData, error: planError }, { data: productData, error: productError }] = await Promise.all([
+    supabase.rpc("admin_subscription_plans"),
+    supabase.rpc("admin_premium_products"),
+  ]);
+  if (planError || productError) return { error: "Yerel ürün kataloğu okunamadı." };
+
+  const plans = (planData ?? []) as PlanRow[];
+  const products = (productData ?? []) as ProductRow[];
+  const expectedPlans = [
+    ["small_family", "monthly"],
+    ["small_family", "annual"],
+    ["normal_family", "monthly"],
+    ["normal_family", "annual"],
+    ["large_family", "monthly"],
+    ["large_family", "annual"],
+  ] as const;
+  const expectedProducts = ["first_year_book", "first_year_html", "first_year_film"] as const;
+  const currentPlans = expectedPlans.map(([planCode, period]) =>
+    plans.find((item) => item.catalog_active && item.plan_code === planCode && item.billing_period === period));
+  const currentProducts = expectedProducts.map((productCode) =>
+    products.find((item) => item.catalog_active && item.product_code === productCode));
+  if (currentPlans.some((item) => !item) || currentProducts.some((item) => !item)) {
+    return { error: "Beklenen yerel katalog satırlarından biri eksik veya pasif." };
+  }
+
+  const local: LocalCatalog = {
+    subscriptions: currentPlans.map((item) => ({
+      kind: "subscription",
+      productId: item!.google_product_id ?? "",
+      basePlanId: item!.google_base_plan_id ?? "",
+      expectedPriceMinor: item!.price_minor,
+      expectedCurrency: item!.currency,
+    })),
+    oneTimeProducts: currentProducts.map((item) => ({
+      kind: "one_time",
+      productId: item!.google_product_id ?? "",
+      expectedPriceMinor: item!.price_minor,
+      expectedCurrency: item!.currency,
+    })),
+  };
+  if (local.subscriptions.some((item) => !item.productId || !item.basePlanId)
+      || local.oneTimeProducts.some((item) => !item.productId)) {
+    return { error: "Yerel Google Play ürün eşlemelerinden biri eksik." };
+  }
+
+  const report = await checkGooglePlayCatalog(local);
+  const { error } = await supabase.rpc("admin_record_google_play_catalog_check", {
+    p_connection_status: report.connection_status,
+    p_package_name: report.package_name,
+    p_results: report.results,
+    p_error_code: report.error_code,
+  });
+  if (error) return { error: "Google Play kontrol sonucu denetim kaydına yazılamadı." };
+  revalidatePath("/abonelik-planlari");
+  revalidatePath("/urunler");
+  revalidatePath("/denetim");
+
+  return {
+    success: report.connection_status === "success"
+      ? "Google Play kataloğu kontrol edildi ve sonuçlar denetlendi."
+      : report.connection_status === "not_configured"
+      ? "Google Play API bağlantısı henüz yapılandırılmadı."
+      : report.connection_status === "permission_denied"
+      ? "Google Play API hizmet hesabının yetkisi reddedildi."
+      : "Google Play API geçici olarak kullanılamıyor.",
   };
 }

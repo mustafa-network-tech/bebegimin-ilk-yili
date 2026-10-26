@@ -95,6 +95,8 @@ textarea { resize: vertical; }
 .button-row { display: flex; gap: 8px; justify-content: flex-end; }
 .stack-form, .inline-action-form, .auth-form { display: grid; gap: 14px; }
 .inline-action-form { min-width: 265px; }
+.header-action-form { display: grid; gap: 8px; justify-items: end; max-width: 380px; }
+.header-action-form .form-message { max-width: 380px; }
 .check-row { display: flex; align-items: flex-start; gap: 10px; }
 .check-row input { width: auto; margin-top: 4px; }
 .form-message { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: .9rem; }

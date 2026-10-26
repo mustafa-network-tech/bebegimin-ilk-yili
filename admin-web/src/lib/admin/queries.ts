@@ -7,6 +7,7 @@ import type {
   BirthPreview,
   DashboardSummary,
   ExtensionRow,
+  GooglePlayCatalogCheckRow,
   PaymentEventRow,
   PlanRow,
   PlatformAuditRow,
@@ -45,6 +46,8 @@ export const getSubscriptions = (status: string, plan: string | null, search: st
     p_offset: offset,
   });
 export const getProducts = () => rpc<ProductRow[]>("admin_premium_products");
+export const getGooglePlayCatalogLatest = async () =>
+  (await rpc<GooglePlayCatalogCheckRow[]>("admin_google_play_catalog_latest"))[0] ?? null;
 export const getPurchases = (status: string, product: string | null, search: string | null, offset: number) =>
   rpc<PurchaseRow[]>("admin_purchase_records", {
     p_status: status,

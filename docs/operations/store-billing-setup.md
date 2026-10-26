@@ -59,7 +59,7 @@ supabase secrets set \
   APPLE_ROOT_CERTS_B64=<Apple Root CA - G3 .cer, base64> \
   APPLE_ISSUER_ID=<...> APPLE_KEY_ID=<...> APPLE_PRIVATE_KEY="$(cat SubscriptionKey_XXXX.p8)" \
   GOOGLE_PLAY_PACKAGE_NAME=com.mkdigitalsystems.bebegimin_ilk_yili \
-  GOOGLE_PLAY_SERVICE_ACCOUNT="$(cat play-service-account.json)" \
+  GOOGLE_PLAY_SERVICE_ACCOUNT_JSON="$(cat play-service-account.json)" \
   GOOGLE_RTDN_TOKEN=<uzun rastgele değer>
 supabase functions deploy billing-webhook --no-verify-jwt
 supabase functions deploy billing-verify-purchase
@@ -68,6 +68,12 @@ supabase functions deploy billing-verify-purchase
 - Apple kök sertifikası (Apple Root CA - G3): https://www.apple.com/certificateauthority/
 - App Store Server API anahtarı: App Store Connect > Users and Access > Integrations > In-App Purchase.
 - Google servis hesabı: Play Console > Users and permissions. "View financial data" ve "Manage orders and subscriptions" yetkileri verilmelidir.
+
+Admin Paneli'ndeki salt-okunur katalog kontrolü için Vercel projesine de
+`GOOGLE_PLAY_PACKAGE_NAME` ve `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` değişkenleri
+server-only olarak eklenir. Bu değişkenlerde `NEXT_PUBLIC_` öneki kullanılmaz.
+Admin Paneli Google Play ürünlerini veya fiyatlarını değiştirmez; yalnız gerçek
+katalog durumunu okuyup denetimli bir kontrol sonucu kaydeder.
 
 ## 3. Mağaza bildirimleri
 

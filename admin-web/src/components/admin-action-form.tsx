@@ -91,3 +91,20 @@ export function TestAccessActionForm({
     </form>
   );
 }
+
+export function GooglePlayCatalogCheckForm({
+  action,
+}: {
+  action: (state: ActionState, data: FormData) => Promise<ActionState>;
+}) {
+  const [state, formAction, pending] = useActionState(action, initialState);
+  return (
+    <form action={formAction} className="header-action-form">
+      <button className="button primary" type="submit" disabled={pending}>
+        {pending ? "Google Play kontrol ediliyor…" : "Google Play’den Kontrol Et"}
+      </button>
+      {state.error && <span className="form-message error">{state.error}</span>}
+      {state.success && <span className="form-message success">{state.success}</span>}
+    </form>
+  );
+}

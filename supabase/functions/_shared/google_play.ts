@@ -3,7 +3,7 @@
 // re-read from Google before anything is applied.
 //
 // Secrets: GOOGLE_PLAY_PACKAGE_NAME,
-//          GOOGLE_PLAY_SERVICE_ACCOUNT (JSON key with the "View financial data" /
+//          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON (JSON key with the "View financial data" /
 //          "Manage orders and subscriptions" permission in Play Console).
 import {
   type GoogleProductPurchase,
@@ -28,7 +28,9 @@ function base64url(input: ArrayBuffer | string): string {
 async function accessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   if (cachedToken && cachedToken.expires > now + 60) return cachedToken.token;
-  const raw = Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
+  // The old name remains a temporary compatibility fallback for environments
+  // that have not rotated to the explicit server-only JSON variable yet.
+  const raw = Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON") ?? Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
   if (!raw) throw new Error("Google Play verification is not configured");
   const sa = JSON.parse(raw) as ServiceAccount;
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));

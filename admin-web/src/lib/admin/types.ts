@@ -86,6 +86,30 @@ export type ProductRow = {
   active_entitlements: number;
 };
 
+export type GooglePlayCatalogItemRow = {
+  kind: "subscription" | "one_time";
+  product_id: string;
+  base_plan_id: string | null;
+  status: "verified" | "not_found" | "mismatch";
+  play_state: string | null;
+  expected_price_minor: number;
+  play_price_minor: number | null;
+  expected_currency: string;
+  play_currency: string | null;
+  detail_code: string | null;
+};
+
+export type GooglePlayCatalogCheckRow = {
+  check_id: number;
+  connection_status: "success" | "not_configured" | "permission_denied" | "unavailable";
+  package_name: string;
+  results: GooglePlayCatalogItemRow[];
+  error_code: string | null;
+  checked_at: string;
+  checked_by: string;
+  checked_by_name: string;
+};
+
 export type PurchaseRow = {
   order_id: string;
   family_account_id: string;

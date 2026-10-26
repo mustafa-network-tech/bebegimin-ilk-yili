@@ -11,5 +11,8 @@ Bağımsız Next.js yönetim paneli. Mobil uygulamayla aynı Supabase Auth hesab
    varsa publishable anahtar tercih edilir.
 3. `npm install`, ardından `npm run dev` çalıştırın.
 
-`service_role`, Google Play servis hesabı ve webhook secret'ları bu uygulamanın
-ortamına hiçbir zaman eklenmemelidir.
+Supabase `service_role` ve webhook secret'ları bu uygulamanın ortamına hiçbir
+zaman eklenmemelidir. Google Play katalog kontrolü için servis hesabı JSON'u
+yalnızca sunucu tarafındaki `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` değişkenine,
+paket adı da `GOOGLE_PLAY_PACKAGE_NAME` değişkenine yazılır. Bu değişkenlerde
+`NEXT_PUBLIC_` öneki kullanılmaz; değerler kaynak koda veya Git'e eklenmez.
