@@ -8,6 +8,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { json } from "../_shared/cors.ts";
 import { adapterFor } from "../_shared/billing.ts";
+import { toBillingError } from "../_shared/billing_errors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -20,8 +21,9 @@ Deno.serve(async (req) => {
   let event;
   try {
     event = await adapterFor(url.searchParams.get("provider") ?? "").verify(raw, url, req.headers);
-  } catch (_) {
-    // Do not reveal why verification failed.
+  } catch (e) {
+    // Do not reveal why verification failed; log only the safe code.
+    console.error(JSON.stringify({ fn: "billing-webhook", provider: url.searchParams.get("provider"), code: toBillingError(e).code }));
     return json({ error: "unauthorized" }, 401);
   }
   if (!event) return json({ result: "ignored" });

@@ -43,11 +43,11 @@ class _FakeStore implements StoreBilling {
   @override
   Future<Map<String, String>> localizedPrices(Iterable<String> ids) async => {for (final id in ids) id: '₺299,99'};
   @override
-  Future<void> buy(CheckoutIntent intent) async => bought.add(intent);
+  Future<void> buy(CheckoutIntent intent, {String? currentPlanCode}) async => bought.add(intent);
   @override
   Future<void> buyPremium(PremiumOrder order) async {}
   @override
-  Future<void> restore() async => restores++;
+  Future<void> restore({bool silent = false}) async => restores++;
   @override
   void dispose() => _events.close();
 }

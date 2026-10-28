@@ -82,7 +82,7 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
       final intent = await ref
           .read(subscriptionRepositoryProvider)
           .requestCheckout(accountId: account.id, planCode: plan.planCode, period: plan.period, provider: provider.key);
-      await store.buy(intent);
+      await store.buy(intent, currentPlanCode: account.subscriptionLive ? account.subscription?.planCode : null);
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {

@@ -6,10 +6,13 @@ import 'package:go_router/go_router.dart';
 
 import '../core/content/lifecycle_revision.dart';
 import '../core/widgets/offline_banner.dart';
+import '../features/babies/application/baby_providers.dart';
 import '../features/family/application/family_providers.dart';
 import '../features/family/domain/permission.dart';
 import '../features/media/presentation/upload_status_bar.dart';
 import '../features/notifications/data/push_service.dart';
+import '../features/subscription/application/auto_restore.dart';
+import '../features/subscription/application/subscription_providers.dart';
 import '../features/subscription/presentation/read_only_banner.dart';
 
 /// Bottom navigation: Ana Sayfa · Anılar · (+) · Takvim · Aile
@@ -29,7 +32,23 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
   /// ask the server again instead of trusting the cached lifecycle.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) ref.read(lifecycleRevisionProvider.notifier).bump();
+    if (state == AppLifecycleState.resumed) {
+      ref.read(lifecycleRevisionProvider.notifier).bump();
+      unawaited(_autoRestore());
+    }
+  }
+
+  /// Quietly asks the store for purchases the server may not know about (a renewal or plan
+  /// change made outside the app). Throttled; every result is verified by the server.
+  Future<void> _autoRestore() async {
+    final baby = ref.read(activeBabyProvider);
+    if (baby == null) return;
+    try {
+      final overview = await ref.read(familyAccountOverviewProvider(baby.id).future);
+      await ref.read(autoRestoreProvider).maybeRun(overview);
+    } catch (_) {
+      // Offline or server trouble: the next start / resume tries again.
+    }
   }
 
   @override
@@ -50,7 +69,10 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
       );
     });
     push.openedRoute.addListener(_openPushRoute);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _openPushRoute());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openPushRoute();
+      unawaited(_autoRestore());
+    });
   }
 
   void _openPushRoute() {

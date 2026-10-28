@@ -65,6 +65,10 @@ supabase functions deploy billing-webhook --no-verify-jwt
 supabase functions deploy billing-verify-purchase
 ```
 
+> RTDN kurulmadan yenileme / iptal / iade takibi için bkz.
+> [billing-reconcile-setup.md](billing-reconcile-setup.md) (zamanlanmış `billing-reconcile`,
+> `BILLING_RECONCILE_SECRET`; varsayılan olarak kapalıdır).
+
 - Apple kök sertifikası (Apple Root CA - G3): https://www.apple.com/certificateauthority/
 - App Store Server API anahtarı: App Store Connect > Users and Access > Integrations > In-App Purchase.
 - Google servis hesabı: Play Console > Users and permissions. "View financial data" ve "Manage orders and subscriptions" yetkileri verilmelidir.
@@ -102,3 +106,23 @@ katalog durumunu okuyup denetimli bir kontrol sonucu kaydeder.
 Bu andan itibaren aktif paketi olmayan ailelerin arşivi salt okunur olur (karar P-2, 2026-10-02): görüntüleme sürer; içerik ekleme, düzenleme ve premium işlemler kapanır. Uygulama salt okunur bandından ödeme sayfasına yönlendirir.
 
 Geri almak için aynı komut `enabled = false` ile çalıştırılır. Hiçbir veri silinmez.
+
+## 6. Satın alma doğrulama hataları ve yapılandırma kontrol listesi
+
+`billing-verify-purchase` hata durumunda yalnızca güvenli bir kod döndürür ve loglar (token, anahtar veya makbuz asla yazılmaz). Uygulama her kod için "Aboneliğiniz etkinleştirilmedi" diyen Türkçe bir mesaj gösterir. Başarı yalnızca yanıtta `granted: true` varsa kabul edilir; Google satın alması ancak o zaman onaylanır (acknowledge). Onaylanmayan satın almalar Google tarafından 3 gün içinde otomatik iade edilir.
+
+| Kod | Anlamı | Bakılacak yer |
+|---|---|---|
+| `not_configured` | Supabase secret'ı eksik veya bozuk | Supabase > Edge Functions > Secrets: `GOOGLE_PLAY_PACKAGE_NAME`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` (tam JSON), `GOOGLE_RTDN_TOKEN` |
+| `google_401` | Hizmet hesabı anahtarı reddedildi | Anahtar iptal/yenilenmiş olabilir; yeni JSON ile secret'ı güncelleyin |
+| `google_403` | Hizmet hesabının Play Console yetkisi yok | Play Console > Users and permissions; Cloud'da Android Publisher API etkin mi |
+| `google_404` | Satın alma jetonu Google'da yok | Test hesabı/uygulama paketi/ürün eşleşmesi |
+| `product_not_found` | Ürün kimliği veritabanı eşlemesinde yok | `subscription_plan_provider_products` |
+| `base_plan_unavailable` | Base plan eşlemesi/etkinliği yok | Play Console'da base plan Etkin mi; `small_family:monthly` / `:annual` |
+| `verification_failed` | Beklenmeyen doğrulama hatası | Edge Function logları (`code` alanı) |
+| `purchase_rejected` | Google doğruladı ama aile hesabına uygulanamadı | `select error from billing_events where result = 'rejected' order by id desc limit 10;` |
+| `temporary_error` | Google/ağ geçici hata | Uygulama sonraki açılışta yeniden dener |
+
+Supabase ve Vercel değişkenleri **birbirinin yerine geçmez**: satın alma doğrulaması yalnızca Supabase secret'larını, Admin Paneli katalog kontrolü yalnızca Vercel değişkenlerini okur.
+
+**Yayın sırası:** (1) migration `20261028000100_billing_event_retry.sql`, (2) `billing-verify-purchase` ve `billing-webhook` deploy, (3) uygulama sürümü. Yeni uygulama yalnızca `granted: true` yanıtını başarı sayar; eski sunucuyla çalışırsa satın alma doğrulanmış sayılmaz. Geri alma: önce uygulama sürümünü durdurun, sonra fonksiyonları eski sürüme, en son `supabase/rollbacks/20261028000100_billing_event_retry.down.sql` dosyasını çalıştırın (yalnızca fonksiyon gövdelerini eski haline getirir, veri silmez).

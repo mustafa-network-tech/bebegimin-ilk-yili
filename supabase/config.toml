@@ -72,6 +72,11 @@ verify_jwt = false
 [functions.billing-webhook]
 verify_jwt = false
 
+# Called by pg_cron / pg_net every 15 minutes with the x-reconcile-secret header
+# (BILLING_RECONCILE_SECRET), never by users. Off until the billing_reconcile flag is enabled.
+[functions.billing-reconcile]
+verify_jwt = false
+
 # Called by the app with the user's JWT after a store purchase / restore.
 [functions.billing-verify-purchase]
 verify_jwt = true

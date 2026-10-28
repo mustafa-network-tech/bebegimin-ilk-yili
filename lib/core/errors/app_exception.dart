@@ -33,8 +33,8 @@ class AppException implements Exception {
     if (error is PostgrestException) return _fromPostgrest(error);
     if (error is StorageException) return _fromStorage(error);
     if (error is FunctionException) {
-      final details = error.details;
-      final msg = details is Map && details['error'] is String ? details['error'] as String : null;
+      final code = functionErrorCode(error);
+      final msg = code == null ? null : _billingMessages[code];
       return AppException(
         msg ?? 'Sunucu işlemi tamamlanamadı (${error.status}).',
         kind: AppErrorKind.server,
@@ -43,6 +43,28 @@ class AppException implements Exception {
     }
     return AppException('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.', cause: error);
   }
+
+  /// Safe error code of an Edge Function failure (`{ "error": "<code>" }`), if any.
+  static String? functionErrorCode(FunctionException error) {
+    final details = error.details;
+    return details is Map && details['error'] is String ? details['error'] as String : null;
+  }
+
+  /// Store purchase verification codes (see supabase/functions/_shared/billing_errors.ts).
+  /// Every message states that the subscription was NOT activated.
+  static const _billingMessages = <String, String>{
+    'not_configured':
+        'Ödeme doğrulama hizmeti şu an hazır değil. Aboneliğiniz etkinleştirilmedi; daha sonra tekrar deneyin.',
+    'google_401': 'Google Play ile doğrulama yapılamadı. Aboneliğiniz etkinleştirilmedi; daha sonra tekrar deneyin.',
+    'google_403': 'Google Play ile doğrulama yapılamadı. Aboneliğiniz etkinleştirilmedi; daha sonra tekrar deneyin.',
+    'google_404': 'Bu satın alma Google Play kayıtlarında bulunamadı. Aboneliğiniz etkinleştirilmedi.',
+    'product_not_found': 'Bu paket mağazada tanımlı değil. Aboneliğiniz etkinleştirilmedi.',
+    'base_plan_unavailable': 'Seçtiğiniz paket seçeneği şu an kullanılamıyor. Aboneliğiniz etkinleştirilmedi.',
+    'verification_failed': 'Satın alma doğrulanamadı. Aboneliğiniz etkinleştirilmedi.',
+    'purchase_rejected': 'Satın alma aile hesabınıza uygulanamadı. Aboneliğiniz etkinleştirilmedi.',
+    'temporary_error': 'Doğrulama servisine şu an ulaşılamıyor. Aboneliğiniz henüz etkinleşmedi; uygulama bir sonraki açılışta yeniden deneyecek.',
+    'purchase_not_yours': 'Bu satın alma başka bir aile hesabına ait.',
+  };
 
   static bool isNetworkError(Object error) =>
       error is SocketException ||

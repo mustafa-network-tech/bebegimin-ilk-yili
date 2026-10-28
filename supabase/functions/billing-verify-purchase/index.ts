@@ -2,6 +2,11 @@
 // with the store (never trusted as sent), routed by product kind and bound
 // to the caller's family account only if the caller is a parent there.
 //
+// Response: { kind, result, status, granted } on success. `granted` is true only
+// when the family really has access / the baby really owns the product (the RPC
+// re-reads the stored state). Failures are `{ error: <code> }` with a safe code
+// (see _shared/billing_errors.ts); nothing from the store or the receipt is echoed.
+//
 // POST {
 //   provider: "app_store" | "google_play",
 //   verification_data,   // app_store: StoreKit 2 signed transaction (JWS); google_play: purchase token
@@ -18,6 +23,14 @@ import {
   verifyAppleTransaction,
 } from "../_shared/app_store.ts";
 import { googlePlayState, googlePremiumState } from "../_shared/google_play.ts";
+import {
+  BILLING_HTTP_STATUS,
+  BillingError,
+  type BillingErrorCode,
+  rejectionCode,
+  toBillingError,
+  verifyOutcome,
+} from "../_shared/billing_errors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -30,6 +43,12 @@ type Body = {
   checkout_intent_id?: string;
   order_id?: string;
 };
+
+function fail(provider: string | undefined, code: BillingErrorCode): Response {
+  // Only the safe code is logged: no tokens, keys, receipts or user data.
+  console.error(JSON.stringify({ fn: "billing-verify-purchase", provider: provider ?? null, code }));
+  return json({ error: code }, BILLING_HTTP_STATUS[code]);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -71,10 +90,11 @@ Deno.serve(async (req) => {
       }
     } else if (body.provider === "google_play") {
       if (!body.product_id) return json({ error: "malformed request" }, 400);
-      const { data: productKind } = await admin.rpc("store_product_kind", {
+      const { data: productKind, error: kindError } = await admin.rpc("store_product_kind", {
         p_provider: "google_play",
         p_provider_product_id: body.product_id,
       });
+      if (kindError) throw new BillingError("temporary_error");
       if (productKind === "premium") {
         kind = "premium";
         payload = await googlePremiumState(body.product_id, body.verification_data);
@@ -84,15 +104,15 @@ Deno.serve(async (req) => {
         payload = await googlePlayState(body.verification_data);
         eventId = `verify:${body.verification_data}:${payload?.status}:${payload?.current_period_end}`;
       } else {
-        return json({ error: "unknown product" }, 400);
+        throw new BillingError("product_not_found");
       }
     } else {
       return json({ error: "unsupported provider" }, 400);
     }
-  } catch (_) {
-    return json({ error: "verification failed" }, 422);
+  } catch (e) {
+    return fail(body.provider, toBillingError(e).code);
   }
-  if (!payload) return json({ result: "pending" });
+  if (!payload) return json({ result: "pending", granted: false });
 
   if (kind === "subscription" && body.checkout_intent_id) payload.checkout_intent_id = body.checkout_intent_id;
   if (kind === "premium" && body.order_id) payload.order_id = body.order_id;
@@ -102,8 +122,20 @@ Deno.serve(async (req) => {
     { p_user: auth.user.id, p_provider: body.provider, p_provider_event_id: eventId, p_payload: payload },
   );
   if (error) {
-    if (error.hint === "purchase_not_yours") return json({ error: "purchase_not_yours" }, 403);
-    return json({ error: "processing failed" }, 500);
+    if (error.hint === "purchase_not_yours") return fail(body.provider, "purchase_not_yours");
+    return fail(body.provider, "temporary_error");
   }
-  return json({ kind, result: data, status: payload.status });
+  const outcome = verifyOutcome(data);
+  if (outcome === "rejected") {
+    // Why it was rejected is stored with the (append-only) event; only a code is returned.
+    const { data: rows } = await admin
+      .from(kind === "premium" ? "premium_order_events" : "billing_events")
+      .select("error")
+      .eq("provider", body.provider!)
+      .like("provider_event_id", `${eventId}*`)
+      .order("id", { ascending: false })
+      .limit(1);
+    return fail(body.provider, rejectionCode(rows?.[0]?.error as string | undefined));
+  }
+  return json({ kind, result: data, status: payload.status, granted: outcome === "granted" });
 });

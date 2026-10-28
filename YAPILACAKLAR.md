@@ -144,6 +144,65 @@ Google Play içerik derecelendirme anketinde "kullanıcı içeriği bildirme öz
   - Gizlilik politikası (§1) ve KVKK aydınlatma metni (§2) bu durumu anlatacak şekilde güncellendi (3 Ekim 2026). Videolardaki konum bilgisi temizlenmeye başlanırsa bu iki metin de yeniden düzeltilmeli.
   - Ayarlar'daki "Yüklenen fotoğrafların EXIF (konum dahil) bilgileri cihazda temizlenir" yazısı ([settings_screens.dart:501](lib/features/settings/presentation/settings_screens.dart#L501)) yalnızca fotoğrafları kapsıyor. Videolar temizlenmezse bu yazı yanlış anlaşılabilir.
 
+## 7. Test sonrası yapılacaklar (Android sürümü ve imzalama)
+
+İlk AAB 2026-10-03'te derlendi: `0.1.0+1`, paket `com.mkdigitalsystems.bebegimin_ilk_yili`, `env/dev.json` ile (`DEMO_MODE` açık).
+
+- [ ] **Yükleme anahtarını yedekle.** `C:\Users\mavik\keystores\bebegimin-ilk-yili-upload.jks` dosyasını ve `android/key.properties` içindeki şifreyi bir şifre yöneticisine ya da güvenli bir yere kopyala. Anahtar kaybolursa Google desteğinden yükleme anahtarı sıfırlatmak gerekir. Anahtar parmak izi (SHA-256): `96:28:16:E5:2D:A1:DE:5E:D1:44:1A:CC:FF:84:6F:7A:54:B0:9E:99:55:87:7D:53:97:26:D2:8E:07:B9:91:7B`.
+- [ ] **Play Uygulama İmzalama:** İlk yüklemede Play bu ayarı soracak. Önerilen seçenekte kalınmalı, yani Google'ın oluşturduğu uygulama imzalama anahtarıyla devam edilmeli.
+- [ ] **Supabase'de paket adını güncelle.** Ödeme webhook'u için Supabase'deki `GOOGLE_PLAY_PACKAGE_NAME` gizli değişkeni `com.mkdigitalsystems.bebegimin_ilk_yili` olmalı. Eski değer (`app.bebegimin.bebegimin_ilk_yili`) kalırsa satın almalar doğrulanmaz.
+- [ ] **Her yeni yüklemede sürüm kodunu artır.** `pubspec.yaml` içindeki `version` değeri her yüklemede artmalı (ör. `0.1.0+1` → `0.1.1+2`). Play aynı sürüm koduyla ikinci yüklemeyi kabul etmez.
+- [ ] **Üretim sürümünü `DEMO_MODE` kapalı derle.** Üretim için `env/dev.json` yerine `DEMO_MODE` alanı olmayan ya da `false` olan bir ayar dosyası kullanılmalı (bkz. §3).
+- **Bilgi: Windows'ta derleme `B:` sürücüsünden yapılıyor.** Proje yolunda Türkçe karakterler ("DİGİTAL", "PORTFÖY") olduğu için Android derleme aracı bu yolda çalışmıyor. Proje klasörü `B:` sürücüsüne bağlanıp derleme oradan yapılıyor. Bu bağlantı bilgisayar yeniden başlatılınca kalkar. Yeniden bağlamak ve derlemek için:
+  ```powershell
+  subst B: "C:\Users\mavik\Desktop\MK DİGİTAL SYSTEMS PROJECTS\PORTFÖY\UYGULAMA\my-baby-first-year"
+  cd B:\bebegimin-ilk-yili
+  flutter build appbundle --release --dart-define-from-file=env/dev.json
+  ```
+  Aynı sebeple `android/gradle.properties` içinde `kotlin.incremental=false` ayarı var.
+
+## 8. Kapalı test süresince tamamlanacak sunucu ve mağaza kurulumu
+
+Kapalı test 2026-10-03'te başladı (15–20 gün). Aşağıdakilerin hepsi test bitmeden yapılmalı.
+
+**Tespit (2026-10-03):** Dev Supabase projesinde (`noayrdgjxwjnyghoyehv`) hiçbir Edge Function yüklü değil; fonksiyon adresleri 404 dönüyor. Bilgisayarda Supabase CLI kurulu değil. Gizli değişkenler (secrets) hiç girilmedi. Kitap, Film ve HTML üretimi için yalnızca kod yazıldı, hiçbir sunucuda kurulum yapılmadı. Bu yüzden testte şunlar çalışmıyor:
+- Satın alma ("Paket mağazada bulunamadı" hatası).
+- Kitap, Film ve HTML üretimi ve indirme.
+- Uygulama içinden hesap silme. Google Play politikası bunu zorunlu tutuyor, öncelikli.
+- Anlık bildirimler.
+
+### 8.1 Supabase Edge Functions
+- [ ] Supabase CLI'yı kur, `supabase login` ile giriş yap, `supabase link --project-ref <ref>` ile projeye bağla.
+- [ ] 7 fonksiyonu deploy et: `privacy-actions`, `output-download`, `book-artifact-finalize`, `billing-verify-purchase`, `billing-webhook` (`--no-verify-jwt` ile), `send-push`, `storage-cleanup`.
+- [ ] Deploy sonrası adresleri yeniden kontrol et; artık 404 dönmemeli.
+- [ ] Uygulama içinden hesap silmeyi test et (`privacy-actions`).
+
+### 8.2 Gizli değişkenler (Supabase → Edge Functions → Secrets)
+Bunlar SQL ya da migration ile değil, Supabase panelinden veya `supabase secrets set` ile girilir. Ayrıntı: [docs/operations/store-billing-setup.md](docs/operations/store-billing-setup.md) §2.
+- [ ] `GOOGLE_PLAY_PACKAGE_NAME` = `com.mkdigitalsystems.bebegimin_ilk_yili`
+- [ ] `GOOGLE_RTDN_TOKEN` = uzun, rastgele bir değer.
+- [ ] `GOOGLE_PLAY_SERVICE_ACCOUNT` = servis hesabının JSON anahtarı (bkz. 8.3).
+- [ ] Diğer fonksiyonların istediği değişkenleri kontrol et: [output-pipeline-setup.md](docs/operations/output-pipeline-setup.md), [book-artifacts-setup.md](docs/operations/book-artifacts-setup.md).
+
+### 8.3 Google Play ödeme kurulumu
+- [ ] Play Console → Para kazanma → Ödeme profili kur.
+- [ ] Google Cloud'da servis hesabı oluştur, JSON anahtarını indir. Hesabı Play Console → Kullanıcılar ve izinler bölümüne "Finansal verileri görüntüleme" ve "Siparişleri ve abonelikleri yönetme" yetkileriyle ekle.
+- [ ] Abonelikleri oluştur ve etkinleştir. Kimlikler birebir aynı olmalı: `small_family`, `normal_family`, `large_family`; her birinde `monthly` ve `annual` base plan. Fiyatlar katalogla aynı: 299/369/469 TL aylık, 3.229,20/3.985,20/5.065,20 TL yıllık.
+- [ ] Tek seferlik ürünleri oluştur: `first_year_book` (349 TL), `first_year_html` (449 TL), `first_year_film` (549 TL).
+- [ ] Ayarlar → Lisans testi bölümüne test kullanıcılarını ekle. Eklenmezse test satın almalarında gerçek para çekilir.
+- [ ] RTDN: Google Cloud'da bir Pub/Sub topic ve push subscription oluştur, Play Console → Para kazanma kurulumu ekranında bağla. Endpoint: `https://<PROJECT_REF>.supabase.co/functions/v1/billing-webhook?provider=google_play&token=<GOOGLE_RTDN_TOKEN>`. Tek seferlik ürün ve iptal edilen satın alma bildirimleri de açık olmalı.
+- [ ] Ürünler hazır olunca `premium_storefront` bayrağını aç ([store-billing-setup.md](docs/operations/store-billing-setup.md)).
+- [ ] Test hesabıyla satın almayı uçtan uca dene: abonelik açılıyor mu, Kitap/HTML/Film hakkı veriliyor mu, aynı bildirim iki kez gelince tek etki oluşuyor mu.
+
+### 8.4 Output worker (Kitap, Film, HTML üretimi)
+- [ ] Worker'ın nerede çalışacağına karar ver (Docker çalıştırabilen bir sunucu).
+- [ ] Docker imajını derle ve doğrula (bkz. §2).
+- [ ] Worker'ı kur ve ortam değişkenlerini gir: [output-worker-setup.md](docs/operations/output-worker-setup.md), [output-pipeline-setup.md](docs/operations/output-pipeline-setup.md).
+- [ ] Kilitli bir demo bebek (Defne) için Kitap PDF, HTML ve Film üret; ebeveyn hesabıyla indirmeyi test et.
+
+### 8.5 Anlık bildirimler
+- [ ] `env/dev.json` içindeki `FIREBASE_*` alanları boş. Firebase projesini kur, Android uygulamasını yeni paket adıyla (`com.mkdigitalsystems.bebegimin_ilk_yili`) ekle, değerleri gir ve `send-push` fonksiyonunun gizli değişkenlerini tanımla. Bundan sonra yeni AAB derlenmeli.
+
 
 Android paket kimliği:  com.mkdigitalsystems.bebegimin_ilk_yili     bu olacak paket ısmı
 

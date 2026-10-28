@@ -45,8 +45,11 @@ class SubscriptionRepository {
 
   /// Sends a store receipt to the server, which verifies it with Apple /
   /// Google and binds it to the caller's family account (parents only).
-  /// Returns the server's routing (`subscription` / `premium`) and result.
-  Future<({String kind, String result})> verifyPurchase({
+  /// Returns the server's routing (`subscription` / `premium`), its result and
+  /// `granted`: true only when the server confirmed that access / the
+  /// entitlement really exists. A response without `granted: true` (rejected,
+  /// pending, inactive, or from an older server) is never a success.
+  Future<({String kind, String result, bool granted})> verifyPurchase({
     required String provider,
     required String verificationData,
     required String productId,
@@ -64,7 +67,11 @@ class SubscriptionRepository {
       },
     );
     final data = res.data as Map?;
-    return (kind: (data?['kind'] as String?) ?? 'unknown', result: (data?['result'] as String?) ?? 'unknown');
+    return (
+      kind: (data?['kind'] as String?) ?? 'unknown',
+      result: (data?['result'] as String?) ?? 'unknown',
+      granted: data?['granted'] == true,
+    );
   }
 
   Future<CheckoutIntent> requestCheckout({

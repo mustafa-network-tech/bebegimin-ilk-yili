@@ -48,6 +48,20 @@ class GoogleProductRef {
 
 enum StorePurchaseStatus { pending, verified, canceled, failed }
 
+/// What to do with a purchase after the server answered.
+enum VerifyDecision { granted, pending, inactive, notActivated }
+
+/// Success needs the server's explicit `granted: true`. `rejected`, `duplicate`
+/// or `stale` alone, an unknown result or an older server's reply without
+/// `granted` never count as an activated subscription.
+@visibleForTesting
+VerifyDecision decideVerification({required bool granted, required String result}) {
+  if (granted) return VerifyDecision.granted;
+  if (result == 'pending') return VerifyDecision.pending;
+  if (result == 'inactive') return VerifyDecision.inactive;
+  return VerifyDecision.notActivated;
+}
+
 class StorePurchaseEvent {
   const StorePurchaseEvent(this.status, [this.message]);
 
@@ -71,12 +85,19 @@ abstract class StoreBilling {
   Stream<StorePurchaseEvent> get events;
   void start();
   Future<Map<String, String>> localizedPrices(Iterable<String> storeProductIds);
-  Future<void> buy(CheckoutIntent intent);
+
+  /// [currentPlanCode] is the plan code of the family's live subscription (if
+  /// any): on Google Play only that subscription may be replaced by a plan change.
+  Future<void> buy(CheckoutIntent intent, {String? currentPlanCode});
 
   /// One-time premium product (consumable in the store; the server keeps the
   /// permanent, baby-scoped entitlement).
   Future<void> buyPremium(PremiumOrder order);
-  Future<void> restore();
+
+  /// Asks the store for the purchases of this account; each one is verified by the
+  /// server before anything is granted. [silent] (automatic restore) suppresses
+  /// failure messages: the user did not ask for it.
+  Future<void> restore({bool silent = false});
   void dispose();
 }
 
@@ -88,6 +109,8 @@ class InAppStoreBilling implements StoreBilling {
   final _intentByStoreProduct = <String, String>{};
   final _orderByStoreProduct = <String, String>{};
   StreamSubscription<List<PurchaseDetails>>? _sub;
+  bool _restoring = false;
+  DateTime? _silentUntil;
 
   InAppPurchase get _iap => InAppPurchase.instance;
   StoreProvider? get _store => StoreProvider.current;
@@ -149,7 +172,8 @@ class InAppStoreBilling implements StoreBilling {
   }
 
   @override
-  Future<void> buy(CheckoutIntent intent) async {
+  Future<void> buy(CheckoutIntent intent, {String? currentPlanCode}) async {
+    _silentUntil = null; // a purchase the user started always reports its failures
     final store = _store;
     if (store == null) throw const AppException('Satın alma yalnızca iOS ve Android uygulamasında yapılabilir.');
     if (!await _iap.isAvailable()) {
@@ -166,10 +190,20 @@ class InAppStoreBilling implements StoreBilling {
     } else {
       final ref = GoogleProductRef.parse(_storeId(intent));
       final res = await _iap.queryProductDetails({ref.productId});
+      if (res.error != null) {
+        throw const AppException('Mağazaya şu an ulaşılamıyor. Lütfen daha sonra tekrar deneyin.');
+      }
       final product = _googleOffer(res.productDetails, ref);
-      if (product == null) throw const AppException('Paket mağazada bulunamadı.');
+      if (product == null) {
+        // Product missing in Play vs. product present but this base plan inactive / not offered.
+        throw AppException(
+          res.notFoundIDs.contains(ref.productId)
+              ? "Bu paket Google Play'de tanımlı değil."
+              : "Seçtiğiniz paket seçeneği şu an Google Play'de kullanılamıyor.",
+        );
+      }
       final offer = product.productDetails.subscriptionOfferDetails![product.subscriptionIndex!];
-      final current = await _activeGoogleSubscription();
+      final current = await _replaceableGoogleSubscription(currentPlanCode);
       param = GooglePlayPurchaseParam(
         productDetails: product,
         applicationUserName: intent.intentId, // obfuscatedAccountId
@@ -185,6 +219,7 @@ class InAppStoreBilling implements StoreBilling {
 
   @override
   Future<void> buyPremium(PremiumOrder order) async {
+    _silentUntil = null;
     final store = _store;
     if (store == null) throw const AppException('Satın alma yalnızca iOS ve Android uygulamasında yapılabilir.');
     if (order.provider != store.key) throw const AppException('Sipariş bu mağaza için hazırlanmadı.');
@@ -209,17 +244,51 @@ class InAppStoreBilling implements StoreBilling {
     return intent.providerProductId;
   }
 
-  /// The subscription this Google account already pays for (plan change).
-  Future<GooglePlayPurchaseDetails?> _activeGoogleSubscription() async {
+  /// The Google subscription a plan change replaces: only the family's own
+  /// live subscription product. One-time products, unverified (unacknowledged)
+  /// purchases and other subscriptions on this Google account are never used.
+  Future<GooglePlayPurchaseDetails?> _replaceableGoogleSubscription(String? currentPlanCode) async {
+    if (currentPlanCode == null) return null;
     final addition = _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
     final past = await addition.queryPastPurchases();
-    return past.pastPurchases.whereType<GooglePlayPurchaseDetails>().firstOrNull;
+    if (past.error != null) return null; // buy as a new subscription; never guess
+    return past.pastPurchases.whereType<GooglePlayPurchaseDetails>().firstWhereOrNull(
+      (p) => isReplaceableSubscription(
+        productId: p.productID,
+        purchased: p.status == PurchaseStatus.purchased,
+        acknowledged: p.billingClientPurchase.isAcknowledged,
+        currentPlanCode: currentPlanCode,
+      ),
+    );
   }
 
+  /// Plan codes are the Google subscription product ids (`small_family` …).
+  @visibleForTesting
+  static bool isReplaceableSubscription({
+    required String productId,
+    required bool purchased,
+    required bool acknowledged,
+    required String currentPlanCode,
+  }) => productId == currentPlanCode && purchased && acknowledged;
+
   @override
-  Future<void> restore() async {
+  Future<void> restore({bool silent = false}) async {
     if (!isSupported) throw const AppException('Geri yükleme yalnızca iOS ve Android uygulamasında yapılabilir.');
-    await _iap.restorePurchases();
+    if (_restoring) return; // one restore at a time
+    _restoring = true;
+    // Purchases arrive on the purchase stream a little later; failures in that window stay quiet.
+    _silentUntil = silent ? DateTime.now().add(const Duration(seconds: 45)) : null;
+    try {
+      await _iap.restorePurchases().timeout(const Duration(seconds: 20));
+    } finally {
+      _restoring = false;
+    }
+  }
+
+  void _emitFailure(String? message) {
+    final until = _silentUntil;
+    if (until != null && DateTime.now().isBefore(until)) return;
+    _events.add(StorePurchaseEvent(StorePurchaseStatus.failed, message));
   }
 
   Future<void> _onPurchases(List<PurchaseDetails> purchases) async {
@@ -249,37 +318,67 @@ class InAppStoreBilling implements StoreBilling {
             provider: store.key,
             verificationData: p.verificationData.serverVerificationData,
             productId: p.productID,
-            checkoutIntentId: _intentByStoreProduct.remove(p.productID),
-            orderId: _orderByStoreProduct.remove(p.productID),
+            checkoutIntentId: _intentByStoreProduct[p.productID],
+            orderId: _orderByStoreProduct[p.productID],
           );
+      switch (decideVerification(granted: verified.granted, result: verified.result)) {
+        case VerifyDecision.pending:
+          // Payment not settled yet: nothing is granted and nothing is acknowledged.
+          _events.add(const StorePurchaseEvent(StorePurchaseStatus.pending));
+          return;
+        case VerifyDecision.inactive:
+          // Verified with the store but expired / refunded: no access to open.
+          _forget(p);
+          await _complete(p);
+          _emitFailure('Bu satın alma artık geçerli değil.');
+          return;
+        case VerifyDecision.notActivated:
+          // Left unfinished (never acknowledged): the store delivers it again, and
+          // Google refunds purchases that are not acknowledged within three days.
+          _emitFailure(_notActivated);
+          return;
+        case VerifyDecision.granted:
+          break;
+      }
+      // Access / the entitlement exists on the server: only now acknowledge.
+      _forget(p);
       await _complete(p);
       if (verified.kind == 'premium' && store == StoreProvider.googlePlay) {
-        // Lets the family buy the same product for another baby later.
-        await _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>().consumePurchase(p);
+        // Lets the family buy the same product for another baby later. A failure
+        // here must not undo the grant; the store keeps the purchase until retried.
+        try {
+          await _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>().consumePurchase(p);
+        } catch (_) {}
       }
       _ref.read(lifecycleRevisionProvider.notifier).bump(); // refresh access / plan
       _events.add(const StorePurchaseEvent(StorePurchaseStatus.verified));
     } on FunctionException catch (e) {
-      if (e.status == 403) {
+      if (AppException.functionErrorCode(e) == 'purchase_not_yours') {
         // Belongs to another family account: never retried, never applied here.
+        _forget(p);
         await _complete(p);
-        _events.add(const StorePurchaseEvent(StorePurchaseStatus.failed, 'Bu satın alma başka bir aile hesabına ait.'));
-      } else {
-        // Left unfinished so the store delivers it again and we retry.
-        _events.add(
-          const StorePurchaseEvent(
-            StorePurchaseStatus.failed,
-            'Satın alma doğrulanamadı. Uygulama bir sonraki açılışta yeniden deneyecek.',
-          ),
-        );
       }
+      // Every other failure leaves the purchase unfinished so it is verified again.
+      _emitFailure(AppException.from(e).message);
     } catch (e) {
-      _events.add(StorePurchaseEvent(StorePurchaseStatus.failed, AppException.from(e).message));
+      _emitFailure(AppException.from(e).message);
     }
   }
 
+  static const _notActivated = 'Satın alma doğrulanamadı. Aboneliğiniz etkinleştirilmedi.';
+
+  void _forget(PurchaseDetails p) {
+    _intentByStoreProduct.remove(p.productID);
+    _orderByStoreProduct.remove(p.productID);
+  }
+
   Future<void> _complete(PurchaseDetails p) async {
-    if (p.pendingCompletePurchase) await _iap.completePurchase(p);
+    if (!p.pendingCompletePurchase) return;
+    try {
+      await _iap.completePurchase(p);
+    } catch (_) {
+      // The server may have acknowledged the purchase first; the entitlement is already stored.
+    }
   }
 
   @override

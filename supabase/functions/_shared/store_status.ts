@@ -75,6 +75,14 @@ export type GoogleSubscriptionV2 = {
   subscriptionState?: string;
   startTime?: string;
   linkedPurchaseToken?: string;
+  acknowledgementState?: string; // ACKNOWLEDGEMENT_STATE_PENDING | ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED
+  // Present on a canceled / expired subscription: why it ended.
+  canceledStateContext?: {
+    userInitiatedCancellation?: unknown;
+    systemInitiatedCancellation?: unknown;
+    developerInitiatedCancellation?: unknown;
+    replacementCancellation?: unknown;
+  };
   externalAccountIdentifiers?: { obfuscatedExternalAccountId?: string };
   lineItems?: Array<{
     productId: string;

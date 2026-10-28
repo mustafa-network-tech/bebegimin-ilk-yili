@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/content/lifecycle_revision.dart';
@@ -34,7 +35,10 @@ final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
     final products = await ref.watch(subscriptionRepositoryProvider).storeProducts(provider.key);
     final prices = await store.localizedPrices(products.values);
     return {for (final e in products.entries) e.key: ?prices[e.value]};
-  } catch (_) {
+  } catch (e) {
+    // Prices are cosmetic (the catalog price stays visible), but the cause must
+    // not vanish: a missing Play product also surfaces at purchase time.
+    debugPrint('storePrices: ${e.runtimeType}');
     return const {};
   }
 });
