@@ -220,13 +220,16 @@ test("offline archive: real media, manifest-verified ZIP, opens offline in Chrom
         const v = document.querySelector("video");
         return !!v && v.readyState >= 1 && v.videoWidth > 0;
       }, { timeout: 15_000 });
-      const playing = await page.evaluate(async () => {
+      await page.evaluate(async () => {
         const v = document.querySelector("video")!;
         v.muted = true;
         await v.play();
-        await new Promise((r) => setTimeout(r, 600));
-        return v.currentTime > 0;
       });
+      // play() resolves before the media clock starts; on a busy runner the
+      // first advance can take longer than any fixed sleep.
+      const playing = await page.waitForFunction(() => document.querySelector("video")!.currentTime > 0, {
+        timeout: 10_000,
+      }).then(() => true, () => false);
       assert.ok(playing, "video plays offline");
 
       await page.goto(url("mektuplar.html"), { waitUntil: "load" });
