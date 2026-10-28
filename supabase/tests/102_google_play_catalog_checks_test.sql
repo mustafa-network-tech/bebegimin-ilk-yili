@@ -71,3 +71,6 @@ select tests.expect_error(
   'append-only');
 update public.platform_user_roles set revoked_at = now()
  where user_id = tests.id('baska') and role = 'super_admin';
+-- Later suites insert this fixture role again; leave no row behind.
+delete from public.platform_user_roles
+ where user_id = tests.id('baska') and role = 'super_admin';

@@ -140,7 +140,9 @@ else
 fi
 rm -rf -- "$RACE_DIR"
 
-for f in "$DIR"/[1-9]*_test.sql; do
+# Two-digit suites first, then three-digit ones (100+ come after 99z), so a
+# plain lexical glob never runs 100_ before 10_.
+for f in "$DIR"/[1-9][0-9][!0-9]*_test.sql "$DIR"/[1-9][0-9][0-9]*_test.sql; do
   echo "→ test $(basename "$f")"
   psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" -f "$f" 2>&1 | sed -n 's/.*NOTICE:  \(ok - .*\)/  \1/p; /ERROR/p; /FAIL/p'
   test "${PIPESTATUS[0]}" -eq 0 || { echo "✗ $(basename "$f") failed"; exit 1; }

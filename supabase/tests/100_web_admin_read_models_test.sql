@@ -27,7 +27,8 @@ select tests.login(tests.id('baska'));
 select tests.eq((public.admin_dashboard_summary() ->> 'users_total')::bigint > 0, true, 'dashboard uses real users');
 select tests.eq((select count(*) from public.admin_users_families(null, 'all', 1, 0)), 1::bigint, 'users are paginated');
 select tests.eq((select total_count from public.admin_users_families(null, 'all', 1, 0) limit 1) > 1, true, 'user total count returned');
-select tests.eq((select email from public.admin_users_families('anne@example.com', 'all', 1, 0)),
+-- Exact id search: other suites add many *anne@example.com accounts.
+select tests.eq((select email from public.admin_users_families(tests.id('anne')::text, 'all', 1, 0)),
                 'anne@example.com', 'managed auth varchar email is exposed as text');
 select tests.expect_error($q$select * from public.admin_users_families(null, 'bogus')$q$, 'invalid status');
 select tests.expect_error(format('select * from public.admin_users_families(%L)', repeat('x', 61)), 'too long');
