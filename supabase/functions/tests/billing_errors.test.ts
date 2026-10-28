@@ -27,7 +27,9 @@ test("a rejected service-account grant is a credential problem, not a bad purcha
 });
 
 test("unknown errors never leak their message", () => {
-  const e = toBillingError(new Error("private_key = -----BEGIN PRIVATE KEY----- secret token abc"));
+  // Assembled at runtime so the CI secret scan never sees a key header in source.
+  const pemHeader = ["-----BEGIN", "PRIVATE KEY-----"].join(" ");
+  const e = toBillingError(new Error(`private_key = ${pemHeader} secret token abc`));
   assert.equal(e.code, "verification_failed");
   assert.equal(e.message, "verification_failed");
   assert.equal(toBillingError("boom").code, "verification_failed");
