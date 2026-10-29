@@ -124,8 +124,7 @@ class AppException implements Exception {
     'rate_limited': 'Çok fazla işlem yapıldı. Lütfen bir dakika sonra tekrar deneyin.',
     'admin_console_disabled': 'Yönetim paneli geçici olarak kapalı.',
     'family_capacity_full': 'Aile paketinin üye kapasitesi dolu. Katılım için Anne veya Baba paketi yükseltebilir ya da bir üyeyi çıkarabilir.',
-    'already_in_another_family':
-        'Zaten bir ailenin parçasısınız. Başka bir aileye davetle katılamazsınız.',
+    'already_in_another_family': 'Zaten bir ailenin parçasısınız. Başka bir aileye davetle katılamazsınız.',
     'parent_seats_full': 'Bu aile hesabında iki ebeveyn zaten kayıtlı.',
     'subscription_required': 'Bu işlem için aktif bir aile paketi gerekiyor.',
     'premium_requires_locked': 'Dijital ürünler ilk yıl arşivi tamamlandıktan sonra sunulur.',
