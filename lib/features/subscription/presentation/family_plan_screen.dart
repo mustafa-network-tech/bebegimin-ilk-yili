@@ -96,8 +96,23 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
     if (baby == null) return const Scaffold(body: LoadingView());
     final overview = ref.watch(familyAccountOverviewProvider(baby.id));
     final catalog = ref.watch(planCatalogProvider);
+    // The plan gate (router) holds a new family here; leave once the plan is active.
+    ref.listen(activeAccessGateProvider, (prev, next) {
+      if (prev?.planRequired == true && next?.planRequired == false) context.go('/home');
+    });
+    final planRequired = ref.watch(activeAccessGateProvider)?.blocksApp ?? false;
     return Scaffold(
-      appBar: AppBar(title: const Text('Aile paketi')),
+      appBar: AppBar(
+        title: const Text('Aile paketi'),
+        actions: [
+          if (planRequired)
+            IconButton(
+              tooltip: 'Ayarlar',
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => context.push('/settings'),
+            ),
+        ],
+      ),
       body: AsyncValueView<FamilyAccountOverview?>(
         value: overview,
         onRetry: () => ref.invalidate(familyAccountOverviewProvider(baby.id)),

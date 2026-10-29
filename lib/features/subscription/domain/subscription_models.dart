@@ -271,6 +271,7 @@ class BabyAccessState {
     required this.reason,
     required this.isParent,
     required this.familyAccountId,
+    this.planRequired = false,
   });
 
   factory BabyAccessState.fromJson(String babyId, Map<String, dynamic> j) => BabyAccessState(
@@ -279,6 +280,7 @@ class BabyAccessState {
     reason: AccessReason.fromKey(j['reason'] as String?),
     isParent: j['is_parent'] as bool? ?? false,
     familyAccountId: j['family_account_id'] as String?,
+    planRequired: j['plan_required'] as bool? ?? false,
   );
 
   final String babyId;
@@ -286,6 +288,13 @@ class BabyAccessState {
   final AccessReason reason;
   final bool isParent;
   final String? familyAccountId;
+
+  /// A new family that has not chosen a plan yet: a parent cannot enter the
+  /// app before buying one (families that existed earlier are exempt).
+  final bool planRequired;
+
+  /// The plan gate closes the app for the parent who has to buy the plan.
+  bool get blocksApp => planRequired && isParent;
 
   String get title => switch (reason) {
     AccessReason.testAccess => 'Sınırsız test erişimi',

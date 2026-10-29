@@ -113,14 +113,6 @@ Future<void> showBabySwitcher(BuildContext context, WidgetRef ref) {
                   context.push('/baby/new');
                 },
               ),
-              ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.vpn_key_outlined)),
-                title: const Text('Davet koduyla bir aileye katıl'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  context.push('/join');
-                },
-              ),
               const SizedBox(height: 8),
             ],
           ),

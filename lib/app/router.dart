@@ -355,6 +355,9 @@ const _onboardingRoutes = {
   '/admin',
 };
 
+/// Reachable while a new family still has to choose a plan.
+const _planGateRoutes = [familyPlanRoute, paywallRoute, '/settings'];
+
 String? _redirect(Ref ref, GoRouterState state) {
   final loc = state.matchedLocation;
   if (!Env.isSupabaseConfigured) return loc == '/config-error' ? null : '/config-error';
@@ -409,6 +412,8 @@ String? _redirect(Ref ref, GoRouterState state) {
   // the shell shows a read-only banner and write routes are guarded. The
   // payment page is only left automatically once access is back.
   final gate = ref.read(activeAccessGateProvider);
+  // A new family without a plan: only the plans (and settings) are reachable.
+  if (gate != null && gate.blocksApp && !_planGateRoutes.any(loc.startsWith)) return familyPlanRoute;
   final blocked = gate != null && !gate.allowed;
   if (!blocked && loc == paywallRoute && gate != null) return '/home';
   return null;

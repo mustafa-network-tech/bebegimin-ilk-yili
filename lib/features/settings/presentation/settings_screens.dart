@@ -73,11 +73,13 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Yeni çocuk ekle'),
             onTap: () => context.push('/baby/new'),
           ),
-          ListTile(
-            leading: const Icon(Icons.vpn_key_outlined),
-            title: const Text('Davet koduyla katıl'),
-            onTap: () => context.push('/join'),
-          ),
+          // One family per person: joining another family is only offered before having a baby.
+          if (babies.isEmpty)
+            ListTile(
+              leading: const Icon(Icons.vpn_key_outlined),
+              title: const Text('Davet koduyla katıl'),
+              onTap: () => context.push('/join'),
+            ),
           if (ref.watch(adminSessionProvider).value?.isSuperAdmin ?? false) ...[
             const SectionHeader(title: 'Platform'),
             ListTile(

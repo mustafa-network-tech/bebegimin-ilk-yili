@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,8 @@ import 'core/cache/local_cache.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Android 15 draws apps edge to edge (target SDK 35); opt in explicitly on every version.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   Intl.defaultLocale = 'tr_TR';
   await initializeDateFormatting('tr_TR');
   final prefs = await SharedPreferences.getInstance();
