@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9DBBA8"/><stop offset="1" stop-color="#6E9580"/></linearGradient></defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <g id="baby">
+    <circle cx="262" cy="575" r="62" fill="#F7D6BF"/>
+    <circle cx="262" cy="575" r="32" fill="#EDBFA2"/>
+    <circle cx="762" cy="575" r="62" fill="#F7D6BF"/>
+    <circle cx="762" cy="575" r="32" fill="#EDBFA2"/>
+    <circle cx="512" cy="570" r="262" fill="#F7D6BF"/>
+    <path d="M 462 318 C 448 250 520 222 560 252 C 590 276 572 322 536 318 C 512 315 512 290 530 286" fill="none" stroke="#8A5A44" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="392" cy="648" rx="54" ry="34" fill="#EE9F86" opacity="0.75"/>
+    <ellipse cx="632" cy="648" rx="54" ry="34" fill="#EE9F86" opacity="0.75"/>
+    <path d="M 392 566 Q 432 610 472 566" fill="none" stroke="#2F2A26" stroke-width="20" stroke-linecap="round"/>
+    <path d="M 552 566 Q 592 610 632 566" fill="none" stroke="#2F2A26" stroke-width="20" stroke-linecap="round"/>
+    <ellipse cx="512" cy="628" rx="16" ry="11" fill="#E9B396"/>
+    <path d="M 474 690 Q 512 728 550 690" fill="none" stroke="#2F2A26" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>

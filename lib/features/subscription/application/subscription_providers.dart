@@ -1,0 +1,77 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/content/lifecycle_revision.dart';
+import '../../babies/application/baby_providers.dart';
+import '../data/store_billing.dart';
+import '../data/subscription_repository.dart';
+import '../domain/subscription_models.dart';
+
+final planCatalogProvider = FutureProvider<PlanCatalog>((ref) => ref.watch(subscriptionRepositoryProvider).catalog());
+
+final familyAccountIdProvider = FutureProvider.family<String?, String>(
+  (ref, babyId) => ref.watch(subscriptionRepositoryProvider).accountIdForBaby(babyId),
+);
+
+/// Family plan overview for a baby's account (`null` if not mapped yet).
+/// Refetched after purchases, on app resume and after server refusals.
+final familyAccountOverviewProvider = FutureProvider.autoDispose.family<FamilyAccountOverview?, String>((
+  ref,
+  babyId,
+) async {
+  ref.watch(lifecycleRevisionProvider);
+  final accountId = await ref.watch(familyAccountIdProvider(babyId).future);
+  if (accountId == null) return null;
+  return ref.watch(subscriptionRepositoryProvider).overview(accountId);
+});
+
+/// Store-localized prices keyed by `<plan_code>.<billing_period>`; empty on
+/// platforms without a store or when the store is unreachable.
+final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
+  final store = ref.watch(storeBillingProvider);
+  final provider = store.provider;
+  if (provider == null) return const {};
+  try {
+    final products = await ref.watch(subscriptionRepositoryProvider).storeProducts(provider.key);
+    final prices = await store.localizedPrices(products.values);
+    return {for (final e in products.entries) e.key: ?prices[e.value]};
+  } catch (e) {
+    // Prices are cosmetic (the catalog price stays visible), but the cause must
+    // not vanish: a missing Play product also surfaces at purchase time.
+    debugPrint('storePrices: ${e.runtimeType}');
+    return const {};
+  }
+});
+
+/// Server decision for a baby: `allowed` = the family may use the app. Without
+/// an active plan, trial or test access the server locks the whole app.
+final babyAccessStateProvider = FutureProvider.family<BabyAccessState, String>((ref, babyId) async {
+  ref.watch(lifecycleRevisionProvider);
+  final state = await ref.watch(subscriptionRepositoryProvider).accessState(babyId);
+  // A running trial ends by itself: ask the server again the moment it is over, so the
+  // plan screen opens without a restart (the server enforces it regardless).
+  final end = state.trialEndsAt;
+  if (end != null) {
+    final wait = end.difference(DateTime.now());
+    if (!wait.isNegative) {
+      final timer = Timer(wait + const Duration(seconds: 2), ref.invalidateSelf);
+      ref.onDispose(timer.cancel);
+    }
+  }
+  return state;
+});
+
+/// True once the server reports that the family subscription is inactive:
+/// the archive stays readable, nothing can be added or changed (P-2).
+final babySubscriptionReadOnlyProvider = Provider.family<bool, String>(
+  (ref, babyId) => ref.watch(babyAccessStateProvider(babyId)).value?.allowed == false,
+);
+
+/// Access state of the selected baby (drives the read-only banner).
+final activeAccessGateProvider = Provider<BabyAccessState?>((ref) {
+  final baby = ref.watch(activeBabyProvider);
+  if (baby == null) return null;
+  return ref.watch(babyAccessStateProvider(baby.id)).value;
+});

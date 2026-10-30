@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**", "feature/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.47.5"
+  # One Deno for CI, the Edge Functions and the output worker image
+  # (workers/output/Dockerfile). The lockfiles are format v5, which older
+  # Deno releases (e.g. 2.1.x) cannot read.
+  DENO_VERSION: "v2.9.7"
+
+jobs:
+  flutter:
+    name: Analyze & unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # Secrets never belong in the repository or the app (phase 13 audit).
+      - name: Secret and service-role scan
+        run: |
+          ! grep -rIni "service_role" lib/
+          ! git grep -IlE "eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC )?PRIVATE KEY-----|sk_live_" -- . ':!*.lock' ':!.github/workflows/ci.yml'
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+
+  database:
+    name: Migrations + RLS tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: ./supabase/tests/run_db_tests.sh
+
+  output-worker:
+    name: Output worker (Deno + ffmpeg + headless browser tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/output
+    env:
+      FFMPEG_PATH: ffmpeg
+      FFPROBE_PATH: ffprobe
+      # Preinstalled on GitHub's Ubuntu runners; the offline archive is opened
+      # in it with the network disabled.
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: deno fmt --check src tests
+      - run: deno lint src tests
+      - run: deno check src/main.ts
+      - run: deno task test
+
+  edge-functions:
+    name: Edge Functions (Deno type check + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      # The functions guard downloads, purchases, book finalization and
+      # account deletion; a type error or a broken helper must fail CI.
+      - run: deno check */index.ts
+      - run: deno test --allow-read --allow-env tests/
+
+  android:
+    name: Android build (APK)
+    runs-on: ubuntu-latest
+    needs: flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk --debug --dart-define-from-file=env/example.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+  ios:
+    name: iOS build (no codesign)
+    # connectivity_plus 7.x uses iOS 26 SDK APIs and requires Xcode 26.1.1+.
+    runs-on: macos-26
+    needs: flutter
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - run: xcodebuild -version
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build ios --debug --no-codesign --dart-define-from-file=env/example.json

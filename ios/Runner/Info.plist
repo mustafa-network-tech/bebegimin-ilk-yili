@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Bebegimin Ilk Yili</string>
+	<string>Bebeğimin İlk Yılı</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,32 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>bebegimin_ilk_yili</string>
+	<string>Bebeğimin İlk Yılı</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>app.bebegimin.links</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bebegimin</string>
+			</array>
+		</dict>
+	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Bebeğinizin fotoğraf ve videolarını çekip aile arşivinize eklemek için kameraya erişim gerekir.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Video çekerken ses kaydı için mikrofona erişim gerekir.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Galerinizdeki fotoğraf ve videoları bebeğinizin özel arşivine eklemek için erişim gerekir.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Paylaştığınız fotoğrafları galerinize kaydedebilmek için erişim gerekir.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -47,6 +72,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

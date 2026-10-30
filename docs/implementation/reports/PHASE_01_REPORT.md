@@ -1,0 +1,25 @@
+# Faz 01 Sonuç Raporu
+
+- Durum: COMPLETE
+- Başlangıç commit'i: `0b33687`
+- Bitiş commit'i: Commit oluşturulmadı (kullanıcı talebi)
+- Değişen dosyalar: Canonical route, detay ekranı/provider/repository, medya görüntüleyici, upload queue, cache ve push route dosyaları; ayrıntı için çalışma ağacı diff'i
+- Eklenen migration'lar: Yok
+- Korunan sözleşmeler: Mevcut RLS ve içerik izinleri; legacy route'lar yalnız RLS-yetkili canonical yönlendirme olarak korundu
+- Kabul kriterleri ve kanıtlar:
+  - Detay route/provider/repository anahtarları `(babyId, contentId)` oldu.
+  - Memory, letter, milestone, bağlı media/comment ve mutasyon sorguları `baby_id` ile kapsamlandı.
+  - Detay yaşı, yazar/izin/favori bağlamı route bebeğinden türetiliyor.
+  - Model/route bebek uyuşmazlığı güvenli not-found sonucu ve güvenlik logu üretiyor.
+  - Yerel cache, signed URL/image cache anahtarı ve upload çalışma yolu kullanıcı+bebek namespace'i taşıyor.
+  - Logout hassas cache/upload state'ini; bebek değişimi yerel/signed cache'i temizliyor.
+  - Aynı ailede Defne içeriğinin Ege route'unda dönmediği SQL ve Dart testleriyle doğrulandı.
+- Çalıştırılan testler ve sonuçları:
+  - `flutter analyze --no-pub`: başarılı, sorun yok.
+  - `flutter test --no-pub`: başarılı, 64 test.
+  - Tüm migration'lar + `supabase/tests/*_test.sql`: başarılı; yeni aynı-aile bağlam testleri dahil.
+- Çalıştırılamayan testler / neden: `deno check supabase/functions/send-push/index.ts` çalıştırılamadı; yerel ortamda Deno CLI kurulu değil. Push route üretimi Dart route testleri ve kod incelemesiyle doğrulandı, Edge runtime ayrıca çalıştırılmadı.
+- Güvenlik ve veri migration notları: Şema değişmedi. Legacy ID çözümleme RLS altında yalnız `baby_id` okur; bulunamayan/yetkisiz ayrımı istemciye sızdırılmaz.
+- Rollback adımları: Canonical route ve scoped sorgular geri alınmamalı; eski route'lar yalnız güvenli redirect olarak kalmalı.
+- Bilinen riskler: Gerçek cihazda cold-start deep-link ve platform image-cache disk temizliği ayrıca entegrasyon testiyle gözlenebilir; anahtar izolasyonu ve in-memory cache temizliği test edilmiştir. Push Edge Function değişikliği hedef Deno/Supabase ortamında ayrıca doğrulanmalıdır.
+- Bir sonraki fazın giriş koşulları: Faz 1 COMPLETE; Europe/Istanbul lifecycle ADR'si mevcut.
