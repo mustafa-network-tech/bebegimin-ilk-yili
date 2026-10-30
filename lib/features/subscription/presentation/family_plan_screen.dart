@@ -38,7 +38,7 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
       if (!mounted) return;
       switch (e.status) {
         case StorePurchaseStatus.verified:
-          showSnack(context, 'Aile paketiniz güncellendi.');
+          showSnack(context, 'Planınız güncellendi.');
         case StorePurchaseStatus.pending:
           showSnack(context, 'Ödeme onayı bekleniyor…');
         case StorePurchaseStatus.failed:
@@ -100,10 +100,11 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
     ref.listen(activeAccessGateProvider, (prev, next) {
       if (prev?.planRequired == true && next?.planRequired == false) context.go('/home');
     });
-    final planRequired = ref.watch(activeAccessGateProvider)?.blocksApp ?? false;
+    final gate = ref.watch(activeAccessGateProvider);
+    final planRequired = gate?.blocksApp ?? false;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aile paketi'),
+        title: const Text('Planlar'),
         actions: [
           if (planRequired)
             IconButton(
@@ -134,7 +135,10 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
             child: ListView(
               padding: const EdgeInsets.only(bottom: 32),
               children: [
-                _SubscriptionCard(account: account),
+                _SubscriptionCard(
+                  account: account,
+                  trialEndsAt: gate?.reason == AccessReason.trial ? gate?.trialEndsAt : null,
+                ),
                 _CapacityCard(account: account),
                 const SectionHeader(title: 'Kapsanan bebekler'),
                 Padding(
@@ -201,9 +205,12 @@ class _FamilyPlanScreenState extends ConsumerState<FamilyPlanScreen> {
 }
 
 class _SubscriptionCard extends StatelessWidget {
-  const _SubscriptionCard({required this.account});
+  const _SubscriptionCard({required this.account, this.trialEndsAt});
 
   final FamilyAccountOverview account;
+
+  /// End of the admin-granted trial while it runs (a plan can still be bought meanwhile).
+  final DateTime? trialEndsAt;
 
   @override
   Widget build(BuildContext context) {
@@ -222,8 +229,12 @@ class _SubscriptionCard extends StatelessWidget {
               Text('Sınırsız test erişimi', style: theme.textTheme.titleLarge),
               const SizedBox(height: 4),
               const Text('Süresiz · tüm ücretli özellikler ve dijital çıktılar dahil'),
+            ] else if (s == null && trialEndsAt != null) ...[
+              Text('Deneme erişimi', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text('Tüm özellikler açık · bitiş: ${_trialEnd(trialEndsAt!)}'),
             ] else if (s == null)
-              const Text('Henüz bir aile paketi yok.')
+              const Text('Henüz bir planınız yok.')
             else ...[
               Text('${planName(s.planCode)} · ${s.period.label}', style: theme.textTheme.titleLarge),
               const SizedBox(height: 4),
@@ -245,6 +256,12 @@ class _SubscriptionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _trialEnd(DateTime end) {
+  final local = end.toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${Dates.long(local)} ${two(local.hour)}:${two(local.minute)}';
 }
 
 class _CapacityCard extends StatelessWidget {
@@ -389,6 +406,7 @@ class FamilyPlanTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final account = ref.watch(familyAccountOverviewProvider(babyId)).value;
+    final trialEnd = ref.watch(babyAccessStateProvider(babyId)).value?.trialEndsAt;
     final cap = account?.capacity;
     return ListTile(
       leading: const Icon(Icons.workspace_premium_outlined),
@@ -398,8 +416,10 @@ class FamilyPlanTile extends ConsumerWidget {
             ? 'Plan ve aile üyesi kapasitesi'
             : account.testAccess
             ? 'Sınırsız test erişimi · ${account.activeFamilyMembers} aile üyesi'
+            : trialEnd != null && !account.subscriptionLive
+            ? 'Deneme · bitiş: ${_trialEnd(trialEnd)}'
             : account.subscription == null || !account.subscriptionLive
-            ? 'Aktif paket yok'
+            ? 'Aktif plan yok'
             : '${planName(account.subscription!.planCode)} · ${account.activeFamilyMembers} / $cap aile üyesi'
                   '${account.isFull ? ' · dolu' : ''}',
       ),

@@ -170,7 +170,7 @@ void main() {
   test('access reasons are explained without promising deletion', () {
     expect(state().message, contains('hiçbir şey silinmedi'));
     expect(state(parent: false).message, contains('Anne veya Baba'));
-    expect(state().message, contains('salt okunur'), reason: 'decision P-2: the archive stays readable');
+    expect(state().message, isNot(contains('salt okunur')), reason: 'full lock replaced the read-only archive (P-2)');
     expect(state(parent: false).message, contains('hiçbir şey silinmedi'));
     expect(state(reason: 'payment_issue').title, 'Ödeme alınamadı');
     expect(state(reason: 'account_unmapped').title, 'Aile hesabı eşleştiriliyor');
@@ -208,7 +208,7 @@ void main() {
 
   testWidgets('a lapsed subscription shows a read-only banner instead of locking the app', (tester) async {
     await pumpWithGate(tester, const SubscriptionReadOnlyBanner(), allowed: false);
-    expect(find.text('Aile paketi aktif değil: arşiv salt okunur.'), findsOneWidget);
+    expect(find.text('Plan aktif değil: arşiv salt okunur.'), findsOneWidget);
     await pumpWithGate(tester, const SubscriptionReadOnlyBanner(), allowed: true);
     await tester.pumpAndSettle();
     expect(find.textContaining('salt okunur'), findsNothing);
@@ -218,14 +218,14 @@ void main() {
     await pumpWithGate(tester, LifecycleWriteGuard(babyId: defne.id, child: const Text('FORM')), allowed: false);
     await tester.pumpAndSettle();
     expect(find.text('FORM'), findsNothing);
-    expect(find.text('Aile paketi aktif değil'), findsOneWidget);
+    expect(find.text('Plan aktif değil'), findsOneWidget);
   });
 
   testWidgets('parents can choose a plan or restore purchases', (tester) async {
     final store = _FakeStore(StoreProvider.appStore);
     await _pumpPaywall(tester, state(), store);
-    expect(find.text('Aile paketinizin süresi doldu'), findsOneWidget);
-    expect(find.text('Aile paketini seç'), findsOneWidget);
+    expect(find.text('Planınızın süresi doldu'), findsOneWidget);
+    expect(find.text('Plan seç'), findsOneWidget);
     await tester.tap(find.text('Satın alımları geri yükle'));
     await tester.pumpAndSettle();
     expect(store.restores, 1);
@@ -233,10 +233,10 @@ void main() {
 
   testWidgets('family members are told a parent renews; no purchase buttons', (tester) async {
     await _pumpPaywall(tester, state(parent: false), _FakeStore(StoreProvider.googlePlay));
-    expect(find.text('Aile paketini seç'), findsNothing);
+    expect(find.text('Plan seç'), findsNothing);
     expect(find.text('Satın alımları geri yükle'), findsNothing);
-    expect(find.textContaining('arşiv salt okunur'), findsOneWidget);
-    expect(find.textContaining('Anne veya Baba paketi yenilediğinde'), findsOneWidget);
+    expect(find.textContaining('Ailenizin planı aktif değil'), findsOneWidget);
+    expect(find.textContaining('Anne veya Baba planı yenilediğinde'), findsOneWidget);
     expect(find.text('Tekrar kontrol et'), findsOneWidget);
   });
 

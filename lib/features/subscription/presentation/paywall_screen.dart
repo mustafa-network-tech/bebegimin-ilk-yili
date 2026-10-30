@@ -70,7 +70,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aile paketi'),
+        title: const Text('Planlar'),
         actions: [
           IconButton(
             tooltip: 'Ayarlar',
@@ -97,7 +97,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               FilledButton.icon(
                 onPressed: () => context.push(familyPlanRoute),
                 icon: const Icon(Icons.workspace_premium_rounded),
-                label: Text(s.reason == AccessReason.paymentIssue ? 'Paketi yönet' : 'Aile paketini seç'),
+                label: Text(s.reason == AccessReason.paymentIssue ? 'Planı yönet' : 'Plan seç'),
               ),
               const SizedBox(height: 8),
               if (store.isSupported)

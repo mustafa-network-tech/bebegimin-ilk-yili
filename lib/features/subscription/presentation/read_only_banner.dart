@@ -28,12 +28,12 @@ class SubscriptionReadOnlyBanner extends ConsumerWidget {
               Expanded(
                 child: Text(
                   gate.isParent
-                      ? 'Aile paketi aktif değil: arşiv salt okunur.'
-                      : 'Aile paketi aktif değil: arşiv salt okunur. Anne veya Baba yenileyebilir.',
+                      ? 'Plan aktif değil: arşiv salt okunur.'
+                      : 'Plan aktif değil: arşiv salt okunur. Anne veya Baba yenileyebilir.',
                   style: TextStyle(color: scheme.onTertiaryContainer, fontWeight: FontWeight.w700),
                 ),
               ),
-              TextButton(onPressed: () => context.push(paywallRoute), child: const Text('Aile paketi')),
+              TextButton(onPressed: () => context.push(paywallRoute), child: const Text('Planlar')),
             ],
           ),
         ),

@@ -46,7 +46,9 @@ import '../features/search/presentation/search_screen.dart';
 import '../features/settings/presentation/settings_screens.dart';
 import '../features/subscription/application/subscription_providers.dart';
 import '../features/subscription/presentation/family_plan_screen.dart';
+import '../features/subscription/presentation/member_locked_screen.dart';
 import '../features/subscription/presentation/paywall_screen.dart';
+import '../features/subscription/presentation/plans_overview_screen.dart';
 import 'env.dart';
 import 'session.dart';
 import 'shell.dart';
@@ -321,6 +323,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/family/invite', builder: (_, _) => const InviteScreen()),
       GoRoute(path: familyPlanRoute, builder: (_, _) => const FamilyPlanScreen()),
       GoRoute(path: paywallRoute, builder: (_, _) => const PaywallScreen()),
+      GoRoute(path: plansOverviewRoute, builder: (_, _) => const PlansOverviewScreen()),
+      GoRoute(path: memberLockRoute, builder: (_, _) => const MemberLockedScreen()),
       GoRoute(
         path: '/babies/:babyId/members/:memberId',
         builder: (_, s) =>
@@ -348,6 +352,7 @@ const _onboardingRoutes = {
   '/onboarding/start',
   '/baby/new',
   '/join',
+  plansOverviewRoute,
   '/settings',
   '/settings/profile',
   '/settings/delete-account',
@@ -355,8 +360,8 @@ const _onboardingRoutes = {
   '/admin',
 };
 
-/// Reachable while a new family still has to choose a plan.
-const _planGateRoutes = [familyPlanRoute, paywallRoute, '/settings'];
+/// Reachable while the family has no plan (parents: buy one; members: read why).
+const _planGateRoutes = [familyPlanRoute, paywallRoute, plansOverviewRoute, memberLockRoute, '/settings'];
 
 String? _redirect(Ref ref, GoRouterState state) {
   final loc = state.matchedLocation;
@@ -412,8 +417,11 @@ String? _redirect(Ref ref, GoRouterState state) {
   // the shell shows a read-only banner and write routes are guarded. The
   // payment page is only left automatically once access is back.
   final gate = ref.read(activeAccessGateProvider);
-  // A new family without a plan: only the plans (and settings) are reachable.
+  // A family without a plan (or trial / test access) is locked out of the app: the parent
+  // is taken to the plans, family members to an explanation. Nothing is deleted.
   if (gate != null && gate.blocksApp && !_planGateRoutes.any(loc.startsWith)) return familyPlanRoute;
+  if (gate != null && gate.lockedMember && !_planGateRoutes.any(loc.startsWith)) return memberLockRoute;
+  if (gate != null && !gate.lockedMember && loc == memberLockRoute) return '/home';
   final blocked = gate != null && !gate.allowed;
   if (!blocked && loc == paywallRoute && gate != null) return '/home';
   return null;

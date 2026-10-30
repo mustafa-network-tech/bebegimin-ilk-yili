@@ -246,6 +246,7 @@ class CheckoutIntent {
 enum AccessReason {
   ok,
   testAccess,
+  trial,
   enforcementOff,
   noSubscription,
   subscriptionEnded,
@@ -255,6 +256,7 @@ enum AccessReason {
   static AccessReason fromKey(String? key) => switch (key) {
     'ok' => ok,
     'test_access' => testAccess,
+    'trial' => trial,
     'enforcement_off' => enforcementOff,
     'no_subscription' => noSubscription,
     'payment_issue' => paymentIssue,
@@ -272,6 +274,7 @@ class BabyAccessState {
     required this.isParent,
     required this.familyAccountId,
     this.planRequired = false,
+    this.trialEndsAt,
   });
 
   factory BabyAccessState.fromJson(String babyId, Map<String, dynamic> j) => BabyAccessState(
@@ -281,6 +284,7 @@ class BabyAccessState {
     isParent: j['is_parent'] as bool? ?? false,
     familyAccountId: j['family_account_id'] as String?,
     planRequired: j['plan_required'] as bool? ?? false,
+    trialEndsAt: j['trial_ends_at'] == null ? null : DateTime.tryParse(j['trial_ends_at'] as String),
   );
 
   final String babyId;
@@ -289,32 +293,40 @@ class BabyAccessState {
   final bool isParent;
   final String? familyAccountId;
 
-  /// A new family that has not chosen a plan yet: a parent cannot enter the
-  /// app before buying one (families that existed earlier are exempt).
+  /// The family has no active plan, trial or test access: the whole app is
+  /// locked (nothing is deleted). Only the parent can buy; family members wait.
   final bool planRequired;
+
+  /// End of the admin-granted 72 hour trial (only while the trial runs).
+  final DateTime? trialEndsAt;
 
   /// The plan gate closes the app for the parent who has to buy the plan.
   bool get blocksApp => planRequired && isParent;
 
+  /// A family member cannot buy: the app shows an explanation instead.
+  bool get lockedMember => planRequired && !isParent;
+
   String get title => switch (reason) {
     AccessReason.testAccess => 'Sınırsız test erişimi',
-    AccessReason.noSubscription => 'Aile paketi gerekli',
+    AccessReason.trial => 'Deneme erişimi',
+    AccessReason.noSubscription => 'Plan gerekli',
     AccessReason.paymentIssue => 'Ödeme alınamadı',
     AccessReason.accountUnmapped => 'Aile hesabı eşleştiriliyor',
-    _ => 'Aile paketinizin süresi doldu',
+    _ => 'Planınızın süresi doldu',
   };
 
   String get message => switch (reason) {
     AccessReason.testAccess => 'Bu aile için süresiz ve sınırsız test erişimi etkin.',
+    AccessReason.trial => 'Deneme süresince tüm özellikler açık.',
     AccessReason.accountUnmapped =>
       'Bu bebeğin aile hesabı henüz eşleştirilmedi. Destek ekibimiz eşleştirmeyi tamamladığında devam edebilirsiniz.',
     AccessReason.paymentIssue when isParent =>
       'Mağaza ödemeyi alamadı. Ödeme yönteminizi güncelleyin ya da yeni bir paket seçin. Anılarınız güvende.',
     _ when isParent =>
-      'Arşiviniz salt okunur: anıları, albümü ve takvimi görüntülemeye devam edebilirsiniz. Yeni içerik eklemek ve '
-          'düzenlemek için aile paketini seçin veya yenileyin; hiçbir şey silinmedi.',
+      'Uygulamayı kullanmaya devam etmek için bir plan seçin veya planınızı yenileyin. Anılarınız, bebek profiliniz '
+          've ailenizin bilgileri güvende; hiçbir şey silinmedi.',
     _ =>
-      'Ailenizin paketi aktif değil; arşiv salt okunur. Görüntülemeye devam edebilirsiniz. Anne veya Baba paketi '
-          'yenilediğinde yeniden içerik ekleyebilirsiniz; hiçbir şey silinmedi.',
+      'Ailenizin planı aktif değil. Anne veya Baba planı yenilediğinde uygulamayı yeniden kullanabilirsiniz; '
+          'hiçbir şey silinmedi.',
   };
 }

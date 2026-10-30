@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,11 +45,22 @@ final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
   }
 });
 
-/// Server decision for a baby: `allowed` = the family may write. Without an
-/// active family subscription the archive is read-only (decision P-2).
-final babyAccessStateProvider = FutureProvider.family<BabyAccessState, String>((ref, babyId) {
+/// Server decision for a baby: `allowed` = the family may use the app. Without
+/// an active plan, trial or test access the server locks the whole app.
+final babyAccessStateProvider = FutureProvider.family<BabyAccessState, String>((ref, babyId) async {
   ref.watch(lifecycleRevisionProvider);
-  return ref.watch(subscriptionRepositoryProvider).accessState(babyId);
+  final state = await ref.watch(subscriptionRepositoryProvider).accessState(babyId);
+  // A running trial ends by itself: ask the server again the moment it is over, so the
+  // plan screen opens without a restart (the server enforces it regardless).
+  final end = state.trialEndsAt;
+  if (end != null) {
+    final wait = end.difference(DateTime.now());
+    if (!wait.isNegative) {
+      final timer = Timer(wait + const Duration(seconds: 2), ref.invalidateSelf);
+      ref.onDispose(timer.cancel);
+    }
+  }
+  return state;
 });
 
 /// True once the server reports that the family subscription is inactive:

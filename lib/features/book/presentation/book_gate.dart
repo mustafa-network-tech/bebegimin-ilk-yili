@@ -91,7 +91,7 @@ class _BlockedBook extends StatelessWidget {
         title: 'Aile paketi gerekiyor',
         message:
             'Kitabınız korunuyor. Aile paketi aboneliği yeniden etkin olduğunda düzenleyebilir ve indirebilirsiniz.',
-        action: FilledButton(onPressed: () => context.push(familyPlanRoute), child: const Text('Aile paketi')),
+        action: FilledButton(onPressed: () => context.push(familyPlanRoute), child: const Text('Planlar')),
       ),
       'not_parent' => EmptyState(
         icon: Icons.lock_outline_rounded,

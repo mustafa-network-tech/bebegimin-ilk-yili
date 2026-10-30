@@ -20,6 +20,8 @@ import '../../media/presentation/media_picker.dart';
 import '../../notifications/data/push_service.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile.dart';
+import '../../subscription/presentation/family_plan_screen.dart';
+import '../../subscription/presentation/plans_overview_screen.dart';
 import '../application/theme_mode.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -58,6 +60,16 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(user?.email ?? ''),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push('/settings/profile'),
+          ),
+          const SectionHeader(title: 'Plan'),
+          ListTile(
+            leading: const Icon(Icons.workspace_premium_outlined),
+            title: const Text('Planlar'),
+            subtitle: const Text('Abonelik planları, fiyatlar ve mevcut durumunuz'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            // With a baby there is a family account: the full plan screen (buy / manage);
+            // before that only the price list.
+            onTap: () => context.push(babies.isEmpty ? plansOverviewRoute : familyPlanRoute),
           ),
           const SectionHeader(title: 'Çocuklarım'),
           for (final b in babies)

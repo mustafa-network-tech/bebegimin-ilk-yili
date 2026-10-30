@@ -17,6 +17,7 @@ import '../../family/domain/invitation.dart';
 import '../../family/domain/relation.dart';
 import '../../media/presentation/media_picker.dart';
 import '../../profile/data/profile_repository.dart';
+import '../../subscription/presentation/plans_overview_screen.dart';
 import '../application/baby_providers.dart';
 
 /// First step after sign-up: how the family will see you.
@@ -147,6 +148,14 @@ class StartChoiceScreen extends ConsumerWidget {
           'Davet koduyla katıl',
           'Bir aile üyeniz size kod veya bağlantı gönderdiyse.',
           () => context.push('/join'),
+        ),
+        const SizedBox(height: 12),
+        // Information only: the order (create the baby, then the plans) does not change.
+        option(
+          Icons.workspace_premium_outlined,
+          'Planlar',
+          'Aile planlarını ve fiyatları görün.',
+          () => context.push(plansOverviewRoute),
         ),
         const SizedBox(height: 24),
         TextButton(onPressed: () => ref.read(authRepositoryProvider).signOut(), child: const Text('Çıkış yap')),

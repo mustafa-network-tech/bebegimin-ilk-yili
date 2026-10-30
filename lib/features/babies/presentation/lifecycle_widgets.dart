@@ -204,9 +204,9 @@ class _SubscriptionReadOnlyRouteView extends StatelessWidget {
       appBar: AppBar(title: const Text('Arşiv salt okunur')),
       body: EmptyState(
         icon: Icons.visibility_rounded,
-        title: 'Aile paketi aktif değil',
+        title: 'Plan aktif değil',
         message: 'Arşivi görüntülemeye devam edebilirsiniz. Yeni içerik eklemek ve düzenlemek için aile paketi yenilenmelidir.',
-        action: FilledButton(onPressed: () => context.push(paywallRoute), child: const Text('Aile paketi')),
+        action: FilledButton(onPressed: () => context.push(paywallRoute), child: const Text('Planlar')),
       ),
     );
   }

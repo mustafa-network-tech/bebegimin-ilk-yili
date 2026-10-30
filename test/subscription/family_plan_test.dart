@@ -113,7 +113,7 @@ void main() {
     await pumpPlan(tester, account);
     expect(find.text('Sınırsız test erişimi'), findsOneWidget);
     expect(find.textContaining('aile üyesi kapasitesi sınırsız'), findsOneWidget);
-    expect(find.text('Planlar'), findsNothing);
+    expect(find.text('Small Family'), findsNothing, reason: 'paid plans are hidden for test access');
     expect(find.text('Seç'), findsNothing);
   });
 
