@@ -31,6 +31,13 @@ import {
   toBillingError,
   verifyOutcome,
 } from "../_shared/billing_errors.ts";
+import {
+  platformFor,
+  type ProductKind,
+  recordUserEvent,
+  type ServerEventType,
+  storeConfirmsPayment,
+} from "../_shared/user_events.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -60,6 +67,7 @@ Deno.serve(async (req) => {
   });
   const { data: auth } = await userClient.auth.getUser();
   if (!auth?.user) return json({ error: "unauthorized" }, 401);
+  const userId = auth.user.id;
 
   let body: Body;
   try {
@@ -71,6 +79,13 @@ Deno.serve(async (req) => {
     return json({ error: "malformed request" }, 400);
   }
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+  // Journey / payment-stage record (see _shared/user_events.ts): awaited before every
+  // response, never throws, bounded by a timeout, and never changes the decision below.
+  const platform = platformFor(body.provider);
+  let knownKind: ProductKind | null = null;
+  const track = (type: ServerEventType, status: "ok" | "failed" | "pending", errorCode?: string) =>
+    recordUserEvent(admin, { userId, type, platform, planCode: body.product_id, kind: knownKind, status, errorCode });
 
   let kind: "subscription" | "premium";
   let eventId: string;
@@ -95,6 +110,7 @@ Deno.serve(async (req) => {
         p_provider_product_id: body.product_id,
       });
       if (kindError) throw new BillingError("temporary_error");
+      if (productKind === "premium" || productKind === "subscription") knownKind = productKind;
       if (productKind === "premium") {
         kind = "premium";
         payload = await googlePremiumState(body.product_id, body.verification_data);
@@ -110,9 +126,19 @@ Deno.serve(async (req) => {
       return json({ error: "unsupported provider" }, 400);
     }
   } catch (e) {
-    return fail(body.provider, toBillingError(e).code);
+    const code = toBillingError(e).code;
+    // The store could not be checked: whether any money moved is unknown.
+    await track("store_verification_failed", "failed", code);
+    return fail(body.provider, code);
   }
-  if (!payload) return json({ result: "pending", granted: false });
+  knownKind = kind;
+  if (!payload) {
+    await track("payment_pending", "pending");
+    return json({ result: "pending", granted: false });
+  }
+  // The store itself reports the purchase as paid (distinct from a failed check).
+  const paymentConfirmed = storeConfirmsPayment(kind, String(payload.status));
+  if (paymentConfirmed) await track("payment_verified", "ok");
 
   if (kind === "subscription" && body.checkout_intent_id) payload.checkout_intent_id = body.checkout_intent_id;
   if (kind === "premium" && body.order_id) payload.order_id = body.order_id;
@@ -122,8 +148,9 @@ Deno.serve(async (req) => {
     { p_user: auth.user.id, p_provider: body.provider, p_provider_event_id: eventId, p_payload: payload },
   );
   if (error) {
-    if (error.hint === "purchase_not_yours") return fail(body.provider, "purchase_not_yours");
-    return fail(body.provider, "temporary_error");
+    const code = error.hint === "purchase_not_yours" ? "purchase_not_yours" : "temporary_error";
+    await track("activation_failed", "failed", code);
+    return fail(body.provider, code);
   }
   const outcome = verifyOutcome(data);
   if (outcome === "rejected") {
@@ -135,7 +162,15 @@ Deno.serve(async (req) => {
       .like("provider_event_id", `${eventId}*`)
       .order("id", { ascending: false })
       .limit(1);
-    return fail(body.provider, rejectionCode(rows?.[0]?.error as string | undefined));
+    const code = rejectionCode(rows?.[0]?.error as string | undefined);
+    await track("activation_failed", "failed", code);
+    return fail(body.provider, code);
+  }
+  if (outcome === "granted") {
+    await track("activation_granted", "ok");
+  } else if (paymentConfirmed) {
+    // Paid according to the store, but no access to open (expired / refunded afterwards).
+    await track("activation_failed", "failed", "purchase_inactive");
   }
   return json({ kind, result: data, status: payload.status, granted: outcome === "granted" });
 });

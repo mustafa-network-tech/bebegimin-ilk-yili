@@ -5,10 +5,12 @@ import type {
   AuditRow,
   BabyLookupRow,
   BirthPreview,
+  ConversionFunnel,
   DashboardSummary,
   ExtensionRow,
   GooglePlayCatalogCheckRow,
   PaymentEventRow,
+  PaymentProblemRow,
   PlanRow,
   PlatformAuditRow,
   ProductRow,
@@ -16,6 +18,8 @@ import type {
   SubscriptionRow,
   TestAccessEventRow,
   TestAccessUserRow,
+  UserActivityRow,
+  UserActivitySummary,
   UserFamilyRow,
 } from "./types";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -91,3 +95,12 @@ export const getTestAccessUsers = (search: string | null, status: string, offset
   });
 export const getTestAccessEvents = (offset: number) =>
   rpc<TestAccessEventRow[]>("admin_test_access_events", { p_user_id: null, p_limit: 50, p_offset: offset });
+
+export const getUserActivity = (userId: string, offset: number) =>
+  rpc<UserActivityRow[]>("admin_user_activity", { p_user_id: userId, p_limit: 50, p_offset: offset });
+export const getUserActivitySummary = async (userId: string) =>
+  (await rpc<UserActivitySummary[]>("admin_user_activity_summary", { p_user_id: userId }))[0] ?? null;
+export const getConversionFunnel = async (days: number) =>
+  (await rpc<ConversionFunnel[]>("admin_conversion_funnel", { p_days: days }))[0] ?? null;
+export const getPaymentProblems = (offset: number) =>
+  rpc<PaymentProblemRow[]>("admin_payment_problems", { p_limit: 50, p_offset: offset });

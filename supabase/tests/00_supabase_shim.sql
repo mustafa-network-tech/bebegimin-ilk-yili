@@ -17,7 +17,9 @@ create table if not exists auth.users (
   -- RETURNS TABLE text/varchar mismatches in security-definer RPCs.
   email varchar(255) unique,
   raw_user_meta_data jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  email_confirmed_at timestamptz,
+  last_sign_in_at timestamptz
 );
 
 create or replace function auth.uid() returns uuid language sql stable as $$

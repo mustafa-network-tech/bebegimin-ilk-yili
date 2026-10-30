@@ -240,3 +240,62 @@ export type TestAccessEventRow = {
   created_at: string;
   total_count: number;
 };
+
+export type UserActivityRow = {
+  event_type: string;
+  occurred_at: string;
+  platform: string;
+  plan_code: string | null;
+  status: string;
+  error_code: string | null;
+  source: "recorded" | "history";
+  scope: "user" | "family";
+  total_count: number;
+};
+
+export type PaymentProblem = "paid_not_activated" | "verification_failed";
+
+export type UserActivitySummary = {
+  user_id: string;
+  registered_at: string;
+  email_verified_at: string | null;
+  last_activity_at: string | null;
+  family_created_at: string | null;
+  baby_added_at: string | null;
+  plans_viewed_at: string | null;
+  plan_selected_at: string | null;
+  checkout_started_at: string | null;
+  payment_verified_at: string | null;
+  activated_at: string | null;
+  subscription_status: string | null;
+  subscription_plan_code: string | null;
+  has_payment_attempt: boolean;
+  payment_success_count: number;
+  payment_failure_count: number;
+  payment_problem: PaymentProblem | null;
+  tracking_started_at: string;
+};
+
+export type ConversionFunnel = {
+  registered: number;
+  email_verified: number;
+  family_created: number;
+  plans_viewed: number;
+  checkout_started: number;
+  payment_verified: number;
+  activated_users: number;
+  activated_families: number;
+  open_paid_not_activated: number;
+  open_verification_failed: number;
+  plans_viewed_available: boolean;
+  tracking_started_at: string;
+};
+
+export type PaymentProblemRow = {
+  user_id: string;
+  problem: PaymentProblem;
+  last_event_at: string;
+  plan_code: string | null;
+  error_code: string | null;
+  total_count: number;
+};

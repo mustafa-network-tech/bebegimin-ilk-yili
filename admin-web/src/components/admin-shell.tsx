@@ -6,6 +6,7 @@ import { logoutAction } from "@/app/actions/auth";
 const nav = [
   ["/dashboard", "Genel bakış", "⌂"],
   ["/kullanicilar", "Kullanıcılar ve aileler", "◎"],
+  ["/donusum", "Abonelik dönüşümü", "▽"],
   ["/abonelik-planlari", "Abonelik planları", "◫"],
   ["/abonelikler", "Aktif abonelikler", "↻"],
   ["/urunler", "Dijital ürünler", "◇"],
