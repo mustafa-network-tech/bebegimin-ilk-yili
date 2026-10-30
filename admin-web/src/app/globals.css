@@ -160,3 +160,8 @@ textarea { resize: vertical; }
   .auth-intro { background: linear-gradient(145deg, #2c211b, #24211d); }
   .button.secondary { color: var(--ink); }
 }
+
+.nav-badge { margin-left: auto; min-width: 22px; padding: 2px 7px; border-radius: 999px; background: #f4b942; color: #4b3300; font-size: .75rem; font-weight: 800; text-align: center; }
+.mail-preview { white-space: pre-wrap; padding: 14px; border-radius: 12px; background: #f6f1ec; border: 1px solid #e6ded6; font-family: inherit; }
+details { margin-top: 12px; }
+summary { cursor: pointer; font-weight: 800; }

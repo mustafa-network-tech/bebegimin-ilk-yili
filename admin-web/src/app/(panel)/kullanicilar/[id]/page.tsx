@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { grantTrialAction, markEmailSentAction, revokeTrialAction } from "@/app/actions/signups";
+import { GrantTrialForm, MarkSentForm, RevokeTrialForm } from "@/components/signup-forms";
 import { Badge, EmptyState, PageHeader, Pagination, StatCard } from "@/components/ui";
-import { getUserActivity, getUserActivitySummary, getUsersFamilies } from "@/lib/admin/queries";
+import { getUserActivity, getUserActivitySummary, getUserTrials, getUsersFamilies } from "@/lib/admin/queries";
 import { dateTime, errorCodeLabel, eventLabel, paymentProblemLabel, planName, platformLabel, statusLabel } from "@/lib/format";
 
 type Props = {
@@ -16,14 +18,16 @@ export default async function UserActivityPage({ params, searchParams }: Props) 
   if (!UUID.test(id)) notFound();
   const sp = await searchParams;
   const offset = Math.max(0, Number(typeof sp.offset === "string" ? sp.offset : 0) || 0);
-  const [summary, events, users] = await Promise.all([
+  const [summary, events, users, trials] = await Promise.all([
     getUserActivitySummary(id).catch(() => null),
     getUserActivity(id, offset).catch(() => null),
     getUsersFamilies(id, "all", 0),
+    getUserTrials(id),
   ]);
   if (!summary || !events) notFound();
   const user = users[0];
   const total = events[0]?.total_count ?? 0;
+  const liveTrial = trials.find((t) => t.status === "live");
   const journey: Array<[string, string | null, string?]> = [
     ["Kayıt", summary.registered_at],
     ["E-posta doğrulama", summary.email_verified_at],
@@ -44,6 +48,11 @@ export default async function UserActivityPage({ params, searchParams }: Props) 
       <StatCard label="Ödeme denemesi" value={summary.has_payment_attempt ? "Var" : "Yok"} />
       <StatCard label="Başarılı / başarısız ödeme" value={`${summary.payment_success_count} / ${summary.payment_failure_count}`} detail="Başarısız sayısı yalnız izleme başladıktan sonrakileri kapsar" tone={summary.payment_failure_count ? "warn" : ""} />
     </div>
+    <section className="section card">
+      <div className="section-head"><div><h2>72 saatlik deneme</h2><p>Yalnızca yönetici tarafından elle verilir; abonelik veya ödeme kaydı oluşturmaz.</p></div>{liveTrial && <Badge tone="good">{dateTime(liveTrial.ends_at)} tarihine kadar</Badge>}</div>
+      {liveTrial ? <><RevokeTrialForm action={revokeTrialAction} userId={id} /><MarkSentForm action={markEmailSentAction} userId={id} template="trial_activated" trialId={liveTrial.trial_id} label="Deneme e-postası gönderildi olarak işaretle" /></> : <GrantTrialForm action={grantTrialAction} userId={id} hadTrial={trials.length > 0} />}
+      {trials.length > 0 && <div className="table-wrap"><table><thead><tr><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th>Veren</th><th>Gerekçe</th></tr></thead><tbody>{trials.map((t) => <tr key={t.trial_id}><td>{dateTime(t.starts_at)}</td><td>{dateTime(t.ends_at)}</td><td><Badge tone={t.status === "live" ? "good" : "neutral"}>{t.status === "live" ? "Sürüyor" : t.status === "revoked" ? "Sonlandırıldı" : "Bitti"}</Badge>{t.repeat_grant && <small>Yenileme</small>}</td><td>{t.granted_by_name}</td><td>{t.grant_reason}{t.revoke_reason && <small>Sonlandırma: {t.revoke_reason}</small>}</td></tr>)}</tbody></table></div>}
+    </section>
     <section className="section"><div className="section-head"><h2>Abonelik yolculuğu</h2></div>
       <div className="table-wrap"><table><thead><tr><th>Aşama</th><th>Tarih</th></tr></thead><tbody>{journey.map(([label, at, note]) => <tr key={label}><td>{label}</td><td>{at ? dateTime(at) : <small>{note ?? "Kayıt yok"}</small>}</td></tr>)}</tbody></table></div>
     </section>

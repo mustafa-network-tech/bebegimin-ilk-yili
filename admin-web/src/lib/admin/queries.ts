@@ -7,8 +7,10 @@ import type {
   BirthPreview,
   ConversionFunnel,
   DashboardSummary,
+  EmailTemplateRow,
   ExtensionRow,
   GooglePlayCatalogCheckRow,
+  NewSignupRow,
   PaymentEventRow,
   PaymentProblemRow,
   PlanRow,
@@ -21,6 +23,7 @@ import type {
   UserActivityRow,
   UserActivitySummary,
   UserFamilyRow,
+  UserTrialRow,
 } from "./types";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -104,3 +107,9 @@ export const getConversionFunnel = async (days: number) =>
   (await rpc<ConversionFunnel[]>("admin_conversion_funnel", { p_days: days }))[0] ?? null;
 export const getPaymentProblems = (offset: number) =>
   rpc<PaymentProblemRow[]>("admin_payment_problems", { p_limit: 50, p_offset: offset });
+
+export const getNewSignups = (status: string, offset: number) =>
+  rpc<NewSignupRow[]>("admin_new_signups", { p_status: status, p_limit: 50, p_offset: offset });
+export const getPendingSignupCount = () => rpc<number>("admin_pending_signup_count");
+export const getEmailTemplates = () => rpc<EmailTemplateRow[]>("admin_email_templates");
+export const getUserTrials = (userId: string) => rpc<UserTrialRow[]>("admin_user_trials", { p_user_id: userId });

@@ -140,6 +140,39 @@ else
 fi
 rm -rf -- "$RACE_DIR"
 
+# Real two-session race: two Super Admins grant a trial to the same user at once;
+# the user row lock must let exactly one grant commit (one running trial only).
+echo "→ race trial grant"
+psql -v ON_ERROR_STOP=1 -q -o /dev/null -d "$DB" <<'SQL'
+insert into auth.users (id, email) values
+  ('d4000000-0000-4000-8000-000000000001', 'yaris-deneme-admin1@example.com'),
+  ('d4000000-0000-4000-8000-000000000002', 'yaris-deneme-admin2@example.com'),
+  ('d4000000-0000-4000-8000-000000000003', 'yaris-deneme-kullanici@example.com');
+insert into public.platform_user_roles (user_id, role) values
+  ('d4000000-0000-4000-8000-000000000001', 'super_admin'),
+  ('d4000000-0000-4000-8000-000000000002', 'super_admin');
+SQL
+RACE_DIR="$(mktemp -d)"
+set +e
+psql -v ON_ERROR_STOP=1 -q -d "$DB" -c "set role authenticated; select tests.login('d4000000-0000-4000-8000-000000000001'); select * from public.admin_grant_trial('d4000000-0000-4000-8000-000000000003', 'yaris bir');" >"$RACE_DIR/one.log" 2>&1 &
+RACE_ONE=$!
+psql -v ON_ERROR_STOP=1 -q -d "$DB" -c "set role authenticated; select tests.login('d4000000-0000-4000-8000-000000000002'); select * from public.admin_grant_trial('d4000000-0000-4000-8000-000000000003', 'yaris iki');" >"$RACE_DIR/two.log" 2>&1 &
+RACE_TWO=$!
+wait "$RACE_ONE"; RACE_ONE_STATUS=$?
+wait "$RACE_TWO"; RACE_TWO_STATUS=$?
+set -e
+TRIALS="$(psql -v ON_ERROR_STOP=1 -qtA -d "$DB" -c "select count(*) from public.access_trials where user_id = 'd4000000-0000-4000-8000-000000000003'")"
+if { { [ "$RACE_ONE_STATUS" -eq 0 ] && [ "$RACE_TWO_STATUS" -ne 0 ]; } ||
+     { [ "$RACE_ONE_STATUS" -ne 0 ] && [ "$RACE_TWO_STATUS" -eq 0 ]; }; } && [ "$TRIALS" = "1" ]; then
+  echo "  ok - concurrent trial grants create exactly one trial"
+else
+  echo "✗ trial race expected one success and one trial; got $RACE_ONE_STATUS / $RACE_TWO_STATUS, trials $TRIALS"
+  sed -n '/ERROR/p' "$RACE_DIR/one.log" "$RACE_DIR/two.log"
+  rm -rf -- "$RACE_DIR"
+  exit 1
+fi
+rm -rf -- "$RACE_DIR"
+
 # Two-digit suites first, then three-digit ones (100+ come after 99z), so a
 # plain lexical glob never runs 100_ before 10_.
 for f in "$DIR"/[1-9][0-9][!0-9]*_test.sql "$DIR"/[1-9][0-9][0-9]*_test.sql; do

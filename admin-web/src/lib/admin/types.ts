@@ -299,3 +299,44 @@ export type PaymentProblemRow = {
   error_code: string | null;
   total_count: number;
 };
+
+export type TrialStatus = "none" | "live" | "expired" | "revoked";
+
+export type NewSignupRow = {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  signed_up_at: string;
+  email_verified_at: string | null;
+  welcome_marked_at: string | null;
+  welcome_marked_by_name: string | null;
+  trial_status: TrialStatus;
+  trial_ends_at: string | null;
+  trial_id: string | null;
+  trial_email_marked_at: string | null;
+  total_count: number;
+};
+
+export type UserTrialRow = {
+  trial_id: string;
+  starts_at: string;
+  ends_at: string;
+  status: "live" | "expired" | "revoked";
+  granted_by_name: string;
+  grant_reason: string;
+  repeat_grant: boolean;
+  revoked_at: string | null;
+  revoked_by_name: string | null;
+  revoke_reason: string | null;
+};
+
+export type EmailTemplateKind = "welcome" | "trial_activated";
+
+export type EmailTemplateRow = {
+  kind: EmailTemplateKind;
+  subject: string;
+  body: string;
+  version: number;
+  updated_at: string;
+  updated_by_name: string | null;
+};

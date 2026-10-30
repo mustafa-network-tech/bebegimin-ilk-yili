@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --experimental-strip-types --test src/lib/google-play/*.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/google-play/*.test.ts src/lib/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
